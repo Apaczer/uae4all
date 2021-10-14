@@ -30,9 +30,15 @@
 #define EOP_ALLOCABS 7
 #define EOP_LOOP 8
 
+extern void Retro_Msg(const char *);
+
 void init_ersatz_rom (uae_u8 *data)
 {
     write_log ("Trying to use Kickstart replacement.\n");
+#ifdef __LIBRETRO__
+    const char *msg_str = "No Kickstart file found.";
+    Retro_Msg(msg_str);
+#endif
     *data++ = 0x00; *data++ = 0x08; /* initial SP */
     *data++ = 0x00; *data++ = 0x00;
     *data++ = 0x00; *data++ = 0xF8; /* initial PC */

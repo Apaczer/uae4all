@@ -58,6 +58,9 @@ extern signed int IO_CYCLE;
 #include "drawing.h"
 #include "savestate.h"
 
+#if  defined(__LIBRETRO__)
+extern int second_joystick_enable;
+#endif
 
 #ifdef STOP_WHEN_COPPER
 static __inline__ void setcopper(void)
@@ -2475,6 +2478,11 @@ static _INLINE_ uae_u16 POT0DAT (void)
 
 static _INLINE_ uae_u16 JOY0DAT (void)
 {
+#if  defined(__LIBRETRO__)
+    if (second_joystick_enable)
+        return joy0dir;
+#endif
+
     do_mouse_hack ();
     return ((uae_u8)mouse_x) + ((uae_u16)mouse_y << 8) + joy0dir;
 }
@@ -3223,6 +3231,15 @@ static void vsync_handler (void)
     	handle_events ();
     	getjoystate (0, &joy1dir, &joy1button);
     	getjoystate (1, &joy0dir, &joy0button);
+#ifdef __LIBRETRO__
+	if (second_joystick_enable == 1)
+	{
+		back_joy0button= joy0button;
+		buttonstate[0]= joy0button & 0x01;
+
+	}
+	else
+#endif
 	if (joy0button!=back_joy0button)
 		back_joy0button= buttonstate[0]= joy0button;
     }

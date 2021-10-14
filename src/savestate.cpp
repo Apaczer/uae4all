@@ -275,8 +275,10 @@ static void restore_header (uae_u8 *src)
 }
 
 static void clear_events(void) {
+#ifndef __LIBRETRO__
 	SDL_Event event;
 	while (SDL_PollEvent(&event));
+#endif
 }
 /* restore all subsystems */
 
@@ -289,7 +291,7 @@ void restore_state (const char *filename)
     long filepos;
     int i=0;
 
-#if !defined(DREAMCAST) && !defined(DINGOO)
+#if !defined(DREAMCAST) && !defined(DINGOO) && !defined(__LIBRETRO__)
     if (SDL_MUSTLOCK(prSDLScreen))
     	SDL_UnlockSurface (prSDLScreen);
 #endif
@@ -444,7 +446,7 @@ void restore_state (const char *filename)
     gui_set_message("Error loadstate", 50);
 
     end:
-#if !defined(DREAMCAST) && !defined(DINGOO)
+#if !defined(DREAMCAST) && !defined(DINGOO) && !defined(__LIBRETRO__)
     if (SDL_MUSTLOCK(prSDLScreen))
     	SDL_LockSurface (prSDLScreen);
 #else
@@ -484,7 +486,7 @@ void save_state (const char *filename, const char *description)
     int len,i;
     char name[5];
 
-#if !defined(DREAMCAST) && !defined(DINGOO)
+#if !defined(DREAMCAST) && !defined(DINGOO) && !defined(__LIBRETRO__)
     if (SDL_MUSTLOCK(prSDLScreen))
     	SDL_UnlockSurface (prSDLScreen);
 #endif
@@ -663,7 +665,7 @@ void save_state (const char *filename, const char *description)
 #ifdef START_DEBUG_SAVESTATE
 	DEBUG_AHORA=1;
 #endif
-#if !defined(DREAMCAST) && !defined(DINGOO)
+#if !defined(DREAMCAST) && !defined(DINGOO) && !defined(__LIBRETRO__)
     if (SDL_MUSTLOCK(prSDLScreen))
     	SDL_LockSurface (prSDLScreen);
 #endif

@@ -60,6 +60,8 @@ uae_u16 *prSDLScreenPixels;
 char *gfx_mem=NULL;
 unsigned gfx_rowbytes=0;
 
+int need_frameskip = 0;
+
 Uint32 uae4all_numframes=0;
 
 #ifdef DEBUG_FRAMERATE

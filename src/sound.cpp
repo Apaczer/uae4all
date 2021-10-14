@@ -119,7 +119,15 @@ void uae4all_pause_music(void) { }
 
 void uae4all_resume_music(void) { }
 
+void audio_clear(void) { }
+
 #else 
+
+void audio_clear(void)
+{
+    memset (sndbuffer_all, 0 , sizeof(sndbuffer_all) );
+}
+
 
 #include "thread.h"
 #include <SDL.h>
