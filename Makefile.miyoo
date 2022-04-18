@@ -17,7 +17,7 @@ LIB7Z=1
 
 HOME_DIR=1
 
-DEFAULT_CFLAGS = -I/opt/miyoo/usr/include/ -I/opt/miyoo/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/include/  -I/opt/miyoo/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/include/SDL -D_GNU_SOURCE=1 -D_REENTRANT -DGCW0
+DEFAULT_CFLAGS = -I/opt/miyoo/usr/include/ -I/opt/miyoo/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/include/  -I/opt/miyoo/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/include/SDL -DGCW0 -DRS97
 
 LDFLAGS = -lSDL -lSDL_image -lz -lpthread -flto
 # add -lSDL_mixer if -DMENU_MUSIC below
