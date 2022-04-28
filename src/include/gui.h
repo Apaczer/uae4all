@@ -8,7 +8,7 @@
 
 extern void loadConfig(void);
 extern void storeConfig(void);
-extern int gui_init (void);
+extern int gui_init (int argc, char **argv);
 extern int gui_update (void);
 extern void gui_exit (void);
 extern void gui_led (int, int);

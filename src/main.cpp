@@ -306,7 +306,8 @@ void real_main (int argc, char **argv)
     }
     init_joystick ();
 
-	int err = gui_init ();
+    // Send argv if romfile is used as parameter
+	int err = gui_init (argc, argv);
 	if (err == -1) {
 	    write_log ("Failed to initialize the GUI\n");
 	} else if (err == -2) {

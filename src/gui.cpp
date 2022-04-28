@@ -219,7 +219,7 @@ static void getChanges(void)
     init_hz();
 }
 
-int gui_init (void)
+int gui_init (int argc, char **argv)
 {
 //Se ejecuta justo despues del MAIN
     if (prSDLScreen==NULL)
@@ -237,17 +237,29 @@ int gui_init (void)
     if (prSDLScreen!=NULL)
     {
 	emulating=0;
-#if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
-	uae4all_image_file[0]=0;
-	uae4all_image_file2[0]=0;
-#else
-	strcpy(uae4all_image_file,"prueba.adz");
-	strcpy(uae4all_image_file2,"prueba2.adz");
-#endif
+	#if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
+		uae4all_image_file[0]=0;
+		uae4all_image_file2[0]=0;
+		// Use parameters as rom files
+		if (argc == 2 || argc == 3)
+		{
+			strcpy(uae4all_image_file,argv[1]);
+			if (argc == 3)
+				strcpy(uae4all_image_file2,argv[2]);
+		}
+		printf("Disk 0=%s\n",uae4all_image_file);fflush(stdout);
+		printf("Disk 1=%s\n",uae4all_image_file2);fflush(stdout);
+	#else
+		strcpy(uae4all_image_file,"prueba.adz");
+		strcpy(uae4all_image_file2,"prueba2.adz");
+	#endif
+
 	vkbd_init();
 	init_text(1);
 	loadConfig();
-	run_mainMenu();
+	// Display the menu if no parameter exists
+	if (argc == 1)
+		run_mainMenu();
 	quit_text();
 	uae4all_pause_music();
 	emulating=1;
