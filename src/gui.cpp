@@ -245,7 +245,7 @@ int gui_init (void)
 	strcpy(uae4all_image_file2,"prueba2.adz");
 #endif
 	vkbd_init();
-	init_text(1);
+	init_text(0);
 	loadConfig();
 	run_mainMenu();
 	quit_text();
