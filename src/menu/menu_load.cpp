@@ -547,7 +547,11 @@ int getDefaultFiles(void)
 	strcpy(actual_dir,MENU_DIR_DEFAULT);
 #endif
 	if(last_directory[0])
-		return(getFiles(last_directory));
+		// Check that last directory exists
+		if (getFiles(last_directory) == -1)
+			return(getFiles(MENU_DIR_DEFAULT));
+		else
+			return getFiles(last_directory);
 	else
 		return(getFiles(MENU_DIR_DEFAULT));
 }
