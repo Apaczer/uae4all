@@ -13,7 +13,7 @@ OPKDIR		= opk_data
 all: $(PROG)
 
 # Possible values : 0, YES, APPLY
-PROFILE = YES
+PROFILE = 0
 
 #FAME_CORE=1
 LIB7Z=1
