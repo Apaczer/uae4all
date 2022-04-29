@@ -1,4 +1,4 @@
-NAME   = uae4all.elf
+NAME   = uae4all
 O      = o
 RM     = rm -f
 CC     = /opt/miyoo/usr/bin/arm-linux-gcc
