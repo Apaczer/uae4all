@@ -12,6 +12,9 @@ OPKDIR		= opk_data
 
 all: $(PROG)
 
+# Possible values : 0, YES, APPLY
+PROFILE = YES
+
 #FAME_CORE=1
 LIB7Z=1
 
@@ -26,6 +29,9 @@ LDFLAGS += -lm
 endif
 #-s -static
 
+ifeq ($(PROFILE), YES)
+LDFLAGS		+= -lgcov
+endif
 
 MORE_CFLAGS = -Isrc/ -Isrc/include/ -Isrc/menu -Isrc/vkbd -fomit-frame-pointer  -Wno-unused -Wno-format -DUSE_SDL -DGCCCONSTFUNC="__attribute__((const))" -DUSE_UNDERSCORE -fno-exceptions -DUNALIGNED_PROFITABLE -DREGPARAM="__attribute__((regparm(3)))" -DOPTIMIZED_FLAGS -D__inline__=__inline__ -DSHM_SUPPORT_LINKS=0 -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
 
@@ -35,6 +41,12 @@ MORE_CFLAGS+= -DROM_PATH_PREFIX=\"./\" -DDATA_PREFIX=\"./data/\" -DSAVE_PREFIX=\
 
 MORE_CFLAGS+= -DDOUBLEBUFFER
 MORE_CFLAGS+= -DNO_DEFAULT_THROTTLE
+
+ifeq ($(PROFILE), YES)
+MORE_CFLAGS		+= -fprofile-generate=/mnt/profile
+else ifeq ($(PROFILE), APPLY)
+MORE_CFLAGS		+= -fprofile-use -fbranch-probabilities
+endif
 
 #MORE_CFLAGS+= -DSTATUS_ALWAYS
 #MORE_CFLAGS+= -DUSE_MAYBE_BLIT
