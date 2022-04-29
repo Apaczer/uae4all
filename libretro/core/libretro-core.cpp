@@ -1,6 +1,6 @@
 /* 
  * Uae4all libretro core implementation
- * (c) Chips 2021
+ * (c) Chips 2022
  */
 
 #include "libretro.h"
@@ -54,6 +54,8 @@ extern void texture_init(void);
 extern void texture_uninit(void);
 extern void input_gui(void);
 extern void retro_virtualkb(void);
+
+extern void flush_audio(void);
 
 const char *retro_save_directory;
 const char *retro_system_directory;
@@ -522,6 +524,8 @@ void retro_run(void)
    if(pauseg==0)
       if(SHOWKEY)
          retro_virtualkb();
+
+   flush_audio();
 
    DISK_GUI_change();
 

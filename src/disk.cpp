@@ -240,9 +240,9 @@ static int drive_insert (drive * drv, int dnum, const char *fname)
 	drv->trackspeed = floppy_speed;
 	return 0;
     }
-    strncpy ((char *)&prefs_df[drv-floppy], fname, 127);
+    memmove ((char *)&prefs_df[drv-floppy], fname, 127);
     prefs_df[drv-floppy][127] = 0;
-    strncpy ((char *)&changed_df[drv-floppy], fname, 127);
+    memmove ((char *)&changed_df[drv-floppy], fname, 127);
     changed_df[drv-floppy][127] = 0;
 
     uae4all_fread (buffer, sizeof (char), 8, drv->diskfile);

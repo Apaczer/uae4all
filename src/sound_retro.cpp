@@ -1,6 +1,6 @@
  /* 
   * Libretro sound.c implementation
-  * (c) Chips 2021
+  * (c) Chips 2022
   */
 
 #include <sys/types.h>
@@ -39,6 +39,8 @@ uae_u16 *render_sndbuff = sndbuffer[0];
 
 int cnt = 0;
 int wrcnt = 0;
+
+extern void retro_audiocb(signed short int *sound_buffer,int sndbufsize);
 
 #ifdef NO_SOUND
 
@@ -103,11 +105,8 @@ void sound_default_evtime(void)
     schedule_audio();
 }
 
-
 void finish_sound_buffer (void)
 {
-    extern void retro_audiocb(signed short int *sound_buffer,int sndbufsize);
-
     retro_audiocb((short int *)sndbuffer[0], SNDBUFFER_LEN / 2 );
     sndbufpt = render_sndbuff = sndbuffer[0];
 }
@@ -134,6 +133,18 @@ int init_sound (void)
     sound_default_evtime();
 
     return 1;
+}
+
+void flush_audio(void)
+{
+
+    // Flush audio buffer in order to render all audio samples for a given frame. It's better for some frontend
+
+    retro_audiocb((short int*) sndbuffer[wrcnt%SOUND_BUFFERS_COUNT], (sndbufpt - render_sndbuff)/2);
+
+    sndbufpt = sndbuffer[0];
+    render_sndbuff = sndbuffer[0];
+
 }
 
 void pause_sound (void)
