@@ -563,8 +563,8 @@ void gui_handle_events (void)
 	Uint8 *keystate = SDL_GetKeyState(NULL);
 
 #ifdef EMULATED_JOYSTICK
-#if !defined(GCW0) && !defined(RS97)
-	if (keystate[SDLK_ESCAPE])
+#if !defined(RS97) && !defined(RS97)
+	if (keystate[SDLK_RCTRL])
 	{
 		if (keystate[SDLK_LCTRL])
 		{
@@ -605,6 +605,27 @@ void gui_handle_events (void)
 		{
 			keystate[SDLK_LEFT]=0;
 			dec_dingoo_volumen();
+		}
+	}
+	else
+#endif
+#if !defined(MIYOO)
+	if (keystate[SDLK_ESCAPE])
+	{
+		if (keystate[SDLK_LCTRL])
+		{
+			keystate[SDLK_LCTRL]=0;
+			inc_throttle(1);
+		}
+		else if (keystate[SDLK_SPACE])
+		{
+			keystate[SDLK_SPACE]=0;
+			inc_throttle(1);
+		}
+		else if (keystate[SDLK_LSHIFT])
+		{
+			keystate[SDLK_LSHIFT]=0;
+			inc_throttle(-1);
 		}
 	}
 	else
@@ -703,7 +724,7 @@ void gui_handle_events (void)
 	if (( keystate[SDLK_F11] )
 #ifdef EMULATED_JOYSTICK
 #if defined(GCW0) || defined(RS97)
-			||(keystate[SDLK_ESCAPE])
+			||(keystate[SDLK_RCTRL])
 #else
 			||((keystate[SDLK_RETURN])&&(keystate[SDLK_ESCAPE]))
 #endif
@@ -714,7 +735,7 @@ void gui_handle_events (void)
 #endif
 	{
 #ifdef EMULATED_JOYSTICK
-		keystate[SDLK_RETURN]=keystate[SDLK_ESCAPE]=keystate[SDLK_TAB]=keystate[SDLK_BACKSPACE]=0;
+		keystate[SDLK_RETURN]=keystate[SDLK_RCTRL]=keystate[SDLK_TAB]=keystate[SDLK_BACKSPACE]=0;
 #endif
 		if (!savestate_state && !in_goMenu)
 			in_goMenu=SDL_GetTicks();
@@ -755,7 +776,7 @@ void gui_handle_events (void)
 	{
 		if (keystate[SDLK_ESCAPE])
 		{
-			keystate[SDLK_ESCAPE]=keystate[SDLK_TAB]=0;
+			keystate[SDLK_RCTRL]=keystate[SDLK_TAB]=0;
 			savestate_state = STATE_DOSAVE;
 		}
 		else
