@@ -255,7 +255,7 @@ int gui_init (int argc, char **argv)
 	#endif
 
 	vkbd_init();
-	init_text(1);
+	init_text(0);
 	loadConfig();
 	// Display the menu if no parameter exists
 	if (argc == 1)
