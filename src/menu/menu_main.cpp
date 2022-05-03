@@ -402,9 +402,9 @@ static enum MainMenuEntry key_mainMenu(enum MainMenuEntry *sel)
 				case SDLK_z:
 				case SDLK_RETURN:
 				case SDLK_e:
-				case SDLK_LCTRL: activate = 1; break;
+				case SDLK_LALT: activate = 1; break;
 				case SDLK_q:
-				case SDLK_LALT: cancel = 1; break;
+				case SDLK_LCTRL: cancel = 1; break;
 			}
 			if (cancel && emulating)
 				return MAIN_MENU_ENTRY_RETURN_TO_EMULATION;
