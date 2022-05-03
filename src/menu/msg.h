@@ -6,10 +6,9 @@ static const char *menu_msg="                         Amiga emulator "
  "for Dingoo "
 #endif
 #endif
-#if defined(GCW0) || defined (RS97)
- "by Chui - based on UAE 0.8.22. GCW Zero port by Nebuleon and Zear. UAE4ALL logo and minor gfx changes by Hi-Ban. Release 1.";
+#if defined(MIYOO)
+ "UAE 0.8.22. reworked for MiyooCFW with changes by smurline and goldmojo. Final build and tests by Apacz-er rev.1";
 #else
- "by Chui.                    Third release Candidate.                               GPL License.                                          ";
+ "by Chui - based on UAE 0.8.22. GCW Zero port by Nebuleon and Zear. UAE4ALL logo and minor gfx changes by Hi-Ban. Release 1.";
 #endif
-
 #define MAX_SCROLL_MSG (-1500)
