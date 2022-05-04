@@ -14,7 +14,7 @@
 
 extern int emulating;
 
-static const char *text_str_title="   -- UAE4ALL release 1 ------";
+static const char *text_str_title="   -- UAE4ALL rev-1 MiyooCFW------";
 static const char *text_str_load="Load disk image (X)";
 static const char *text_str_save="Saved states (Y)";
 static const char *text_str_throttle="Throttle";
@@ -43,8 +43,8 @@ static const char *text_str_sound="Sound";
 static const char *text_str_on="on";
 static const char *text_str_off="off";
 static const char *text_str_separator="------------------------------";
-static const char *text_str_start="Start Amiga (R)";
-static const char *text_str_reset="Reset Amiga (R)";
+static const char *text_str_start="Start Amiga (SELECT)";
+static const char *text_str_reset="Reset Amiga (SELECT)";
 static const char *text_str_return="Return to Amiga (B)";
 #ifdef DREAMCAST
 static const char *text_str_exit="Exit - Reboot Dreamcast";
@@ -390,7 +390,7 @@ static enum MainMenuEntry key_mainMenu(enum MainMenuEntry *sel)
 				case SDLK_x:
 				case SDLK_LSHIFT: load = 1; break;
 				case SDLK_1:
-				case SDLK_BACKSPACE: reset = 1; break;
+				case SDLK_ESCAPE: reset = 1; break;
 #else
 				case SDLK_c:
 				case SDLK_LSHIFT: toStates = 1; break;
