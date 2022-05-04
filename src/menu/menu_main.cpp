@@ -298,7 +298,7 @@ static void draw_mainMenu(enum MainMenuEntry c)
 	else
 		write_text(column, row, text_str_on);
 
-#if defined(RS97)
+#if !defined(MIYOO) && !defined(RS97) 
 	row += 2;
 
 	write_text(6, row, text_str_status);
@@ -384,7 +384,7 @@ static enum MainMenuEntry key_mainMenu(enum MainMenuEntry *sel)
 				case SDLK_SPACE: toStates = 1; break;
 				case SDLK_2:
 				case SDLK_TAB: reset = 1; break;
-#elif defined(GCW0)
+#elif defined(GCW0) || defined(MIYOO)
 				case SDLK_c:
 				case SDLK_SPACE: toStates = 1; break;
 				case SDLK_x:

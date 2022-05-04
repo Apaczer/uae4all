@@ -139,7 +139,7 @@ void loadConfig()
 			sscanf(arg, "%d", &mainMenu_autosave);
 		else if(!strcmp(line, "USE_JOY"))
 			sscanf(arg, "%d", &mainMenu_usejoy);
-#if defined(RS97)
+#if !defined(MIYOO) && !defined(RS97)
 		else if(!strcmp(line, "STATUS_BAR"))
 			sscanf(arg, "%d", &mainMenu_statusbar);
 #endif
@@ -187,7 +187,7 @@ void storeConfig()
 		return;
 	}
 
-#if defined(RS97)
+#if !defined(MIYOO) && !defined(RS97)
 	fprintf(f, "THROTTLE %d\nFRAMESKIP %d\nSCREEN_POS %d\nSOUND %d\nSAVE_DISKS %d\nUSE_JOY %d\nSTATUS_BAR %d\n", mainMenu_throttle, mainMenu_frameskip, mainMenu_vpos, mainMenu_sound, mainMenu_autosave, mainMenu_usejoy, mainMenu_statusbar);
 #else
 	fprintf(f, "THROTTLE %d\nFRAMESKIP %d\nSCREEN_POS %d\nSOUND %d\nSAVE_DISKS %d\nUSE_JOY %d\n", mainMenu_throttle, mainMenu_frameskip, mainMenu_vpos, mainMenu_sound, mainMenu_autosave, mainMenu_usejoy);
@@ -563,7 +563,7 @@ void gui_handle_events (void)
 	Uint8 *keystate = SDL_GetKeyState(NULL);
 
 #ifdef EMULATED_JOYSTICK
-#if !defined(RS97) && !defined(RS97)
+#if !defined(MIYOO) && !defined(RS97)
 	if (keystate[SDLK_RCTRL])
 	{
 		if (keystate[SDLK_LCTRL])
@@ -716,14 +716,14 @@ void gui_handle_events (void)
 	else
 		leftSuperThrottle();
 #endif
-#if !defined(DINGOO) && !defined(GCW0) && !defined(DREAMCAST) && !defined(RS97)
+#if !defined(DINGOO) && !defined(GCW0) && !defined(DREAMCAST) && !defined(RS97) && !defined(MIYOO)
 	if ( keystate[SDLK_F12] )
 		SDL_WM_ToggleFullScreen(prSDLScreen);
 	else
 #endif
 	if (( keystate[SDLK_F11] )
 #ifdef EMULATED_JOYSTICK
-#if defined(GCW0) || defined(RS97)
+#if defined(GCW0) || defined(RS97) || defined(MIYOO)
 			||(keystate[SDLK_RCTRL])
 #else
 			||((keystate[SDLK_RETURN])&&(keystate[SDLK_ESCAPE]))

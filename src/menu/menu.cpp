@@ -330,7 +330,7 @@ void init_text(int splash)
 
 			text_draw_background();
 			text_draw_window(54,110,250,64,"--- ERROR ---");
-#if defined(GCW0) || defined(RS97)
+#if defined(GCW0) || defined(RS97) || defined(MIYOO)
 #ifdef HOME_DIR
 			write_text(9,14,"kick.rom not found in:");
 
