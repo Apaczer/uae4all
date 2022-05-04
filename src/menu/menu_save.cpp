@@ -146,7 +146,7 @@ static inline int key_saveMenu(int *cp)
 				case SDLK_z:
 				case SDLK_RETURN:
 				case SDLK_e:
-				case SDLK_LCTRL: hit0=1; break;
+				case SDLK_LALT: hit0=1; break;
 #ifdef DREAMCAST_SAVE_VMU
 				case SDLK_2:
 				case SDLK_BACKSPACE: hit2=1; break;
@@ -176,7 +176,7 @@ static inline int key_saveMenu(int *cp)
 				case SDLK_LSHIFT: hit4=1; break;
 #endif
 				case SDLK_q:
-				case SDLK_LALT: hit1=1; break;
+				case SDLK_LCTRL: hit1=1; break;
 			}
 			if (hit1)
 			{

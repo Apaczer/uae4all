@@ -439,9 +439,9 @@ static int key_loadMenu(int *c)
 				case SDLK_z:
 				case SDLK_RETURN:
 				case SDLK_e:
-				case SDLK_LCTRL: hit0=1; break;
+				case SDLK_LALT: hit0=1; break;
 				case SDLK_q:
-				case SDLK_LALT: hit1=1; break;
+				case SDLK_LCTRL: hit1=1; break;
 				case SDLK_1:
 #ifdef DREAMCAST
 				case SDLK_TAB:
