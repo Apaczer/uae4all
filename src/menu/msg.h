@@ -7,7 +7,7 @@ static const char *menu_msg="                         Amiga emulator "
 #endif
 #endif
 #if defined(MIYOO)
- "UAE 0.8.22. reworked for MiyooCFW with changes by smurline and goldmojo. Final build and tests by Apacz-er rev.1";
+ "UAE 0.8.22. reworked for MiyooCFW with changes by smurline and goldmojo. Final build and tests by Apacz-er rev. 1.1";
 #else
  "by Chui - based on UAE 0.8.22. GCW Zero port by Nebuleon and Zear. UAE4ALL logo and minor gfx changes by Hi-Ban. Release 1.";
 #endif

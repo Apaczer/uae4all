@@ -14,7 +14,7 @@
 
 extern int emulating;
 
-static const char *text_str_title="   -- UAE4ALL rev-1 MiyooCFW------";
+static const char *text_str_title="   -- UAE4ALL rev-1.1 MiyooCFW------";
 static const char *text_str_load="Load disk image (X)";
 static const char *text_str_save="Saved states (Y)";
 static const char *text_str_throttle="Throttle";
