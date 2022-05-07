@@ -24,6 +24,16 @@ cd uae4all
 make clean
 make -f Makefile.miyoo
 ```
+## PGO instructions :
+All builds (from release section) have Profile-Guided Optimization applied, which gives approx 5-10% performance boost.
+- set ``PROFILE = YES`` in Makefile
+- compile
+- run the emulator for a few minutes on your device 
+- dump the *.gcda files dropped in ``/mnt/profile`` and copy them back into your ``/src`` folder in a repo
+- set ``PROFILE = APPLY``
+- compile & enjoy optimized build!
+
+While gathering profiling data on target platform, use the app how normally you would and look for parts that might introduce perf. challenge. Possibly try to run emulator in one take and exit normally through GUI's menu to correctly collect information.
 
 ## Compatibility list
 There are some drawbacks when FAME is not used:
