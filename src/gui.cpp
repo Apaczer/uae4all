@@ -711,14 +711,14 @@ void gui_handle_events (void)
 	else
 		leftSuperThrottle();
 #endif
-#if !defined(DINGOO) && !defined(GCW0) && !defined(DREAMCAST) && !defined(RS97)
+#if !defined(DINGOO) && !defined(DREAMCAST) && !defined(RS97)
 	if ( keystate[SDLK_F12] )
 		SDL_WM_ToggleFullScreen(prSDLScreen);
 	else
 #endif
 	if (( keystate[SDLK_F11] )
 #ifdef EMULATED_JOYSTICK
-#if defined(GCW0) || defined(RS97) || defined(MIYOO)
+#if defined(RS97) || defined(MIYOO)
 			||(keystate[SDLK_RCTRL])
 #else
 			||((keystate[SDLK_RETURN])&&(keystate[SDLK_ESCAPE]))

@@ -13,7 +13,7 @@ extern SDL_Surface *prSDLScreen;
 #else
 #define MENU_DIR_DEFAULT "/"
 #endif
-#elif defined(GCW0) || defined(MIYOO)
+#elif defined(MIYOO)
 #define MENU_DIR_DEFAULT "/media/"
 #else
 #define MENU_DIR_DEFAULT "."

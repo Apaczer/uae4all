@@ -384,7 +384,7 @@ static enum MainMenuEntry key_mainMenu(enum MainMenuEntry *sel)
 				case SDLK_SPACE: toStates = 1; break;
 				case SDLK_2:
 				case SDLK_TAB: reset = 1; break;
-#elif defined(GCW0) || defined(MIYOO)
+#elif defined(MIYOO)
 				case SDLK_c:
 				case SDLK_SPACE: toStates = 1; break;
 				case SDLK_x:
