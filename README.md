@@ -7,7 +7,28 @@ This build is based of a port to _GCW0_ made by zear & Nebuleon (with smurline a
 
 Stock emulator for 1.3.3 MiyooCFW was based (possibly) of upstream by zear (https://github.com/zear/uae4all). Initial (stock) port made by @jamesofarrell, compiled with FAME core (no src available).
 
-This revision replaces FAME mk68 emulation library with UAE core. Major advantages would be wider game compatibility, however some games may produce fps drawback due to UAE being less optimized.
+This revision replaces FAME m68k emulation library with UAE core. Major advantages would be wider game compatibility, however some games may produce fps drawback due to UAE being less optimized.
+
+### Changelog:
+**UAE4ALL rev. 1.1**
+- the "Status bar" option is now visible in main menu and uae4all.cfg file ( ``STATUS_BAR 0`` or ``-1``)
+- added hotkeys to increase/decrease "Throttle" (SELECT+X/Y)
+
+**UAE4ALL rev. 1.0**
+- load DF0 as first arg. parameter (you can load ROM file directly from your console's frontend)
+- show/hide status bar option (editable through *.cfg or in emu's GUI)
+- disabled splash screen by default (faster init load- show/hide status bar option (editable through *.cfg or in emu's GUI)
+- disabled splash screen by default (faster init load speed)
+- semi-darkmode for all notifications due to above commit (unintentional, but I like it!)
+- fixed A/B button mapping for V90/Q90 while in menu screen (to be cohesive with gmenu2x/SM).
+- frame throttling fine tuning now works on "auto" frameskip mode
+- lib7z savestate compression method (will not work with jamesofarrell's stock version)
+- compatibility increase (revert from FAME m68k library to UAE core, may introduce slight performance drawback) speed)
+- semi-darkmode for all notifications due to above commit (unintentional, but I like it!)
+- fixed A/B button mapping for V90/Q90 while in menu screen (to be cohesive with gmenu2x/SM).
+- frame throttling fine tuning now works on "auto" frameskip mode
+- lib7z savestate compression method (will not work with jamesofarrell's stock version)
+- compatibility increase (revert from FAME m68k library to UAE core, may introduce slight performance drawback)
 
 ## Compiling instructions
 1. Set up your environment with @steward-fu toolchain (preferably in Debian 9 distro): 
@@ -44,7 +65,19 @@ There are some drawbacks when FAME is not used:
 Below titles will play better on UAE core comparable to FAME:
 - SuperFrog - no video jittery on "auto" frameskip
 - Alien Breed - no video jittery on "auto" frameskip
-- JamesPond - boot ups and doesn't crash
+- James Pond - boot ups and doesn't crash (CR PDX by TIC)
 - Great Giana Sisters - boot ups and doesn't crash
 - Nicky II - boot ups and doesn't crash
 - AdamsFamily - no sprite freezes during gameplay
+
+UAE4ALL emulation related issues:
+- James Pond - player's sprite can pass through walls
+## FAQ
+Q) _What's the difference between stock UAE4ALL (from 1.3.3 MiyooCFW)?_  
+A: This revision is more compatible and have additional user-friendly features described in changelog. The previous src was also unavailable, so this port is a chance for other people to work of it and modify this emulator to their needs. 
+
+Q) _How to set it up in console?_  
+A: Place binary file in _/mnt/emus/uae4all/_ and make new link to it if you don't have one already. You will also need to have there _/data_ folder with necessary [assets](https://github.com/Apaczer/uae4all/tree/master/data).
+
+Q) _Does this emu need any BIOS file?_  
+A: Yes, the emulator will recognize it by placing kick.rom (rename your kickstater BIOS to match) in _/mnt/.uae4all/_ location
