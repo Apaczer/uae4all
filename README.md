@@ -58,20 +58,23 @@ While gathering profiling data on target platform, use the app how normally you 
 
 ## Compatibility list
 There are some drawbacks when FAME is not used:
-- Zool II - less optimized
-- Jim Power - less optimized
-- Xenon II - crashes after sprite collision with bomb
+- _Zool II_ - less optimized
+- _Jim Power in Mutant Planet_ - less optimized
+- _Xenon 2: Megablast_ - crashes after sprite collision with bomb
 
 Below titles will play better on UAE core comparable to FAME:
-- SuperFrog - no video jittery on "auto" frameskip
-- Alien Breed - no video jittery on "auto" frameskip
-- James Pond - boot ups and doesn't crash (CR PDX by TIC)
-- Great Giana Sisters - boot ups and doesn't crash
-- Nicky II - boot ups and doesn't crash
-- AdamsFamily - no sprite freezes during gameplay
+- _Superfrog_ - no video jittery on "auto" frameskip
+- _Alien Breed_ - no video jittery on "auto" frameskip
+- _James Pond_ - boot ups and doesn't crash (CR PDX by TIC)
+- _The Great Giana Sisters_ - boot ups and doesn't crash
+- _Nicky II_ - boot ups and doesn't crash
+- _The Addams Family Mansion Mayhem_ - no sprite freezes during gameplay
+- _Moonstone: A Hard Days Knight_ - passes loading screen when disk B is being read on DF1 drive
 
 UAE4ALL emulation related issues:
-- James Pond - player's sprite can pass through walls
+- _James Pond_ - player's sprite can pass through walls
+- _Moonstone: A Hard Days Knight_ - will play only with first (DF0) and second (DF1) disk mounted simultaneously
+
 ## FAQ
 Q) _What's the difference between stock UAE4ALL (from 1.3.3 MiyooCFW)?_  
 A: This revision is more compatible and have additional user-friendly features described in changelog. The previous src was also unavailable, so this port is a chance for other people to work of it and modify this emulator to their needs. 
@@ -80,4 +83,4 @@ Q) _How to set it up in console?_
 A: Place binary file in _/mnt/emus/uae4all/_ and make new link to it if you don't have one already. You will also need to have there _/data_ folder with necessary [assets](https://github.com/Apaczer/uae4all/tree/master/data).
 
 Q) _Does this emu need any BIOS file?_  
-A: Yes, the emulator will recognize it by placing kick.rom (rename your kickstater BIOS to match) in _/mnt/.uae4all/_ location
+A: Yes, the emulator will recognize it by placing kick.rom (rename your kickstarter BIOS to match) in _/mnt/.uae4all/_ location
