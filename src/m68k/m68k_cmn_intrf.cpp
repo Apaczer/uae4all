@@ -237,16 +237,16 @@ static void uae4all_reset(void)
 
 #ifdef __LIBRETRO__
 extern int libretro_frame_end;
+extern int libretroreset;
 #endif
 
 static void m68k_run (void)
 {
 #ifdef __LIBRETRO__
-	static int onlyfirstreset = 0;
 	libretro_frame_end = 0;
-	if (0 == onlyfirstreset)
+	if (1 == libretroreset)
 	{
-		onlyfirstreset = 1;
+		libretroreset = 0;
 		uae4all_reset ();
 	}
 #else

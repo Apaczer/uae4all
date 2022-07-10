@@ -69,6 +69,8 @@ static retro_environment_t environ_cb;
 struct zfile *retro_deserialize_file = NULL;
 static size_t save_state_file_size = 0;
 
+int libretroreset = 1;
+
 // Amiga default kickstarts
 
 #define A500_ROM        "kick34005.A500"
@@ -293,6 +295,7 @@ void retro_shutdown_core(void)
 
 void retro_reset(void)
 {
+   libretroreset = 1;
    uae_reset();
 }
 
@@ -543,6 +546,8 @@ bool retro_load_game(const struct retro_game_info *info)
    strcpy(RPATH,full_path);
 
    pre_main(RPATH);
+
+   libretroreset = 1;
 
    quit_program = 2;
 
