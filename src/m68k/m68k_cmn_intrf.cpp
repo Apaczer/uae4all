@@ -262,12 +262,17 @@ static void m68k_run (void)
 #else
 		uae4all_prof_start(0);
 		cycles = nextevent - currcycle;
+#ifdef __LIBRETRO__
+		// On libretro don't use the timeslice hack
+		cycles = cycles / CYCLE_UNIT;
+#else
 		switch (timeslice_mode) {
 			case 3:  cycles>>=6; break;
 			case 2:  cycles>>=7; break;
 			case 1:  cycles=(cycles>>8)+(cycles>>9); break;
 			default: cycles>>=8; break;
 		}
+#endif
 #ifdef DEBUG_TIMESLICE
 		unsigned ts=cycles;
 #endif
@@ -297,7 +302,12 @@ static void m68k_run (void)
                 uae4all_prof_start(1);
 
 		//cycles=((unsigned)(((double)(M68KCONTEXT.cycles_counter-cycles_actual))*cycles_factor))<<8;
+#ifdef __LIBRETRO__
+		// On libretro don't use the cycle_factor hack
+		cycles=(M68KCONTEXT.cycles_counter-cycles_actual) * CYCLE_UNIT;
+#else
 		cycles=(M68KCONTEXT.cycles_counter-cycles_actual) * cycles_factor;
+#endif
 
 #ifdef DEBUG_INTERRUPTS
 		dbgf("cycles=%i (%i) -> PC=%.6x\n",cycles>>8,nextevent - currcycle, _68k_getpc());
@@ -316,7 +326,7 @@ static void m68k_run (void)
 					return;
 #ifndef DEBUG_M68K
 #ifdef NO_SHORT_EVENTS
-			cycles=2048;
+			cycles=4*CYCLE_UNIT;
 #ifdef PROTECT_INFINITE
 			cuentalo++;
 			if (cuentalo>1024)
@@ -325,7 +335,7 @@ static void m68k_run (void)
 				return;
 			}
 #endif
-		}while((nextevent - currcycle)<=2048);
+		}while((nextevent - currcycle)<=4*CYCLE_UNIT);
 #endif
 		cycles_actual=M68KCONTEXT.cycles_counter;
 #endif
