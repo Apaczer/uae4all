@@ -62,6 +62,10 @@ unsigned gfx_rowbytes=0;
 
 Uint32 uae4all_numframes=0;
 
+#ifdef SCALING
+unsigned char uae4all_scalefactor=1;
+#endif
+
 #ifdef DEBUG_FRAMERATE
 
 Uint32 uae4all_frameskipped=0;
@@ -150,6 +154,12 @@ void flush_screen (void)
     if (SDL_MUSTLOCK(prSDLScreen))
     	SDL_UnlockSurface (prSDLScreen);
 #endif
+#ifdef SCALING
+	unsigned x,y,n,m;
+	unsigned short *gfx_mem_p, *gfx_mem_line;
+	unsigned short *surface_p, *surface_line;
+	unsigned width_px = (prSDLScreen->pitch) / (prSDLScreen->format->BytesPerPixel);
+#endif
 #ifndef DINGOO
 #ifndef DOUBLEBUFFER
 #ifdef USE_RASTER_DRAW
@@ -159,6 +169,30 @@ void flush_screen (void)
 #endif
 #endif
 #endif
+#ifdef SCALING
+	surface_line = (uae_u16 *)prSDLScreen->pixels;
+	gfx_mem_p = (uae_u16 *)gfx_mem;
+	for(y = 0; y < current_height; y++)
+	{	
+		gfx_mem_line = gfx_mem_p;
+		for(n = 0; n < uae4all_scalefactor; n++)
+		{
+			gfx_mem_p = gfx_mem_line;
+			surface_p = surface_line;
+			surface_line += width_px;
+			for(x = 0; x < current_width; x++)
+			{
+				for(m = 0; m < uae4all_scalefactor; m++)
+				{
+					*surface_p = *gfx_mem_p;
+					surface_p++;
+				}
+				gfx_mem_p++;
+			}
+		}
+	}
+#endif
+
 #ifdef USE_RASTER_DRAW
     if (drawfinished)
     {
@@ -178,8 +212,13 @@ void flush_screen (void)
 	if (vkbd_mode)
 		vkbd_key=vkbd_process();
 #if defined(DOUBLEBUFFER) || defined(DINGOO)
+#ifdef SCALING
+    SDL_UpdateRect(prSDLScreen, 0, 0, uae4all_scalefactor*320, uae4all_scalefactor*240);
+#else
 	SDL_Flip(prSDLScreen);
 #endif
+#endif
+
 #if !defined(DREAMCAST) && !defined(DINGOO)
     if (SDL_MUSTLOCK(prSDLScreen))
     	SDL_LockSurface (prSDLScreen);
@@ -299,8 +338,8 @@ static void graphics_subinit (void)
 #endif
 
 	if (prSDLScreen==NULL)
-#ifdef DREAMCAST
-		prSDLScreen = SDL_SetVideoMode(current_width, current_height, 16, uiSDLVidModFlags|VIDEO_FLAGS);
+#ifdef SCALING
+		prSDLScreen = SDL_SetVideoMode(uae4all_scalefactor * current_width, uae4all_scalefactor * current_height, 16, uiSDLVidModFlags|VIDEO_FLAGS);
 #else
 		prSDLScreen = SDL_SetVideoMode(current_width, current_height, 16, uiSDLVidModFlags|VIDEO_FLAGS);
 #endif
@@ -320,13 +359,22 @@ static void graphics_subinit (void)
 		dbgf("Bytes per Pixel: %d\n", prSDLScreen->format->BytesPerPixel);
 		dbgf("Bytes per Line: %d\n", prSDLScreen->pitch);
 #endif
+
+#ifdef SCALING
+		memset(prSDLScreen->pixels, 0, uae4all_scalefactor * uae4all_scalefactor * current_width * current_height * prSDLScreen->format->BytesPerPixel);
+#else
 		memset(prSDLScreen->pixels, 0, current_width * current_height * prSDLScreen->format->BytesPerPixel);
+#endif
 #if !defined(DREAMCAST) && !defined(DINGOO)
 		if (SDL_MUSTLOCK(prSDLScreen))
 			SDL_UnlockSurface(prSDLScreen);
 #endif
-#if !defined(DOUBLEBUFFER) && !defined(DINGOO)
+#if defined(MIYOO)
+#ifdef SCALING
+		SDL_UpdateRect(prSDLScreen, 0, 0, uae4all_scalefactor * current_width, uae4all_scalefactor * current_height);
+#else
 		SDL_UpdateRect(prSDLScreen, 0, 0, current_width, current_height);
+#endif
 #else
 		SDL_Flip(prSDLScreen);
 #endif
@@ -341,8 +389,14 @@ static void graphics_subinit (void)
 		if (SDL_MUSTLOCK(prSDLScreen))
 			SDL_LockSurface(prSDLScreen);
 #endif
+#ifdef SCALING
+		if(gfx_mem == NULL)
+			gfx_mem = (char *)calloc(current_width * current_height, prSDLScreen->format->BytesPerPixel);
+		gfx_rowbytes = current_width * prSDLScreen->format->BytesPerPixel;
+#else
 		gfx_mem = (char *)prSDLScreen->pixels;
 		gfx_rowbytes = prSDLScreen->pitch;
+#endif
 	}
 #ifdef DEBUG_GFX
 	dbgf("current_height=%i\n",current_height);

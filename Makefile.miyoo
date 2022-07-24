@@ -48,6 +48,8 @@ else ifeq ($(PROFILE), APPLY)
 MORE_CFLAGS		+= -fprofile-use -fbranch-probabilities
 endif
 
+MORE_CFLAGS+= -DSCALING
+
 #MORE_CFLAGS+= -DSTATUS_ALWAYS
 #MORE_CFLAGS+= -DUSE_MAYBE_BLIT
 #MORE_CFLAGS+= -DUSE_BLITTER_DELAYED

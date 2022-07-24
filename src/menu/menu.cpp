@@ -49,6 +49,10 @@ Uint32 menu_msg_time=0x12345678;
 extern int __sdl_dc_emulate_keyboard;
 #endif
 
+#ifdef SCALING
+extern unsigned char uae4all_scalefactor;
+#endif
+
 static void obten_colores(void)
 {
 	FILE *f=fopen(DATA_PREFIX "colors.txt", "rt");
@@ -203,7 +207,11 @@ void init_text(int splash)
 	if (prSDLScreen==NULL)
 	{
 		SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_JOYSTICK);
+#ifdef SCALING
+		prSDLScreen=SDL_SetVideoMode(uae4all_scalefactor*320,uae4all_scalefactor*240,16,VIDEO_FLAGS);
+#else
 		prSDLScreen=SDL_SetVideoMode(320,240,16,VIDEO_FLAGS);
+#endif
     		SDL_ShowCursor(SDL_DISABLE);
  	   	SDL_JoystickEventState(SDL_ENABLE);
     		SDL_JoystickOpen(0);

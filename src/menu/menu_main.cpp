@@ -18,6 +18,7 @@ static const char *text_str_title="   -- UAE4ALL rev-1.1 MiyooCFW------";
 static const char *text_str_load="Load disk image (X)";
 static const char *text_str_save="Saved states (Y)";
 static const char *text_str_throttle="Throttle";
+static const char *text_str_scaling="Scale";
 static const char *text_str_frameskip="Frameskip";
 static const char *text_str_autosave="Save disks";
 static const char *text_str_vpos="Screen pos";
@@ -58,6 +59,7 @@ enum MainMenuEntry {
 	MAIN_MENU_ENTRY_SAVED_STATES,
 	MAIN_MENU_ENTRY_THROTTLE,
 	MAIN_MENU_ENTRY_FRAMESKIP,
+	MAIN_MENU_ENTRY_SCALING,
 	MAIN_MENU_ENTRY_SCREEN_POSITION,
 	MAIN_MENU_ENTRY_SOUND,
 	MAIN_MENU_ENTRY_SAVE_DISKS,
@@ -104,6 +106,10 @@ int mainMenu_frameskip=0;
 #endif
 #endif
 
+#ifdef SCALING
+extern unsigned char uae4all_scalefactor;
+int mainMenu_scalefactor=uae4all_scalefactor;
+#endif
 
 #if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
 int mainMenu_sound=-1;
@@ -217,6 +223,31 @@ static void draw_mainMenu(enum MainMenuEntry c)
 		write_text_inv(column, row, text_str_auto);
 	else
 		write_text(column, row, text_str_auto);
+		
+	row += 2;
+
+	write_text(6, row, text_str_scaling);
+	column = 17;
+
+	if ((mainMenu_scalefactor == 1) && (c != MAIN_MENU_ENTRY_SCALING || flash))
+		write_text_inv(column, row, text_str_1);
+	else
+		write_text(column, row, text_str_1);
+	column += strlen(text_str_1) + 1;
+	if ((mainMenu_scalefactor == 2) && (c != MAIN_MENU_ENTRY_SCALING || flash))
+		write_text_inv(column, row, text_str_2);
+	else
+		write_text(column, row, text_str_2);
+	column += strlen(text_str_2) + 1;
+	if ((mainMenu_scalefactor == 3) && (c != MAIN_MENU_ENTRY_SCALING || flash))
+		write_text_inv(column, row, text_str_3);
+	else
+		write_text(column, row, text_str_3);
+	column += strlen(text_str_3) + 1;
+	if ((mainMenu_scalefactor == 4) && (c != MAIN_MENU_ENTRY_SCALING || flash))
+		write_text_inv(column, row, text_str_4);
+	else
+		write_text(column, row, text_str_4);
 
 	row += 2;
 
@@ -455,6 +486,14 @@ static enum MainMenuEntry key_mainMenu(enum MainMenuEntry *sel)
 							mainMenu_frameskip = (mainMenu_frameskip < 5)
 								? mainMenu_frameskip + 1
 								: -1;
+						break;
+					case MAIN_MENU_ENTRY_SCALING:
+						if (left)
+							mainMenu_scalefactor = (mainMenu_scalefactor > 0)
+								? mainMenu_scalefactor - 1
+								: 4;
+						else if (right)
+							mainMenu_scalefactor = (mainMenu_scalefactor + 1) % 6;
 						break;
 					case MAIN_MENU_ENTRY_SCREEN_POSITION:
 						if (left)
