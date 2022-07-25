@@ -369,7 +369,7 @@ static void graphics_subinit (void)
 		if (SDL_MUSTLOCK(prSDLScreen))
 			SDL_UnlockSurface(prSDLScreen);
 #endif
-#if defined(MIYOO)
+#if defined(NONE)
 #ifdef SCALING
 		SDL_UpdateRect(prSDLScreen, 0, 0, uae4all_scalefactor * current_width, uae4all_scalefactor * current_height);
 #else
