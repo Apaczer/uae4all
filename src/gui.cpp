@@ -228,7 +228,7 @@ int gui_init (int argc, char **argv)
 //Se ejecuta justo despues del MAIN
     if (prSDLScreen==NULL)
 #ifdef SCALING
-	prSDLScreen=SDL_SetVideoMode(uae4all_scalefactor*320,uae4all_scalefactor*240,16,VIDEO_FLAGS);
+	prSDLScreen=SDL_SetVideoMode(uae4all_scalefactor*320,uae4all_scalefactor*240,16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 #else
 	// prSDLScreen=SDL_SetVideoMode(320,240,16,VIDEO_FLAGS);
 	prSDLScreen=SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE |
