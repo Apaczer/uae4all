@@ -24,11 +24,6 @@ This revision replaces FAME m68k emulation library with UAE core. Major advantag
 - frame throttling fine tuning now works on "auto" frameskip mode
 - lib7z savestate compression method (will not work with jamesofarrell's stock version)
 - compatibility increase (revert from FAME m68k library to UAE core, may introduce slight performance drawback) speed)
-- semi-darkmode for all notifications due to above commit (unintentional, but I like it!)
-- fixed A/B button mapping for V90/Q90 while in menu screen (to be cohesive with gmenu2x/SM).
-- frame throttling fine tuning now works on "auto" frameskip mode
-- lib7z savestate compression method (will not work with jamesofarrell's stock version)
-- compatibility increase (revert from FAME m68k library to UAE core, may introduce slight performance drawback)
 
 ## Compiling instructions
 1. Set up your environment with @steward-fu toolchain (preferably in Debian 9 distro): 
