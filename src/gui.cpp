@@ -676,7 +676,7 @@ void gui_handle_events (void)
 	if (( keystate[SDLK_F11] )
 #ifdef EMULATED_JOYSTICK
 #if defined(GCW0)
-			||(keystate[SDLK_ESCAPE])
+			||(keystate[SDLK_RCTRL]) //HERE MENU
 #else
 			||((keystate[SDLK_RETURN])&&(keystate[SDLK_ESCAPE]))
 #endif
