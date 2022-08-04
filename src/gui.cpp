@@ -215,14 +215,7 @@ int gui_init (void)
 {
 //Se ejecuta justo despues del MAIN
     if (prSDLScreen==NULL)
-	// prSDLScreen=SDL_SetVideoMode(320,240,16,VIDEO_FLAGS);
-	prSDLScreen=SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE |
-		#ifdef SDL_TRIPLEBUF
-			SDL_TRIPLEBUF
-		#else
-			SDL_DOUBLEBUF
-		#endif
-	);
+	prSDLScreen=SDL_SetVideoMode(320,240,16,VIDEO_FLAGS);
     SDL_ShowCursor(SDL_DISABLE);
     SDL_JoystickEventState(SDL_ENABLE);
     SDL_JoystickOpen(0);

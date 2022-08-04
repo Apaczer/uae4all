@@ -1,5 +1,2 @@
 *.o
-*.dge
-*.opk
-*.ipk
-uae4all/*
+uae4all.dge
