@@ -113,7 +113,7 @@ struct color_entry colors_for_drawing;
 /* The size of these arrays is pretty arbitrary; it was chosen to be "more
    than enough".  The coordinates used for indexing into these arrays are
    almost, but not quite, Amiga coordinates (there's a constant offset).  */
-static union {
+union {
     /* Let's try to align this thing. */
     double uupzuq;
     long int cruxmedo;
@@ -1736,6 +1736,10 @@ static __inline__ void do_flush_screen (int start, int stop)
 {
     if (first_block_line != -2) 
 	flush_block (first_block_line, last_block_line);
+    
+#if !defined(DREAMCAST) && !defined(DINGOO)
+    unlockscr ();
+#endif
 }
 #else
 #define do_flush_line(LNO)
@@ -1928,7 +1932,7 @@ static int td_pos = (TD_RIGHT|TD_BOTTOM);
 
 #define TD_TOTAL_HEIGHT (TD_PADY * 2 + TD_NUM_HEIGHT)
 
-static const char *numbers = { /* ugly */
+static char *numbers = { /* ugly */
 "------ ------ ------ ------ ------ ------ ------ ------ ------ ------ "
 "-xxxxx ---xx- -xxxxx -xxxxx -x---x -xxxxx -xxxxx -xxxxx -xxxxx -xxxxx "
 "-x---x ----x- -----x -----x -x---x -x---- -x---- -----x -x---x -x---x "
@@ -1938,11 +1942,9 @@ static const char *numbers = { /* ugly */
 "------ ------ ------ ------ ------ ------ ------ ------ ------ ------ "
 };
 
-#if !defined(DOUBLEBUFFER) && !defined(STATUS_ALWAYS)
 int back_drive_track0=-1,back_drive_motor0=-1;
 static int back_drive_track1=-1,back_drive_motor1=-1;
 static int back_powerled=-1;
-#endif
 
 static __inline__ void putpixel (int x, xcolnr c8)
 {
@@ -2026,6 +2028,13 @@ static _INLINE_ void finish_drawing_frame (void)
 {
     int i;
 
+#if !defined(DREAMCAST) && !defined(DINGOO)
+    if (! lockscr ()) {
+	notice_screen_contents_lost ();
+	return;
+    }
+#endif
+
     for (i = 0; i < max_ypos_thisframe; i++) {
 	int where,i1;
 	int line = i + thisframe_y_adjust_real;
@@ -2050,20 +2059,14 @@ static _INLINE_ void finish_drawing_frame (void)
 #else
     if (
 #endif
-#if !defined(DOUBLEBUFFER) && !defined(STATUS_ALWAYS)
 	   (back_drive_track0!=gui_data.drive_track[0])
 	|| (back_drive_motor0!=gui_data.drive_motor[0])
 #if NUM_DRIVES > 1
 	|| (back_drive_track1!=gui_data.drive_track[1])
 	|| (back_drive_motor1!=gui_data.drive_motor[1])
 #endif
-	|| (back_powerled!=gui_data.powerled)
-#else
-	1
-#endif
-	)
+	|| (back_powerled!=gui_data.powerled)	)
     {
-#if !defined(DOUBLEBUFFER) && !defined(STATUS_ALWAYS)
 	back_drive_track0=gui_data.drive_track[0];
 	back_drive_motor0=gui_data.drive_motor[0];
 #if NUM_DRIVES > 1
@@ -2071,7 +2074,6 @@ static _INLINE_ void finish_drawing_frame (void)
 	back_drive_motor1=gui_data.drive_motor[1];
 #endif
 	back_powerled=gui_data.powerled;
-#endif
  	for (i = 0; i < TD_TOTAL_HEIGHT; i++) {
 		int line = GFXVIDINFO_HEIGHT - TD_TOTAL_HEIGHT + i;
 		draw_status_line (line);
@@ -2203,12 +2205,6 @@ void reset_drawing (void)
     uae4all_memclr(&spixstate, sizeof spixstate);
 
     init_drawing_frame ();
-}
-
-void reset_screen_pointers (void)
-{
-	xlinebuffer = gfx_mem;
-	init_row_map();
 }
 
 void drawing_init ()

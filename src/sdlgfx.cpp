@@ -146,11 +146,11 @@ void flush_screen (void)
 #ifdef DEBUG_GFX
     dbgf("Function: flush_block %d %d\n", ystart, ystop);
 #endif
-#if !defined(DREAMCAST) && !defined(DINGOO)
+#ifndef DINGOO
+#ifndef DREAMCAST
     if (SDL_MUSTLOCK(prSDLScreen))
     	SDL_UnlockSurface (prSDLScreen);
 #endif
-#ifndef DINGOO
 #ifndef DOUBLEBUFFER
 #ifdef USE_RASTER_DRAW
     SDL_UpdateRect(prSDLScreen, 0, ystart, current_width, ystop-ystart+1);
@@ -180,17 +180,12 @@ void flush_screen (void)
 #if defined(DOUBLEBUFFER) || defined(DINGOO)
 	SDL_Flip(prSDLScreen);
 #endif
+#ifdef USE_RASTER_DRAW
+    }
+#endif
 #if !defined(DREAMCAST) && !defined(DINGOO)
     if (SDL_MUSTLOCK(prSDLScreen))
     	SDL_LockSurface (prSDLScreen);
-#endif
-#if defined(DOUBLEBUFFER) || defined(DINGOO)
-	gfx_mem = (char*) prSDLScreen->pixels;
-	prSDLScreenPixels = (uae_u16*) prSDLScreen->pixels;
-	reset_screen_pointers();
-#endif
-#ifdef USE_RASTER_DRAW
-    }
 #endif
     uae4all_prof_end(13);
 }
@@ -311,14 +306,14 @@ static void graphics_subinit (void)
 	}
 	else
 	{
-#if !defined(DREAMCAST) && !defined(DINGOO)
-		if (SDL_MUSTLOCK(prSDLScreen))
-			SDL_LockSurface(prSDLScreen);
-#endif
 		prSDLScreenPixels=(uae_u16 *)prSDLScreen->pixels;
 #ifdef DEBUG_GFX
 		dbgf("Bytes per Pixel: %d\n", prSDLScreen->format->BytesPerPixel);
 		dbgf("Bytes per Line: %d\n", prSDLScreen->pitch);
+#endif
+#if !defined(DREAMCAST) && !defined(DINGOO)
+		if (SDL_MUSTLOCK(prSDLScreen))
+			SDL_LockSurface(prSDLScreen);
 #endif
 		memset(prSDLScreen->pixels, 0, current_width * current_height * prSDLScreen->format->BytesPerPixel);
 #if !defined(DREAMCAST) && !defined(DINGOO)
@@ -337,10 +332,6 @@ static void graphics_subinit (void)
 		SDL_ShowCursor(SDL_DISABLE);
 #endif
 		/* Initialize structure for Amiga video modes */
-#if !defined(DREAMCAST) && !defined(DINGOO)
-		if (SDL_MUSTLOCK(prSDLScreen))
-			SDL_LockSurface(prSDLScreen);
-#endif
 		gfx_mem = (char *)prSDLScreen->pixels;
 		gfx_rowbytes = prSDLScreen->pitch;
 	}
@@ -546,10 +537,6 @@ void handle_events (void)
     dbg("Function: handle_events");
 #endif
 
-#if !defined(DREAMCAST) && !defined(DINGOO)
-    if (SDL_MUSTLOCK(prSDLScreen))
-    	SDL_UnlockSurface (prSDLScreen);
-#endif
 
 #if defined(MAX_AUTOEVENTS) || defined(AUTOEVENTS)
 	{
@@ -862,10 +849,6 @@ break;
     }
 #endif
 
-#if !defined(DREAMCAST) && !defined(DINGOO)
-    if (SDL_MUSTLOCK(prSDLScreen))
-    	SDL_LockSurface (prSDLScreen);
-#endif
 
     /* Handle UAE reset */
 /*
@@ -895,6 +878,29 @@ int needmousehack (void)
 {
     return 1;
 }
+
+
+
+#if !defined(DREAMCAST) && !defined(DINGOO)
+int lockscr (void)
+{
+#ifdef DEBUG_GFX
+    dbg("Function: lockscr");
+#endif
+    if (SDL_MUSTLOCK(prSDLScreen))
+	SDL_LockSurface(prSDLScreen);
+    return 1;
+}
+
+void unlockscr (void)
+{
+#ifdef DEBUG_GFX
+    dbg("Function: unlockscr");
+#endif
+    if (SDL_MUSTLOCK(prSDLScreen))
+    	SDL_UnlockSurface(prSDLScreen);
+}
+#endif
 
 void gui_purge_events(void)
 {

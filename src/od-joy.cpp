@@ -21,17 +21,16 @@
 
 #include "vkbd.h"
 
-#define DEADZONE_J0 500
-#define DEADZONE_J1 500
-
-extern int emulated_mouse, mainMenu_usejoy;
 int nr_joysticks;
 
 SDL_Joystick *uae4all_joy0, *uae4all_joy1;
 
 
 #ifndef DREAMCAST
-struct joy_range dzone0, dzone1;
+struct joy_range
+{
+    int minx, maxx, miny, maxy;
+} range0, range1;
 #endif
 
 void read_joystick(int nr, unsigned int *dir, int *button)
@@ -42,9 +41,6 @@ void read_joystick(int nr, unsigned int *dir, int *button)
     int len, i, num;
     SDL_Joystick *joy = nr == 0 ? uae4all_joy0 : uae4all_joy1;
 
-    if (emulated_mouse)
-	return;
-
     *dir = 0;
     *button = 0;
 
@@ -52,29 +48,30 @@ void read_joystick(int nr, unsigned int *dir, int *button)
 
     SDL_JoystickUpdate ();
 #ifndef DREAMCAST
-    struct joy_range *r = nr == 0 ? &dzone0 : &dzone1;
+    struct joy_range *r = nr == 0 ? &range0 : &range1;
+    x_axis = SDL_JoystickGetAxis (joy, 0);
+    y_axis = SDL_JoystickGetAxis (joy, 1);
 
-    if (mainMenu_usejoy)
-    {
-	x_axis = SDL_JoystickGetAxis (joy, 0);
-	y_axis = SDL_JoystickGetAxis (joy, 1);
+    if (x_axis < r->minx) r->minx = x_axis;
+    if (y_axis < r->miny) r->miny = y_axis;
+    if (x_axis > r->maxx) r->maxx = x_axis;
+    if (y_axis > r->maxy) r->maxy = y_axis;
+    
+    if (x_axis < (r->minx + (r->maxx - r->minx)/3))
+    	left = 1;
+    else if (x_axis > (r->minx + 2*(r->maxx - r->minx)/3))
+    	right = 1;
 
-	if (x_axis < r->minx)
-	left = 1;
-	else if (x_axis > r->maxx)
-	right = 1;
+    if (y_axis < (r->miny + (r->maxy - r->miny)/3))
+    	top = 1;
+    else if (y_axis > (r->miny + 2*(r->maxy - r->miny)/3))
+    	bot = 1;
 
-	if (y_axis < r->miny)
-	top = 1;
-	else if (y_axis > r->maxy)
-	bot = 1;
-
-	num = SDL_JoystickNumButtons (joy);
-	if (num > 16)
+    num = SDL_JoystickNumButtons (joy);
+    if (num > 16)
 	num = 16;
-	for (i = 0; i < num; i++)
+    for (i = 0; i < num; i++)
 	*button |= (SDL_JoystickGetButton (joy, i) & 1) << i;
-     }
 #ifdef EMULATED_JOYSTICK
     extern int emulated_left, emulated_right, emulated_top, emulated_bot, emulated_button1, emulated_button2, emulated_mouse_button1, emulated_mouse_button2;
     if (nr)
@@ -89,21 +86,18 @@ void read_joystick(int nr, unsigned int *dir, int *button)
     }
 #endif
 #else
-    if (mainMenu_usejoy)
-    {
-	int hat=/*15^*/(SDL_JoystickGetHat(joy,0));
-	if (hat & SDL_HAT_LEFT)
+    int hat=/*15^*/(SDL_JoystickGetHat(joy,0));
+    if (hat & SDL_HAT_LEFT)
 	    left = 1;
-	else if (hat & SDL_HAT_RIGHT)
+    else if (hat & SDL_HAT_RIGHT)
 	    right = 1;
-	if (hat & SDL_HAT_UP)
+    if (hat & SDL_HAT_UP)
 	    top = 1;
-	else if (hat & SDL_HAT_DOWN)
+    else if (hat & SDL_HAT_DOWN)
 	    bot = 1;
-	if (vkbd_button2==(SDLKey)0)
-	top |= SDL_JoystickGetButton(joy,6) & 1;
-	*button = SDL_JoystickGetButton(joy,2) & 1;
-    }
+    if (vkbd_button2==(SDLKey)0)
+    	top |= SDL_JoystickGetButton(joy,6) & 1;
+    *button = SDL_JoystickGetButton(joy,2) & 1;
 #endif
     
     if(vkbd_mode && nr)
@@ -173,16 +167,15 @@ void init_joystick(void)
 	uae4all_joy1 = SDL_JoystickOpen (1);
     else
 	uae4all_joy1 = NULL;
-
 #ifndef DREAMCAST
-    dzone0.minx = -DEADZONE_J0;
-    dzone0.maxx = DEADZONE_J0;
-    dzone0.miny = -DEADZONE_J0;
-    dzone0.maxy = DEADZONE_J0;
-    dzone1.minx = -DEADZONE_J1;
-    dzone1.maxx = DEADZONE_J1;
-    dzone1.miny = -DEADZONE_J1;
-    dzone1.maxy = DEADZONE_J1;
+    range0.minx = INT_MAX;
+    range0.maxx = INT_MIN;
+    range0.miny = INT_MAX;
+    range0.maxy = INT_MIN;
+    range1.minx = INT_MAX;
+    range1.maxx = INT_MIN;
+    range1.miny = INT_MAX;
+    range1.maxy = INT_MIN;
 #endif
 }
 

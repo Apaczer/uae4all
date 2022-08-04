@@ -6,7 +6,6 @@
   * Copyright 1996 Bernd Schmidt
   */
 
-#include <math.h>
 #include "sysconfig.h"
 #include "sysdeps.h"
 #include "config.h"
@@ -25,11 +24,6 @@
 #include "keybuf.h"
 #include "disk.h"
 #include "savestate.h"
-#include "joystick.h"
-
-#ifdef HOME_DIR
-#include "homedir.h"
-#endif
 
 #include <SDL.h>
 
@@ -81,7 +75,7 @@ char uae4all_image_file2[128];
 
 int drawfinished=0;
 
-extern int mainMenu_throttle, mainMenu_frameskip, mainMenu_sound, mainMenu_case, mainMenu_autosave, mainMenu_vpos, mainMenu_usejoy;
+extern int mainMenu_throttle, mainMenu_frameskip, mainMenu_sound, mainMenu_case, mainMenu_autosave, mainMenu_vpos;
 
 int emulated_left=0;
 int emulated_right=0;
@@ -92,108 +86,6 @@ int emulated_button2=0;
 int emulated_mouse=0;
 int emulated_mouse_button1=0;
 int emulated_mouse_button2=0;
-
-void loadConfig()
-{
-#if defined(HOME_DIR)
-	FILE *f;
-	char *config = (char *)malloc(strlen(config_dir) + strlen("/uae4all.cfg") + 1);
-	extern char last_directory[PATH_MAX];
-
-	if(config == NULL)
-		return;
-
-	sprintf(config, "%s/uae4all.cfg", config_dir);
-
-	f = fopen(config, "r");
-
-	if(f == NULL)
-	{
-		printf("Failed to open config file: \"%s\" for reading.\n", config);
-		free(config);
-		return;
-	}
-
-	char line[PATH_MAX + 17];
-
-	while(fgets(line, sizeof(line), f))
-	{
-		char *arg = strchr(line, ' ');
-
-		if(!arg)
-		{
-			continue;
-		}
-		*arg = '\0';
-		arg++;
-
-		if(!strcmp(line, "THROTTLE"))
-			sscanf(arg, "%d", &mainMenu_throttle);
-		else if(!strcmp(line, "FRAMESKIP"))
-			sscanf(arg, "%d", &mainMenu_frameskip);
-		else if(!strcmp(line, "SCREEN_POS"))
-			sscanf(arg, "%d", &mainMenu_vpos);
-		else if(!strcmp(line, "SOUND"))
-			sscanf(arg, "%d", &mainMenu_sound);
-		else if(!strcmp(line, "SAVE_DISKS"))
-			sscanf(arg, "%d", &mainMenu_autosave);
-		else if(!strcmp(line, "USE_JOY"))
-			sscanf(arg, "%d", &mainMenu_usejoy);
-		else if(!strcmp(line, "LAST_DIR"))
-		{
-			int len = strlen(arg);
-
-			if(len == 0 || len > sizeof(last_directory) - 1)
-			{
-				continue;
-			}
-
-			if(arg[len-1] == '\n')
-			{
-				arg[len-1] = '\0';
-			}
-
-			strcpy(last_directory, arg);
-		}
-	}
-
-	fclose(f);
-	free(config);
-#endif
-}
-
-void storeConfig()
-{
-#if defined(HOME_DIR)
-	FILE *f;
-	char *config = (char *)malloc(strlen(config_dir) + strlen("/uae4all.cfg") + 1);
-	extern char last_directory[PATH_MAX];
-
-	if(config == NULL)
-		return;
-
-	sprintf(config, "%s/uae4all.cfg", config_dir);
-
-	f = fopen(config, "w");
-
-	if(f == NULL)
-	{
-		printf("Failed to open config file: \"%s\" for writing.\n", config);
-		free(config);
-		return;
-	}
-
-	fprintf(f, "THROTTLE %d\nFRAMESKIP %d\nSCREEN_POS %d\nSOUND %d\nSAVE_DISKS %d\nUSE_JOY %d\n", mainMenu_throttle, mainMenu_frameskip, mainMenu_vpos, mainMenu_sound, mainMenu_autosave, mainMenu_usejoy);
-
-	if(last_directory[0])
-	{
-		fprintf(f, "LAST_DIR %s\n", last_directory);
-	}
-
-	fclose(f);
-	free(config);
-#endif
-}
 
 static void getChanges(void)
 {
@@ -215,14 +107,7 @@ int gui_init (void)
 {
 //Se ejecuta justo despues del MAIN
     if (prSDLScreen==NULL)
-	// prSDLScreen=SDL_SetVideoMode(320,240,16,VIDEO_FLAGS);
-	prSDLScreen=SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE |
-		#ifdef SDL_TRIPLEBUF
-			SDL_TRIPLEBUF
-		#else
-			SDL_DOUBLEBUF
-		#endif
-	);
+	prSDLScreen=SDL_SetVideoMode(320,240,16,VIDEO_FLAGS);
     SDL_ShowCursor(SDL_DISABLE);
     SDL_JoystickEventState(SDL_ENABLE);
     SDL_JoystickOpen(0);
@@ -238,7 +123,6 @@ int gui_init (void)
 #endif
 	vkbd_init();
 	init_text(1);
-	loadConfig();
 	run_mainMenu();
 	quit_text();
 	uae4all_pause_music();
@@ -457,6 +341,35 @@ static void goMenu(void)
     	    }
 #endif
     }
+    if (exitmode==3)
+    {
+    	    extern char *savestate_filename;
+#ifndef NO_SAVE_MENU
+    	    extern int saveMenu_n_savestate;
+#endif
+	    changed_df[1][0]=0;
+	    if (strcmp(changed_df[0],uae4all_image_file))
+	    { 
+            	strcpy(changed_df[0],uae4all_image_file);
+	    	real_changed_df[0]=1;
+	    }
+    	    strcpy(savestate_filename,uae4all_image_file);
+#ifndef NO_SAVE_MENU
+    	    switch(saveMenu_n_savestate)
+    	    {
+	   	 case 1:
+    			strcat(savestate_filename,"-1.asf");
+	    	case 2:
+    			strcat(savestate_filename,"-2.asf");
+	    	case 3:
+    			strcat(savestate_filename,"-3.asf");
+	    	default: 
+    	  	 	strcat(savestate_filename,".asf");
+    	    }
+#endif
+	    uae4all_image_file2[0]=0;
+	    disk_eject(1);
+    }
     if (exitmode==2)
     {
 	    if (autosave!=mainMenu_autosave)
@@ -539,11 +452,9 @@ static int in_goMenu=0;
 void gui_handle_events (void)
 {
 #ifndef DREAMCAST
-	int i;
 	Uint8 *keystate = SDL_GetKeyState(NULL);
 
 #ifdef EMULATED_JOYSTICK
-#if !defined(GCW0)
 	if (keystate[SDLK_ESCAPE])
 	{
 		if (keystate[SDLK_LCTRL])
@@ -588,7 +499,6 @@ void gui_handle_events (void)
 		}
 	}
 	else
-#endif
 	if (emulated_mouse)
 	{
 		if (keystate[SDLK_LEFT])
@@ -613,49 +523,6 @@ void gui_handle_events (void)
 			lastmy += emulated_mouse_speed;
 	    		newmousecounters = 1;
 		}
-
-#ifndef DREAMCAST
-		for(i = 0; i < SDL_NumJoysticks(); i++)
-		{
-			SDL_Joystick *joy = i == 0 ? uae4all_joy0 : uae4all_joy1;
-			int joyx = SDL_JoystickGetAxis(joy, 0);	// left-right
-			int joyy = SDL_JoystickGetAxis(joy, 1);	// up-down
-			struct joy_range *dzone = i == 0 ? &dzone0 : &dzone1;
-
-			if(!mainMenu_usejoy)
-			{
-				break;
-			}
-
-			if(i > 1)
-			{
-				break;
-			}
-
-			if (joyx < dzone->minx)
-			{
-				lastmx -= emulated_mouse_speed;
-				newmousecounters = 1;
-			}
-			else
-			if (joyx > dzone->maxx)
-			{
-				lastmx += emulated_mouse_speed;
-				newmousecounters = 1;
-			}
-			if (joyy < dzone->miny)
-			{
-				lastmy -= emulated_mouse_speed;
-				newmousecounters = 1;
-			}
-			else
-			if (joyy > dzone->maxy)
-			{
-				lastmy += emulated_mouse_speed;
-				newmousecounters = 1;
-			}
-		}
-#endif
 	}
 	else
 	{
@@ -675,18 +542,14 @@ void gui_handle_events (void)
 	else
 		leftSuperThrottle();
 #endif
-#if !defined(DINGOO) && !defined(GCW0) && !defined(DREAMCAST)
+#if !defined(DINGOO) && !defined(DREAMCAST)
 	if ( keystate[SDLK_F12] )
 		SDL_WM_ToggleFullScreen(prSDLScreen);
 	else
 #endif
 	if (( keystate[SDLK_F11] )
 #ifdef EMULATED_JOYSTICK
-#if defined(GCW0)
-			||(keystate[SDLK_ESCAPE])
-#else
 			||((keystate[SDLK_RETURN])&&(keystate[SDLK_ESCAPE]))
-#endif
 #endif
 	   )
 #else
@@ -739,10 +602,8 @@ void gui_handle_events (void)
 			savestate_state = STATE_DOSAVE;
 		}
 		else
-		if (!vkbd_mode && !goingVkbd)
-		{
+		if (!vkbd_mode)
 			goingEmouse=1;
-		}
 	}
 	else if (goingEmouse)
 	{
@@ -767,10 +628,8 @@ void gui_handle_events (void)
     				gui_set_message("Failed: Savestate not found", 100);
 		}
 		else
-		if (!emulated_mouse && !goingEmouse)
-		{
+		if (!emulated_mouse)
 			goingVkbd=1;
-		}
 		else
 		{
 			char str[40];
@@ -907,7 +766,7 @@ void gui_update_gfx (void)
 //	dbg("GUI: gui_update_gfx");
 }
 
-void gui_set_message(const char *msg, int t)
+void gui_set_message(char *msg, int t)
 {
 	show_message=t;
 	strncpy(show_message_str, msg, 36);
@@ -915,7 +774,7 @@ void gui_set_message(const char *msg, int t)
 
 void gui_show_window_bar(int per, int max, int case_title)
 {
-	const char *title;
+	char *title;
 	if (case_title)
 		title="  Restore State";
 	else

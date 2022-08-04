@@ -6,8 +6,6 @@
   * Copyright 1996 Bernd Schmidt
   */
 
-extern void loadConfig(void);
-extern void storeConfig(void);
 extern int gui_init (void);
 extern int gui_update (void);
 extern void gui_exit (void);
@@ -19,7 +17,7 @@ extern void gui_fps (int fps);
 extern void gui_changesettings (void);
 extern void gui_lock (void);
 extern void gui_unlock (void);
-extern void gui_set_message(const char *msg, int t);
+extern void gui_set_message(char *msg, int t);
 extern void gui_show_window_bar(int per, int max, int case_title);
 
 extern unsigned int gui_ledstate;

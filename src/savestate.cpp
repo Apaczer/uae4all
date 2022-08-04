@@ -58,13 +58,8 @@
 
 #ifdef USE_LIB7Z
 #include "lib7z/lzma.h"
-#ifdef USE_LIB7Z_HIGH_COMPRESSION
 #define LZMA_COMPRESSION_LEVEL 9
 #define LZMA_DICT_SIZE (65536*4)
-#else
-#define LZMA_COMPRESSION_LEVEL 1
-#define LZMA_DICT_SIZE (65536*4)
-#endif
 #else
 #include <zlib.h>
 #endif
@@ -87,8 +82,6 @@ static char savestate_filename_default[]={
 };
 char *savestate_filename=(char *)&savestate_filename_default[0];
 FILE *savestate_file=NULL;
-
-extern SDL_Surface* prSDLScreen;
 
 /* functions for reading/writing bytes, shorts and longs in big-endian
  * format independent of host machine's endianess */
@@ -115,7 +108,7 @@ void save_u8_func (uae_u8 **dstp, uae_u8 v)
     *dst++ = v;
     *dstp = dst;
 }
-void save_string_func (uae_u8 **dstp, const char *from)
+void save_string_func (uae_u8 **dstp, char *from)
 {
     uae_u8 *dst = *dstp;
     while(*from)
@@ -166,7 +159,7 @@ char *restore_string_func (uae_u8 **dstp)
 
 /* read and write IFF-style hunks */
 
-static void save_chunk (FILE *f, const uae_u8 *chunk, long len, const char *name)
+static void save_chunk (FILE *f, uae_u8 *chunk, long len, char *name)
 {
     uae_u8 tmp[4], *dst;
     uae_u8 zero[4]= { 0, 0, 0, 0 };
@@ -192,7 +185,7 @@ static void save_chunk (FILE *f, const uae_u8 *chunk, long len, const char *name
 	fwrite (zero, 1, len, f);
 }
 
-static void save_chunk_compressed (FILE *f, const uae_u8 *chunk, long len, const char *name)
+static void save_chunk_compressed (FILE *f, uae_u8 *chunk, long len, char *name)
 {
 #ifndef DREAMCAST
 	void *tmp=malloc(len);
@@ -276,11 +269,12 @@ static void restore_header (uae_u8 *src)
 
 static void clear_events(void) {
 	SDL_Event event;
-	while (SDL_PollEvent(&event));
+	while (SDL_PollEvent(&event))
+		SDL_Delay(20);
 }
 /* restore all subsystems */
 
-void restore_state (const char *filename)
+void restore_state (char *filename)
 {
     FILE *f;
     uae_u8 *chunk,*end;
@@ -288,18 +282,6 @@ void restore_state (const char *filename)
     long len;
     long filepos;
     int i=0;
-
-#if !defined(DREAMCAST) && !defined(DINGOO)
-    if (SDL_MUSTLOCK(prSDLScreen))
-    	SDL_UnlockSurface (prSDLScreen);
-#endif
-#ifdef DOUBLEBUFFER
-	/* Avoid flickering the emulated screen around the progress window */
-	SDL_FillRect(prSDLScreen, NULL, SDL_MapRGB(prSDLScreen->format, 0, 0, 0));
-	SDL_Flip(prSDLScreen);
-	SDL_FillRect(prSDLScreen, NULL, SDL_MapRGB(prSDLScreen->format, 0, 0, 0));
-	SDL_Flip(prSDLScreen);
-#endif
 
     gui_show_window_bar(0, 10, 1);
 #ifdef DREAMCAST
@@ -425,7 +407,7 @@ void restore_state (const char *filename)
 #ifdef AUTO_SAVESTATE
 //	DEBUG_AHORA=1;
 #endif
-    goto end;
+    return;
 
     error:
 #ifdef DEBUG_SAVESTATE
@@ -442,12 +424,6 @@ void restore_state (const char *filename)
     	update_audio();
     notice_screen_contents_lost();
     gui_set_message("Error loadstate", 50);
-
-    end:
-#if !defined(DREAMCAST) && !defined(DINGOO)
-    if (SDL_MUSTLOCK(prSDLScreen))
-    	SDL_LockSurface (prSDLScreen);
-#endif
 }
 
 void savestate_restore_finish (void)
@@ -473,7 +449,7 @@ void savestate_restore_finish (void)
 
 /* Save all subsystems  */
 
-void save_state (const char *filename, const char *description)
+void save_state (char *filename, char *description)
 {
     uae_u8 header[1000];
     char tmp[100];
@@ -481,18 +457,6 @@ void save_state (const char *filename, const char *description)
     FILE *f;
     int len,i;
     char name[5];
-
-#if !defined(DREAMCAST) && !defined(DINGOO)
-    if (SDL_MUSTLOCK(prSDLScreen))
-    	SDL_UnlockSurface (prSDLScreen);
-#endif
-#ifdef DOUBLEBUFFER
-	/* Avoid flickering the emulated screen around the progress window */
-	SDL_FillRect(prSDLScreen, NULL, SDL_MapRGB(prSDLScreen->format, 0, 0, 0));
-	SDL_Flip(prSDLScreen);
-	SDL_FillRect(prSDLScreen, NULL, SDL_MapRGB(prSDLScreen->format, 0, 0, 0));
-	SDL_Flip(prSDLScreen);
-#endif
 
     gui_show_window_bar(0, 10, 0);
 #ifdef DREAMCAST
@@ -660,10 +624,6 @@ void save_state (const char *filename, const char *description)
 #endif
 #ifdef START_DEBUG_SAVESTATE
 	DEBUG_AHORA=1;
-#endif
-#if !defined(DREAMCAST) && !defined(DINGOO)
-    if (SDL_MUSTLOCK(prSDLScreen))
-    	SDL_LockSurface (prSDLScreen);
 #endif
 }
 

@@ -14,23 +14,23 @@
 #include "sound.h"
 #include "savestate.h"
 
-static const char *text_str_title="Saved States";
-static const char *text_str_savestate="Saved state #";
-static const char *text_str_0="0";
-static const char *text_str_1="1";
-static const char *text_str_2="2";
-static const char *text_str_3="3";
+static char *text_str_title="SaveStates";
+static char *text_str_savestate="SaveState";
+static char *text_str_0="0";
+static char *text_str_1="1";
+static char *text_str_2="2";
+static char *text_str_3="3";
 #ifdef DREAMCAST_SAVE_VMU
-static const char *text_str_loadmem="Load from memory (Y)";
-static const char *text_str_savemem="Save to memory (X)";
-static const char *text_str_loadvmu="Load from VMU (L)";
-static const char *text_str_savevmu="Save to VMU (R)";
+static char *text_str_loadmem="Load From Memory (Y)";
+static char *text_str_savemem="Save To Memory (X)";
+static char *text_str_loadvmu="Load From VMU (L)";
+static char *text_str_savevmu="Save To VMU (R)";
 #else
-static const char *text_str_loadmem="Load state (Y)";
-static const char *text_str_savemem="Save state (X)";
+static char *text_str_loadmem="Load State (Y)";
+static char *text_str_savemem="Save State (X)";
 #endif
-static const char *text_str_separator="----------------------";
-static const char *text_str_exit="Main menu (B)";
+static char *text_str_separator="----------------------";
+static char *text_str_exit="Main Menu (B)";
 
 extern int emulating;
 
@@ -156,15 +156,6 @@ static inline int key_saveMenu(int *cp)
 				case SDLK_SPACE: hit4=1; break;
 				case SDLK_c:
 				case SDLK_LSHIFT: hit5=1; break;
-#elif defined(GCW0)
-				case SDLK_2:
-				case SDLK_BACKSPACE: hit3=1; break;
-				case SDLK_1:
-				case SDLK_TAB: hit2=1; break;
-				case SDLK_x:
-				case SDLK_LSHIFT: hit5=1; break;
-				case SDLK_c:
-				case SDLK_SPACE: hit4=1; break;
 #else
 				case SDLK_2:
 				case SDLK_BACKSPACE: hit3=1; break;
@@ -323,7 +314,7 @@ static inline void unraise_saveMenu()
 	text_flip();
 }
 
-static void show_error(const char *str)
+static void show_error(char *str)
 {
 	int i;
 	
@@ -340,7 +331,7 @@ static void show_error(const char *str)
 }
 
 
-static void show_please_wait(const char *title)
+static void show_please_wait(char *title)
 {
 //	menu_moving=0;
 	text_draw_background();
