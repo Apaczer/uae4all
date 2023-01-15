@@ -20,6 +20,7 @@ int vkbd_init(void) { return 0; }
 void vkbd_init_button2(void) { }
 void vkbd_quit(void) { }
 SDLKey vkbd_process(void) { return (SDLKey)0; }
+void vkbd_mouse (void) { }
 
 #else
 
@@ -206,22 +207,26 @@ void vkbd_quit(void)
 
 void vkbd_redraw(void)
 {
+#ifndef RASPBERRY
 	SDL_Rect r;
 	r.x=VKBD_X;
 	r.y=prSDLScreen->h-40;
 	r.w=ksur->w;
 	r.h=ksur->h;
 	SDL_BlitSurface(ksur,NULL,prSDLScreen,&r);
+#endif
 }
 
 void vkbd_mouse(void)
 {
+#ifndef RASPBERRY
 	SDL_Rect r;
 	r.x=0;
 	r.y=prSDLScreen->h-24;
 	r.w=kmou->w;
 	r.h=kmou->h;
 	SDL_BlitSurface(kmou,NULL,prSDLScreen,&r);
+#endif
 }
 
 SDLKey vkbd_process(void)
@@ -229,6 +234,7 @@ SDLKey vkbd_process(void)
 	static Uint32 last_time=0;
 	Uint32 now=SDL_GetTicks();
 	SDL_Rect r;
+#ifndef RASPBERRY
 	int canmove=(now-last_time>MIN_VKBD_TIME);
 #ifndef VKBD_ALWAYS
 	if (vkbd_move) 
@@ -291,6 +297,7 @@ SDLKey vkbd_process(void)
 		SDL_BlitSurface(vkey[vkbd_actual],NULL,prSDLScreen,&r);
 #ifndef VKBD_ALWAYS
 	}
+#endif
 #endif
 	return (SDLKey)0;
 }

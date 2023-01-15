@@ -25,6 +25,8 @@ extern void finish_sound_buffer (void);
 #endif
 #endif
 
+extern void audio_clear(void);
+
 extern void sound_default_evtime(void);
 extern void uae4all_pause_music(void);
 extern void pause_sound (void);

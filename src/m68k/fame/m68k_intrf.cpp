@@ -258,11 +258,18 @@ static void uae4all_reset(void)
 #endif
 }
 
+#ifdef __LIBRETRO__
+extern int libretro_frame_end;
+#endif
+
 static void m68k_run (void)
 {
 	unsigned cycles, cycles_actual=M68KCONTEXT.cycles_counter;
 #ifdef DEBUG_M68K
 	dbg("m68k_run");
+#endif
+#ifdef __LIBRETRO__
+	libretro_frame_end = 0;
 #endif
 	for (;;) {
 #ifdef DEBUG_M68K
@@ -361,6 +368,12 @@ static void m68k_run (void)
 		cycles_actual=M68KCONTEXT.cycles_counter;
 #endif
                 uae4all_prof_end(1);
+
+#ifdef __LIBRETRO__
+		if (libretro_frame_end)
+			return;
+#endif
+
 	}
 }
 
@@ -378,7 +391,9 @@ void m68k_go (int may_quit)
 
     in_m68k_go++;
 #endif
+#ifndef __LIBRETRO__
     quit_program = 2;
+#endif
     for (;;) {
 #ifdef DEBUG_SAVESTATE
 	printf("m68k_go state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_getpc());fflush(stdout);
@@ -408,18 +423,24 @@ void m68k_go (int may_quit)
             handle_active_events ();
             if (mispcflags)
                 do_specialties (0);
+
+            if (!savestate_state)
+                uae4all_reset ();
         }
 
-	if (!savestate_state)
-		uae4all_reset ();
-	savestate_restore_finish ();
+        savestate_restore_finish ();
+
         m68k_run();
+#ifdef __LIBRETRO__
+        if (libretro_frame_end)
+                break;
+#endif
     }
 #if !defined(DREAMCAST) || defined(DEBUG_UAE4ALL)
     in_m68k_go--;
 #endif
 #ifdef DEBUG_UAE4ALL
-    puts("BYE?");
+    //puts("BYE?");
 #endif
 }
 

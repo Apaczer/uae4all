@@ -39,4 +39,4 @@ struct bstring {
     int val;
 };
 
-extern const char *colormodes[];
+extern char *colormodes[];

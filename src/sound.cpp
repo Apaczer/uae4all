@@ -41,7 +41,7 @@ int changed_produce_sound=0;
 #define USE_SOUND_WAIT 1
 #define SOUND_EVTIME_SUPER_THROTTLE (MAXHPOS_PAL*244*VBLANK_HZ_PAL*CYCLE_UNIT/DEFAULT_SOUND_FREQ)
 #define SOUND_EVTIME_THROTTLE	(MAXHPOS_PAL*270*VBLANK_HZ_PAL*CYCLE_UNIT/DEFAULT_SOUND_FREQ)
-#define SOUND_EVTIME_NORMAL	(MAXHPOS_PAL*312 *VBLANK_HZ_PAL*CYCLE_UNIT/DEFAULT_SOUND_FREQ)
+#define SOUND_EVTIME_NORMAL	(MAXHPOS_PAL*313 *VBLANK_HZ_PAL*CYCLE_UNIT/DEFAULT_SOUND_FREQ)
 #else
 #define SOUND_EVTIME_SUPER_THROTTLE (MAXHPOS_PAL*240*VBLANK_HZ_PAL*CYCLE_UNIT/DEFAULT_SOUND_FREQ)
 #define SOUND_EVTIME_THROTTLE	(MAXHPOS_PAL*256*VBLANK_HZ_PAL*CYCLE_UNIT/DEFAULT_SOUND_FREQ)
@@ -61,7 +61,11 @@ static uae_u16 *sndbuffer[8] __attribute__ ((__aligned__ (32))) = {
 };
 
 unsigned n_callback_sndbuff, n_render_sndbuff;
-uae_u16 *callback_sndbuff, *render_sndbuff, *sndbufpt;
+uae_u16 *callback_sndbuff; //, *render_sndbuff, *sndbufpt;
+
+
+uae_u16 *sndbufpt = sndbuffer[0];
+uae_u16 *render_sndbuff = sndbuffer[0];
 
 #ifndef PROFILER_UAE4ALL
 
@@ -119,13 +123,21 @@ void uae4all_pause_music(void) { }
 
 void uae4all_resume_music(void) { }
 
+void audio_clear(void) { }
+
 #else 
+
+void audio_clear(void)
+{
+    memset (sndbuffer_all, 0 , sizeof(sndbuffer_all) );
+}
+
 
 #include "thread.h"
 #include <SDL.h>
 
 #ifdef USE_SOUND_SEMS
-static uae_sem_t data_available_sem,callback_done_sem;
+uae_sem_t data_available_sem,callback_done_sem;
 #endif
 
 
@@ -149,7 +161,7 @@ static unsigned long formats;
 
 static SDL_AudioSpec spec;
 
-static int in_callback, closing_sound=-1;
+int in_callback, closing_sound=-1;
 
 
 void sound_default_evtime(void)
@@ -168,10 +180,6 @@ void sound_default_evtime(void)
 		scaled_sample_evtime=SOUND_EVTIME_SUPER_THROTTLE;
     }
     schedule_audio();
-    n_render_sndbuff=4;
-    sndbufpt=render_sndbuff=sndbuffer[4];
-    n_callback_sndbuff=0;
-    callback_sndbuff=sndbuffer[0];
 }
 
 
@@ -200,99 +208,65 @@ unsigned sound_alcanza_callback=0;
 unsigned sound_alcanza_render=0;
 #endif
 
+
+#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
+unsigned int cnt = 0;
+static int sound_thread_active = 0, sound_thread_exit = 0;
+#define SOUND_BUFFERS_COUNT 4
+int mainMenu_soundStereo = 0;
+
+static void sound_callback(void *ud, Uint8 *stream, int len)
+{
+	if (sound_thread_exit) return;
+	sound_thread_active = 2;
+	uae_sem_wait(&data_available_sem);
+	uae_sem_post(&callback_done_sem);
+	cnt++;
+
+	if(mainMenu_soundStereo)
+		memcpy(stream, sndbuffer[cnt%SOUND_BUFFERS_COUNT], MIN(SNDBUFFER_LEN*2, len));
+	else
+	  	memcpy(stream, sndbuffer[cnt%SOUND_BUFFERS_COUNT], MIN(SNDBUFFER_LEN, len));
+}
+
+unsigned int wrcnt = 2; // Start from the middle of the buffer
+void finish_sound_buffer (void)
+{
+	uae_sem_post(&data_available_sem);
+	uae_sem_wait(&callback_done_sem);
+	wrcnt++;
+	sndbufpt = render_sndbuff = sndbuffer[wrcnt%SOUND_BUFFERS_COUNT];
+}
+
+
+
+#if 0
 static void sound_callback (void *userdata, Uint8 *stream, int len)
 {
-#ifdef DEBUG_FRAMERATE
-    calcule_audio_ratio();
-#endif
-#ifdef DEBUG_SOUND
-    dbg("sound.c : sound_callback");
-#endif
-    in_callback = 1;
+    in_callback ++;
     if (! closing_sound) {
-#ifdef USE_SOUND_SEMS
-         while ((!closing_sound) && (((unsigned)render_sndbuff)==((unsigned)callback_sndbuff)))
-	 		uae_sem_wait (&data_available_sem);
-#else
-	n_callback_sndbuff=(n_callback_sndbuff+1)&7;
-	callback_sndbuff=sndbuffer[n_callback_sndbuff];
-	if (n_callback_sndbuff==n_render_sndbuff)
-	{
-    		n_render_sndbuff=6;
-    		sndbufpt=render_sndbuff=sndbuffer[6];
-    		n_callback_sndbuff=0;
-		callback_sndbuff=sndbuffer[0];
-#ifdef DEBUG_FRAMERATE
-		sound_alcanza_callback++;
-#endif
-	}
-#endif
-#ifdef USE_SOUND_SEMS
-	 if (((unsigned)render_sndbuff)!=((unsigned)callback_sndbuff)) 
-#endif
-	 {
-#ifndef DREAMCAST
- 		memcpy(stream,callback_sndbuff,len);
-#else
-		SDL_DC_SetSoundBuffer(callback_sndbuff);
-#endif
-#if defined(USE_SOUND_SEMS) && defined(USE_SOUND_WAIT)
-		callback_sndbuff=render_sndbuff;
-		uae_sem_post (&callback_done_sem);
-#endif
-	 }
-#if defined(DEBUG_SOUND) && defined(USE_SOUND_SEMS)
-	 else
-		dbg("SOUND TIMEOUT");
-#endif
+
+        uae_sem_wait (&data_available_sem);
+        memcpy(stream,callback_sndbuff,len);
+	n_callback_sndbuff = (n_callback_sndbuff + 1) % 4;
+        callback_sndbuff=sndbuffer[n_callback_sndbuff];
+        uae_sem_post (&callback_done_sem);
     }
-    in_callback = 0;
-#ifdef DEBUG_SOUND
-    dbg(" sound.c : ! sound_callback");
-#endif
+    in_callback --;
 }
 
 void finish_sound_buffer (void)
 {
-#ifdef DEBUG_SOUND
-	dbg("sound.c : finish_sound_buffer");
-#endif
-#ifndef USE_SOUND_SEMS
-	n_render_sndbuff=(n_render_sndbuff+1)&7;
+	closing_sound=0;
+	uae_sem_post (&data_available_sem);
+	uae_sem_wait (&callback_done_sem);
+
+	
+	n_render_sndbuff = (n_render_sndbuff + 1) % 4;
 	render_sndbuff=sndbufpt=sndbuffer[n_render_sndbuff];
-	tabla_ajuste=(int *)&tablas_ajuste[(n_callback_sndbuff-n_render_sndbuff)&7];
-#ifdef DEBUG_FRAMERATE
-	sound_cuantos[(n_callback_sndbuff-n_render_sndbuff)&7]++;
-	sound_ajustes++;
-#endif
-	if (n_callback_sndbuff==n_render_sndbuff)
-	{
-		n_render_sndbuff=0;
-		sndbufpt=render_sndbuff=sndbuffer[0];
-		n_callback_sndbuff=6;
-		callback_sndbuff=sndbuffer[6];
-#ifdef DEBUG_FRAMERATE
-		sound_alcanza_render++;
-#endif
-	}
+}
 #endif
 
-	closing_sound=0;
-#ifdef USE_SOUND_SEMS
-	uae_sem_post (&data_available_sem);
-#ifdef USE_SOUND_WAIT
-	while ((!closing_sound) && (callback_sndbuff!=render_sndbuff))
-		uae_sem_wait (&callback_done_sem);
-	if (callback_sndbuff==sndbuffer[0])
-		render_sndbuff=sndbufpt=sndbuffer[4];
-	else
-		render_sndbuff=sndbufpt=sndbuffer[0];
-#endif
-#endif
-#ifdef DEBUG_SOUND
-	dbg(" sound.c : ! finish_sound_buffer");
-#endif
-}
 
 static int get_soundbuf_size(void)
 {
@@ -328,6 +302,46 @@ int setup_sound (void)
     return 1;
 }
 
+unsigned int sound_rate=DEFAULT_SOUND_FREQ;
+
+static int open_sound (void)
+{
+#ifdef DEBUG_SOUND
+    dbg("sound.c : open_sound");
+#endif
+
+    printf("starting sound thread..\n");
+    uae_sem_init(&data_available_sem, 0, 0);
+    uae_sem_init(&callback_done_sem, 0, 0);
+
+    spec.freq = DEFAULT_SOUND_FREQ_ADJUST;
+    spec.format = DEFAULT_SOUND_BITS == 8 ? AUDIO_U8 : AUDIO_S16;
+    spec.channels = 1;
+    spec.samples = SNDBUFFER_LEN>>1;
+    spec.callback = sound_callback;
+    spec.userdata = 0;
+    SDL_OpenAudio (&spec, NULL);
+
+    SDL_PauseAudio (0);
+
+
+
+
+    sound_default_evtime();
+
+    have_sound = 1;
+    scaled_sample_evtime_ok = 1;
+    sound_available = 1;
+
+#ifdef DEBUG_SOUND
+    dbg(" sound.c : ! open_sound");
+#endif
+    return 1;
+}
+
+
+
+#if 0
 static int open_sound (void)
 {
 #ifdef DEBUG_SOUND
@@ -371,7 +385,7 @@ static int open_sound (void)
 	       DEFAULT_SOUND_BITS, spec.freq, spec.samples);
     n_callback_sndbuff=0;
     callback_sndbuff=sndbuffer[n_callback_sndbuff];
-    n_render_sndbuff=4;
+    n_render_sndbuff=1;
     render_sndbuff=sndbufpt=sndbuffer[n_render_sndbuff];
 #ifndef MENU_MUSIC
     passed++;
@@ -381,6 +395,8 @@ static int open_sound (void)
 #endif
     return 1;
 }
+#endif
+
 
 void close_sound (void)
 {
@@ -430,7 +446,7 @@ void pause_sound (void)
 #endif
     closing_sound=-1;
 #ifdef USE_SOUND_SEMS
-    uae_sem_post (&data_available_sem);
+    //uae_sem_post (&data_available_sem);
 #endif
     SDL_Delay(333);
     SDL_PauseAudio (1);
@@ -476,7 +492,7 @@ void uae4all_init_sound(void)
     	int samples = SNDBUFFER_LEN>>1;
 	Mix_OpenAudio(freq, format, channels, samples);
 #ifdef DEBUG_SOUND
-	dbgf("Freq=%i, Channels=%i, Buff=%i\n",freq,channels,samples);
+	dbgf("Freq=%i, Channels=%i, Buff=%i",freq,channels,samples);
 #endif
 	for(i=0;i<NUM_SAMPLES;i++)
 		sample_wave[i]=Mix_LoadWAV(sample_filename[i]);

@@ -28,10 +28,8 @@ extern void do_copper (void);
 extern void notice_new_xcolors (void);
 #ifdef USE_RASTER_DRAW
 extern void notice_screen_contents_lost (void);
-#elif !defined(DOUBLEBUFFER) && !defined(STATUS_ALWAYS)
-#define notice_screen_contents_lost() { extern int back_drive_track0; back_drive_track0=-1; }
 #else
-#define notice_screen_contents_lost() { }
+#define notice_screen_contents_lost() { extern int back_drive_track0; back_drive_track0=-1; }
 #endif
 
 extern void custom_prepare_savestate (void);
@@ -144,4 +142,5 @@ extern int bpl_off[8];
 /* Compute the number of bitplanes from a value written to BPLCON0  */
 #define GET_PLANES(x) ((((x) >> 12) & 7) | (((x) & 0x10) >> 1))
 
+extern unsigned int beamcon0, new_beamcon0;
 #endif

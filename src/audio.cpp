@@ -66,6 +66,23 @@ static const int aprox_vol[128]= {-16, 0, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4,
 #define APROX_VOL(VAL) aprox_vol[(VAL)&0x7f]
 #endif
 
+#ifdef __LIBRETRO__
+// Currently only duplicate sound word since libretro only support stereo...
+#define PUT_SOUND_WORD(b) \
+{ \
+	*(uae_u16 *)sndbufpt = b; \
+	sndbufpt = (uae_u16 *)(((uae_u8 *)sndbufpt) + 2); \
+	*(uae_u16 *)sndbufpt = b; \
+	sndbufpt = (uae_u16 *)(((uae_u8 *)sndbufpt) + 2); \
+}
+
+#define CHECK_SOUND_BUFFERS() \
+{ \
+    if ((unsigned)sndbufpt - (unsigned)render_sndbuff >= SNDBUFFER_LEN*2) { \
+	finish_sound_buffer (); \
+    } \
+}
+#else
 #define PUT_SOUND_WORD(b) \
 { \
 	*(uae_u16 *)sndbufpt = b; \
@@ -77,8 +94,8 @@ static const int aprox_vol[128]= {-16, 0, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4,
     if ((unsigned)sndbufpt - (unsigned)render_sndbuff >= SNDBUFFER_LEN) { \
 	finish_sound_buffer (); \
     } \
-} \
-
+}
+#endif
 
 #define SAMPLE_HANDLER_AHI \
 	{ \

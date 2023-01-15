@@ -14,15 +14,7 @@
 #include "options.h"
 #include "sound.h"
 
-#ifdef HOME_DIR
-#include "homedir.h"
-#endif
-
-#ifdef NAME_MAX
-#define MAX_FILELEN NAME_MAX
-#else
-#define MAX_FILELEN 29
-#endif
+#include "joystick.h"
 
 typedef struct{
 	char d_name[MAX_FILELEN+2];
@@ -33,25 +25,18 @@ typedef struct{
 #define chdir(A) fs_chdir(A)
 #endif
 
-enum DiskOrder df_num;
 extern char uae4all_image_file[];
 extern char uae4all_image_file2[];
 
-static const char *text_str_load_separator="----------------------------------";
-static const char *text_str_load_dir="#DIR#";
-static const char *text_str_load_title="            File manager           -";
+char *text_str_load_separator="------------------------------------------------------";
+char *text_str_load_dir="#DIR#";
+char *text_str_load_title="            Filemanager            -";
 fichero *text_dir_files=NULL;
 int text_dir_num_files=0, text_dir_num_files_index=0;
-char last_directory[PATH_MAX];
 
 char *text_load=NULL;
 
-#ifdef DREAMCAST
 #define MAX_FILES_PER_DIR 1024
-#else
-#define MAX_FILES_PER_DIR 16384
-#endif
-#define SHOW_MAX_FILES 13
 
 #ifdef DREAMCAST
 #define chdir(A) fs_chdir(A)
@@ -63,9 +48,6 @@ static int min_in_dir=0, max_in_dir=SHOW_MAX_FILES;
 
 static int compare_names(fichero *a, fichero *b)
 {
-	if(a->d_type != b->d_type)
-		return 0;
-
 	return strcmp(a->d_name,b->d_name);
 }
 
@@ -145,7 +127,7 @@ static int checkFiles(void)
 	return ret;
 }
 
-static int getFiles(const char *dir)
+static int getFiles(char *dir)
 {
 	int i,j;
 	DIR *d;
@@ -190,15 +172,10 @@ static int getFiles(const char *dir)
 			i--;
 			continue;
 		}
-		if (strcmp(actual->d_name,"..") && actual->d_name[0] == '.')
-		{
-			i--;
-			continue;
-		}
-		if (actual->d_type==DT_REG && strlen(actual->d_name)>3)
+		if (strlen(actual->d_name)>3)
 		{
 			char *final=(char *)&actual->d_name[strlen(actual->d_name)-3];
-			if (!((!strcasecmp(final,"adf"))||(!strcasecmp(final,"adz"))))
+			if ((!strcmp(final,"asf"))||(!strcmp(final,"ASF"))||(!strcmp(final,"ads"))||(!strcmp(final,"ADS")))
 			{
 				i--;
 				continue;
@@ -280,20 +257,8 @@ static int getFiles(const char *dir)
 					break;
 				}
 	}
-//	for(i=0;i<text_dir_num_files;i++)
-//		if (text_dir_files[i].d_type==0)
-//		{
-//			qsort((void *)&text_dir_files[i],text_dir_num_files-i,sizeof(fichero),(int (*)(const void*, const void*))compare_names);
-//			break;
-//		}
 	for(i=0;i<text_dir_num_files;i++)
-		if (text_dir_files[i].d_type==DT_DIR || text_dir_files[i].d_type==DT_LNK)
-		{
-			qsort((void *)&text_dir_files[i],text_dir_num_files-i,sizeof(fichero),(int (*)(const void*, const void*))compare_names);
-			break;
-		}
-	for(i=0;i<text_dir_num_files;i++)
-		if (text_dir_files[i].d_type==DT_REG)
+		if (text_dir_files[i].d_type==0)
 		{
 			qsort((void *)&text_dir_files[i],text_dir_num_files-i,sizeof(fichero),(int (*)(const void*, const void*))compare_names);
 			break;
@@ -306,19 +271,16 @@ static void draw_loadMenu(int c)
 	int i,j;
 	static int b=0;
 	int bb=(b%6)/3;
-	static int lastSelected = 0;
-	static int scroll = 0;
-	static int pauseScrollTimer = 15;
-	int updateScroll = !(b%5);
-	int padding;
-	int len;
-	int visibleLen;
 	SDL_Rect r;
 	extern SDL_Surface *text_screen;
-	r.x=80-64; r.y=0; r.h=240;
+	r.x=80-64; r.y=0; r.w=110+64+64; r.h=240;
 
 	text_draw_background();
-	text_draw_window(80-64,12,160+64+64,220,text_str_load_title);
+	text_draw_window(MENU_LOAD_BORDER_LEFT,
+			MENU_LOAD_BORDER_UP,
+			MENU_GFX_WIDTH-MENU_LOAD_BORDER_RIGHT,
+			MENU_GFX_HEIGHT-MENU_LOAD_BORDER_DOWN,
+			text_str_load_title);
 
 	if (text_dir_num_files_index<min_in_dir)
 	{
@@ -335,87 +297,71 @@ static void draw_loadMenu(int c)
 		max_in_dir=text_dir_num_files-min_in_dir;
 
 
-	for (i=min_in_dir,j=1;i<max_in_dir;i++,j+=2)
+	for (i=min_in_dir,j=MENU_LOAD_STARTING_LINE;i<max_in_dir;i++,j+=2)
 	{
 		write_text(3,j,text_str_load_separator);
 
-		if (text_dir_files[i].d_type==4)
-		{
-			r.w=110+64+64;
-			visibleLen = 29;
-		}
-		else
-		{
-			r.w=110+64+64+40;
-			visibleLen = 34;
-		}
+		//SDL_SetClipRect(text_screen,&r);
 
-		len = strlen(text_dir_files[i].d_name);
-		if ((text_dir_num_files_index==i) && (len > visibleLen))
-		{
-			if(lastSelected != text_dir_num_files_index)
-			{
-				lastSelected = text_dir_num_files_index;
-				scroll = 0;
-				pauseScrollTimer = 15;
-			}
-
-			if(!pauseScrollTimer)
-			{
-				if(updateScroll)
-					scroll++;
-				if(scroll > len - visibleLen)
-					pauseScrollTimer = 60;
-			}
-			else
-			{
-				pauseScrollTimer--;
-
-				if(pauseScrollTimer == 0)
-					scroll = 0;
-			}
-
-			padding = 4 - scroll;
-			r.x += 16;
-			r.w -= 16;
-		}
-		else
-		{
-			if(lastSelected != text_dir_num_files_index)
-			{
-				lastSelected = text_dir_num_files_index;
-				scroll = 0;
-				pauseScrollTimer = 15;
-			}
-
-			padding = 4;
-			r.x=16;
-		}
-
-		SDL_SetClipRect(text_screen,&r);
 		if ((text_dir_num_files_index==i)&&(bb))
-			write_text_inv(padding,j+1,(char *)&text_dir_files[i].d_name);
+			write_text_inv(4,j+1,(char *)&text_dir_files[i].d_name);
 		else
-			write_text(padding,j+1,(char *)&text_dir_files[i].d_name);
+			write_text(4,j+1,(char *)&text_dir_files[i].d_name);
 
 		SDL_SetClipRect(text_screen,NULL);
 
 		if (text_dir_files[i].d_type==4)
-			write_text(32,j+1,text_str_load_dir);
+			write_text(52,j+1,text_str_load_dir);
 	}
 	write_text(3,j,text_str_load_separator);
 	text_flip();
 	b++;
 }
 
-static int key_loadMenu(int *c)
+// JoyMenu
+unsigned int joy0dir_loadmenu , joy0dir_loadmenu_previous;
+int joy0button_loadmenu , joy0button_loadmenu_previous;
+// JoyMenu
+
+static int key_loadMenu(int *c,char FloppyID)
 {
 	int end=0;
 	int left=0, right=0, up=0, down=0, hit0=0, hit1=0, hit2=0;
 	SDL_Event event;
 
-	while (SDL_PollEvent(&event) > 0)
+	// JoyMenu
+	read_joystick (0, &joy0dir_loadmenu, &joy0button_loadmenu);
+	//while (SDL_PollEvent(&event) > 0)
+	while ((SDL_PollEvent(&event) > 0) ||
+		((joy0dir_loadmenu ^ joy0dir_loadmenu_previous) & joy0dir_loadmenu) ||
+		((joy0button_loadmenu ^ joy0button_loadmenu_previous) &  joy0button_loadmenu ))
+	// JoyMenu
 	{
+
+		// JoyMenu
+		read_joystick (0, &joy0dir_loadmenu, &joy0button_loadmenu);
+		
+		if (((joy0dir_loadmenu ^ joy0dir_loadmenu_previous) & joy0dir_loadmenu) ||
+		((joy0button_loadmenu ^ joy0button_loadmenu_previous) &  joy0button_loadmenu ))
+		{
+			event.type = SDL_KEYDOWN;       // Put dummy value in order to enter 
+			event.key.keysym.sym = SDLK_3;
+			if (((joy0button_loadmenu ^ joy0button_loadmenu_previous) &  joy0button_loadmenu ) & 0x1)
+				hit0=1;
+			if (((joy0dir_loadmenu ^ joy0dir_loadmenu_previous) & joy0dir_loadmenu) & 0x1)
+				down=1;
+			if (((joy0dir_loadmenu ^ joy0dir_loadmenu_previous) & joy0dir_loadmenu) & 0x2)
+				right=1;
+			if (((joy0dir_loadmenu ^ joy0dir_loadmenu_previous) & joy0dir_loadmenu) & (1 <<8))
+				up=1;
+			if (((joy0dir_loadmenu ^ joy0dir_loadmenu_previous) & joy0dir_loadmenu) & (1 <<9))
+				left=1;
+				
+			if (left) up = !up;
+			if (right) down = !down;
+		}
+		// JoyMenu
+
 		if (event.type == SDL_QUIT)
 			end=-1;
 		else
@@ -439,9 +385,9 @@ static int key_loadMenu(int *c)
 				case SDLK_z:
 				case SDLK_RETURN:
 				case SDLK_e:
-				case SDLK_LALT: hit0=1; break;
+				case SDLK_LCTRL: hit0=1; break;
 				case SDLK_q:
-				case SDLK_LCTRL: hit1=1; break;
+				case SDLK_LALT: hit1=1; break;
 				case SDLK_1:
 #ifdef DREAMCAST
 				case SDLK_TAB:
@@ -469,19 +415,15 @@ static int key_loadMenu(int *c)
 					strcpy(tmp,text_dir_files[text_dir_num_files_index].d_name);
 					if (getFiles(tmp))
 						end=-1;
-
-					strcpy(last_directory, getcwd(tmp, PATH_MAX));
 					free(tmp);
 				}
 				else
 				{
-					if (hit0)
-					{
-						if(df_num == DF_0)
-							copyCompleteName(uae4all_image_file,text_dir_num_files_index);
-						else if(df_num == DF_1)
-							copyCompleteName(uae4all_image_file2,text_dir_num_files_index);
-					}
+					//if (hit0)
+					if (FloppyID == 0)
+						copyCompleteName(uae4all_image_file,text_dir_num_files_index);
+					else
+						copyCompleteName(uae4all_image_file2,text_dir_num_files_index);
 					end=1;
 				}
 			}
@@ -507,6 +449,10 @@ static int key_loadMenu(int *c)
 					text_dir_num_files_index=text_dir_num_files-1;
 			}
 		}
+	// JoyMenu
+	joy0dir_loadmenu_previous = joy0dir_loadmenu;
+	joy0button_loadmenu_previous = joy0button_loadmenu;
+	// JoyMenu
 	}
 
 	return end;
@@ -521,7 +467,11 @@ static void raise_loadMenu()
 	for(i=0;i<10;i++)
 	{
 		text_draw_background();
-		text_draw_window(80-64,(10-i)*24,160+64+64,220,text_str_load_title);
+		text_draw_window(MENU_LOAD_BORDER_LEFT,
+			(10-i)*33,
+			MENU_GFX_WIDTH-MENU_LOAD_BORDER_RIGHT,
+			MENU_GFX_HEIGHT-MENU_LOAD_BORDER_DOWN,
+			text_str_load_title);
 		text_flip();
 	}
 }
@@ -533,7 +483,11 @@ static void unraise_loadMenu()
 	for(i=9;i>=0;i--)
 	{
 		text_draw_background();
-		text_draw_window(80-64,(10-i)*24,160+64+64,220,text_str_load_title);
+		text_draw_window(MENU_LOAD_BORDER_LEFT,
+			(10-i)*33,
+			MENU_GFX_WIDTH-MENU_LOAD_BORDER_RIGHT,
+			MENU_GFX_HEIGHT-MENU_LOAD_BORDER_DOWN,
+			text_str_load_title);
 		text_flip();
 	}
 	text_draw_background();
@@ -546,25 +500,16 @@ int getDefaultFiles(void)
 #ifdef DREAMCAST
 	strcpy(actual_dir,MENU_DIR_DEFAULT);
 #endif
-	if(last_directory[0])
-		// Check that last directory exists
-		if (getFiles(last_directory) == -1)
-			return(getFiles(MENU_DIR_DEFAULT));
-		else
-			return getFiles(last_directory);
-	else
-		return(getFiles(MENU_DIR_DEFAULT));
+	return(getFiles(MENU_DIR_DEFAULT));
 }
 
-int run_menuLoad(enum DiskOrder new_df_num)
+int run_menuLoad(char FloppyID)
 {
 	int end=0,c=0;
 #ifdef DREAMCAST
 	extern void reinit_sdcard(void);
 	reinit_sdcard();
 #endif
-
-	df_num = new_df_num;
 
 	if (text_dir_files==NULL)
 		end=getDefaultFiles();
@@ -578,7 +523,7 @@ int run_menuLoad(enum DiskOrder new_df_num)
 	while(!end)
 	{
 		draw_loadMenu(c);
-		end=key_loadMenu(&c);
+		end=key_loadMenu(&c,FloppyID);
 	}
 	unraise_loadMenu();
 

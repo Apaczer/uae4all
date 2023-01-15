@@ -58,12 +58,19 @@ extern signed int IO_CYCLE;
 #include "drawing.h"
 #include "savestate.h"
 
+#if  defined(__LIBRETRO__)
+extern int second_joystick_enable;
+#endif
 
 #ifdef STOP_WHEN_COPPER
 static __inline__ void setcopper(void)
 {
 #ifdef USE_FAME_CORE
+#ifdef USE_CYCLONE_CORE
+	m68k_release_timeslice();
+#else
 	m68k_stop_emulating();
+#endif
 #endif
 	set_special (SPCFLAG_COPPER);
 }
@@ -75,7 +82,11 @@ static __inline__ void setcopper(void)
 static __inline__ void setnasty(void)
 {
 #ifdef USE_FAME_CORE
+#ifdef USE_CYCLONE_CORE
+	m68k_release_timeslice();
+#else
 	m68k_stop_emulating();
+#endif
 #endif
 	set_special (SPCFLAG_BLTNASTY);
 }
@@ -122,7 +133,11 @@ unsigned long int currcycle, nextevent;
 struct ev eventtab[ev_max];
 
 static int vpos;
+#ifdef USE_CYCLONE_CORE
+extern int next_vpos[512];
+#else
 extern int *next_vpos;
+#endif
 static uae_u16 lof;
 static int next_lineno;
 static int lof_changed = 0;
@@ -154,7 +169,7 @@ static int vblank_endline = VBLANK_ENDLINE_PAL;
 static int vblank_hz = VBLANK_HZ_PAL;
 unsigned long syncbase=200000000;
 static int fmode;
-static unsigned int beamcon0, new_beamcon0;
+unsigned int beamcon0, new_beamcon0;
 
 #define MAX_SPRITES 8
 
@@ -1881,7 +1896,60 @@ static _INLINE_ void DMACON (uae_u16 v, int hpos)
     }
     events_schedule();
 }
+#ifdef USE_CYCLONE_CORE
+static _INLINE_ void SET_INTERRUPT(void)
+{
+	int new_irqs = 0, new_level = 0;
 
+	if (intena & 0x4000)
+	{
+		int imask = intreq & intena;
+		if (imask & 0x0007) { new_irqs |= 1 << 1; new_level = 1; }
+		if (imask & 0x0008) { new_irqs |= 1 << 2; new_level = 2; }
+		if (imask & 0x0070) { new_irqs |= 1 << 3; new_level = 3; }
+		if (imask & 0x0780) { new_irqs |= 1 << 4; new_level = 4; }
+		if (imask & 0x1800) { new_irqs |= 1 << 5; new_level = 5; }
+		if (imask & 0x2000) { new_irqs |= 1 << 6; new_level = 6; }
+	}
+
+	if (new_irqs == M68KCONTEXT.interrupts[0]); // nothing changed
+	else if (new_irqs == 0)
+	{
+		M68KCONTEXT.interrupts[0] = 0; // uae4all_go_interrupt = 0;
+		m68k_irq_update(0);
+	}
+	else
+	{
+		int old_irqs = M68KCONTEXT.interrupts[0], old_level = 0, end_timeslice;
+
+		for (old_irqs>>=1; old_irqs; old_irqs>>=1, old_level++);
+		end_timeslice = new_level > old_level && new_level > _68k_intmask;
+
+		M68KCONTEXT.interrupts[0] = new_irqs;
+		m68k_irq_update(end_timeslice);
+		/*
+		if (new_level > old_level && new_level > _68k_intmask)
+		{
+			uae4all_go_interrupt = new_irqs; // delayed interrupt
+			m68k_irq_update(1);
+		}
+		else
+		{
+			M68KCONTEXT.interrupts[0] = new_irqs;
+			uae4all_go_interrupt = 0;
+			m68k_irq_update(0);
+		}
+		*/
+	}
+
+	//printf("%i:%03i ST_IT int req/ena=%04x/%04x,",M68KCONTEXT.cycles_counter,IO_CYCLE,intreq,intena);
+	//printf(" masc=%02x, ints=%02x\n",new_irqs,M68KCONTEXT.interrupts[0]);
+}
+
+
+
+
+#else
 #if defined(USE_FAME_CORE) && !defined(SPECIAL_DEBUG_INTERRUPTS)
 
 static void __inline__ custom_fame_lower(int n_int)
@@ -2044,7 +2112,7 @@ static _INLINE_ void SET_INTERRUPT(void)
 #endif
     uae4all_prof_end(14);
 }
-
+#endif // CYCLONE
 /*static int trace_intena = 0;*/
 
 static __inline__ void INTENA (uae_u16 v)
@@ -2475,6 +2543,11 @@ static _INLINE_ uae_u16 POT0DAT (void)
 
 static _INLINE_ uae_u16 JOY0DAT (void)
 {
+#if  defined(__LIBRETRO__)
+    if (second_joystick_enable)
+        return joy0dir;
+#endif
+
     do_mouse_hack ();
     return ((uae_u8)mouse_x) + ((uae_u16)mouse_y << 8) + joy0dir;
 }
@@ -3223,6 +3296,15 @@ static void vsync_handler (void)
     	handle_events ();
     	getjoystate (0, &joy1dir, &joy1button);
     	getjoystate (1, &joy0dir, &joy0button);
+#ifdef __LIBRETRO__
+	if (second_joystick_enable == 1)
+	{
+		back_joy0button= joy0button;
+		buttonstate[0]= joy0button & 0x01;
+
+	}
+	else
+#endif
 	if (joy0button!=back_joy0button)
 		back_joy0button= buttonstate[0]= joy0button;
     }
@@ -3524,7 +3606,7 @@ void customreset (void)
 	    for(i = 0 ; i < 32 ; i++)
 	    {
 		    vv = current_colors.color_uae_regs_ecs[i];
-		    current_colors.color_uae_regs_ecs[i] = ~0; /* all ones */
+		    current_colors.color_uae_regs_ecs[i] = (unsigned)-1;
 		    record_color_change (0, i, vv);
 		    remembered_color_entry = -1;
 		    current_colors.color_uae_regs_ecs[i] = vv;

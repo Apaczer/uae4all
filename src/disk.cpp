@@ -34,11 +34,19 @@
 #include "osemu.h"
 #include "execlib.h"
 #include "savestate.h"
+#ifdef __LIBRETRO__
+#include <string>
+#include <sstream>
+#include "glob.h"
+#include "graph.h"
+#include "libretro-core.h"
+#endif
 
 #define maxhpos MAXHPOS
 
 char prefs_df[NUM_DRIVES][128];
 char changed_df[NUM_DRIVES][128];
+char extfile[64];
 char romfile[64];
 #ifdef DREAMCAST
 char romfile_sd[32];
@@ -232,9 +240,9 @@ static int drive_insert (drive * drv, int dnum, const char *fname)
 	drv->trackspeed = floppy_speed;
 	return 0;
     }
-    strncpy ((char *)&prefs_df[drv-floppy], fname, 127);
+    memmove ((char *)&prefs_df[drv-floppy], fname, 127);
     prefs_df[drv-floppy][127] = 0;
-    strncpy ((char *)&changed_df[drv-floppy], fname, 127);
+    memmove ((char *)&changed_df[drv-floppy], fname, 127);
     changed_df[drv-floppy][127] = 0;
 
     uae4all_fread (buffer, sizeof (char), 8, drv->diskfile);
@@ -823,6 +831,38 @@ void disk_insert (int num, const char *name)
 		drive_insert (drv, num, name);
     	}
     }
+}
+
+void DISK_GUI_change (void)
+{
+
+#ifdef __LIBRETRO__
+    int idx = 0;
+    if (floppy[idx].dskchange_time)
+    {
+        int i = strlen (floppy[idx].newname) - 1;
+        while (i > 0)
+        {
+            if (floppy[idx].newname[i] == '/' || floppy[idx].newname[i] == '\\')
+            {
+                i++;
+                break;
+            }
+            i--;
+        }
+
+        Draw_text((char*)gfx_mem,20 , 20 ,RGB565(7, 7, 7), RGB565(29, 29, 29) ,1, 1,10,"Switch to:");
+        if (PREFS_GFX_WIDTH > 320)
+            Draw_text((char*)gfx_mem,20 , 30 ,RGB565(7, 7, 7), RGB565(29, 29, 29) ,1, 1,100,(floppy[idx].newname) + i);
+        else
+        {
+            Draw_text((char*)gfx_mem,20 , 30 ,RGB565(7, 7, 7), RGB565(29, 29, 29) ,1, 1,40,(floppy[idx].newname) + i);
+            if (strlen (floppy[idx].newname) > 40)
+                Draw_text((char*)gfx_mem,20 , 40 ,RGB565(7, 7, 7), RGB565(29, 29, 29) ,1, 1,40,(floppy[idx].newname) + i + 40);
+        }
+    }
+#endif
+
 }
 
 void DISK_check_change (void)
@@ -1652,3 +1692,92 @@ uae_u8 *save_floppy(int *len)
     *len = dst - dstbak;
     return dstbak;
 }
+
+#ifdef __LIBRETRO__
+std::string ReplaceAll(std::string str, const std::string& from, const std::string& to) {
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length();
+    }
+    return str;
+}
+
+void changedisk(bool plus)
+{
+    std::string fname=prefs_df[0];
+    int lfname =fname.length();
+
+    std::string constdisk="(Disk ";
+    std::string constdiskof=" of ";
+    std::size_t finiziodisk = fname.find(constdisk);
+    if (finiziodisk==std::string::npos)return;
+    std::size_t finiziodiskof = fname.find(constdiskof,finiziodisk);
+    if (finiziodiskof==std::string::npos)return;
+    std::size_t ffinedisk = fname.find_last_of(")")+1;
+    if (ffinedisk==std::string::npos)return;
+			
+    std::string strndisk=fname.substr(finiziodisk+constdisk.length(),finiziodiskof-finiziodisk-constdisk.length());
+    std::string strntotdisk=fname.substr(finiziodiskof+constdiskof.length(),ffinedisk-finiziodiskof-constdiskof.length()-1);
+    std::string fnamenodsk=fname.substr(0,finiziodisk);
+    std::string strdisk = fname.substr(finiziodisk,ffinedisk-finiziodisk);
+    std::string ext = fname.substr(ffinedisk,fname.length()-ffinedisk);
+    int newdisk=0;
+    int totdisk= atoi(strntotdisk.c_str());
+    if (plus)
+    {
+        // Swap with disk index superior
+        newdisk= atoi(strndisk.c_str());
+        newdisk=newdisk+1;
+        if (newdisk>totdisk) 
+        {
+            newdisk=1;
+        }
+    }
+    else
+    {
+        // Swap with disk index inferior
+        newdisk= atoi(strndisk.c_str());
+        newdisk=newdisk-1;
+        if (newdisk<1) 
+        {
+            newdisk=totdisk;
+        }
+    }
+
+    std::string strnewdisk;
+    std::stringstream convert;   // stream used for the conversion
+    convert << newdisk;          // insert the textual representation of 'Number' in the characters in the stream
+    strnewdisk = convert.str();
+    std::string strtotdisk;
+    std::stringstream converttot;
+    converttot << totdisk;       // insert the textual representation of 'Number' in the characters in the stream
+    strtotdisk = converttot.str();
+    std::string strnefile = fnamenodsk + constdisk + strnewdisk + constdiskof + strtotdisk + ")" + ext;
+    if ( access( strnefile.c_str(), F_OK ) != -1 )
+    {
+        disk_insert(0, strnefile.c_str());
+        write_log("Insert disk: %s.\n",strnefile.c_str());
+    }
+    else
+    {
+        glob_t globbuf;
+        write_log("Disk    %s not found !.\n",strnefile.c_str());
+        strnefile = fnamenodsk + constdisk + strnewdisk + constdiskof + strtotdisk + ")" + "*"; 
+        strnefile = ReplaceAll(strnefile, std::string("["), std::string("\\["));
+        strnefile = ReplaceAll(strnefile, std::string("]"), std::string("\\]"));
+
+        glob(strnefile.c_str(), 0, NULL, &globbuf);
+        if (globbuf.gl_pathc > 0)
+        {
+            int fd = open(globbuf.gl_pathv[0], O_RDONLY);
+            disk_insert(0, globbuf.gl_pathv[0]);
+            write_log("Use alt %s\n",globbuf.gl_pathv[0]);
+        }
+        else
+            write_log("Disk %s not found !.\n",strnefile.c_str());
+        globfree(&globbuf);
+    }
+}
+#endif
+

@@ -4,7 +4,7 @@
 #include "config.h"
 #include "menu.h"
 
-#include <SDL_mixer.h>
+#include <SDL.h>
 
 #include "sysconfig.h"
 #include "sysdeps.h"
@@ -16,8 +16,21 @@
 #include "msg.h"
 #include "fade.h"
 
-#ifdef HOME_DIR
-#include "homedir.h"
+#ifdef RASPBERRY
+#include "bcm_host.h"
+extern DISPMANX_DISPLAY_HANDLE_T   dispmanxdisplay;
+extern DISPMANX_MODEINFO_T         dispmanxdinfo;
+/* The two dispmanX resource used for a kind of double buffering */
+extern DISPMANX_RESOURCE_HANDLE_T  dispmanxresource_menu;
+extern DISPMANX_RESOURCE_HANDLE_T  dispmanxresource_menu2;
+extern DISPMANX_ELEMENT_HANDLE_T   dispmanxelement_menu;
+extern DISPMANX_UPDATE_HANDLE_T    dispmanxupdate;
+extern VC_RECT_T       src_rect_menu;
+extern VC_RECT_T       dst_rect_menu;
+extern VC_RECT_T       blit_rect_menu;
+
+
+unsigned char current_resource_menu = 0;
 #endif
 
 #ifdef DREAMCAST
@@ -26,6 +39,7 @@ void reinit_sdcard(void);
 #else
 #define VIDEO_FLAGS_INIT SDL_HWSURFACE
 #endif
+
 
 #ifdef DOUBLEBUFFER
 #define VIDEO_FLAGS VIDEO_FLAGS_INIT | SDL_DOUBLEBUF
@@ -39,7 +53,8 @@ static Uint32 menu_inv_color2=0, menu_inv_color=0, menu_win0_color=0, menu_win1_
 static Uint32 menu_barra0_color=0, menu_barra1_color=0;
 static Uint32 menu_win0_color_base=0, menu_win1_color_base=0;
 
-void write_text_pos(int x, int y, const char* str);
+
+void write_text_pos(int x, int y, char * str);
 void write_num(int x, int y, int v);
 int menu_msg_pos=330;
 int menu_moving=1;
@@ -112,7 +127,7 @@ void menu_unraise(void)
 
 static void text_draw_menu_msg()
 {
-	write_text_pos(menu_msg_pos,0,menu_msg);
+	write_text_pos(menu_msg_pos,10,menu_msg);
 	if (menu_msg_pos<MAX_SCROLL_MSG)
 		menu_msg_pos=330;
 	else
@@ -167,10 +182,10 @@ void text_draw_background()
 
 	if (menu_moving)
 	{
-		if (pos_x>=0) pos_x=-text_screen->w;
-		else pos_x++;
-		if (pos_y>=0) pos_y=-text_screen->h;
-		else pos_y++;
+		pos_x++;
+		if (pos_x>0) pos_x=-text_background->w+1;
+		pos_y++;
+		if (pos_y>0) pos_y=-text_background->h+1;
 	}
 
 	for(i=pos_x;i<w;i+=text_background->w)
@@ -191,15 +206,91 @@ void text_draw_background()
 
 void text_flip(void)
 {
+#ifdef RASPBERRY
+        if (current_resource_menu == 1)
+	{
+		current_resource_menu = 0;
+		vc_dispmanx_resource_write_data(  dispmanxresource_menu,
+		                                    VC_IMAGE_RGB565,
+		                                    MENU_GFX_WIDTH * 2,
+		                                    text_screen->pixels,
+		                                    &blit_rect_menu );
+		dispmanxupdate = vc_dispmanx_update_start( 10 );
+		vc_dispmanx_element_change_source(dispmanxupdate,dispmanxelement_menu,dispmanxresource_menu);
+
+		vc_dispmanx_update_submit_sync(dispmanxupdate);
+
+	}
+	else
+	{
+		current_resource_menu = 1;
+		vc_dispmanx_resource_write_data(  dispmanxresource_menu2,
+		                                    VC_IMAGE_RGB565,
+		                                    MENU_GFX_WIDTH * 2,
+		                                    text_screen->pixels,
+		                                    &blit_rect_menu );
+		dispmanxupdate = vc_dispmanx_update_start( 10 );
+		vc_dispmanx_element_change_source(dispmanxupdate,dispmanxelement_menu,dispmanxresource_menu2);
+
+		vc_dispmanx_update_submit_sync(dispmanxupdate);
+	}
+
+#else
 	SDL_Delay(10);
 	SDL_BlitSurface(text_screen,NULL,prSDLScreen,NULL);
 	SDL_Flip(prSDLScreen);
+#endif
 }
 
 void init_text(int splash)
 {
 	SDL_Surface *tmp;
+#ifdef RASPBERRY
+	VC_DISPMANX_ALPHA_T alpha = { (DISPMANX_FLAGS_ALPHA_T ) (DISPMANX_FLAGS_ALPHA_FROM_SOURCE | DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS), 
+                             255, /*alpha 0->255*/
+                             0 };
+	uint32_t                    vc_image_ptr;
 
+	if (dispmanxresource_menu ==0)
+	{
+		dispmanxdisplay = vc_dispmanx_display_open( 0 );
+		vc_dispmanx_display_get_info( dispmanxdisplay, &dispmanxdinfo);
+		dispmanxresource_menu = vc_dispmanx_resource_create( VC_IMAGE_RGB565,
+						MENU_GFX_WIDTH,
+						MENU_GFX_HEIGHT,
+						&vc_image_ptr);
+		dispmanxresource_menu2 = vc_dispmanx_resource_create( VC_IMAGE_RGB565,
+						MENU_GFX_WIDTH,
+						MENU_GFX_HEIGHT,
+						&vc_image_ptr);
+		vc_dispmanx_rect_set( &blit_rect_menu, 0, 0, MENU_GFX_WIDTH,MENU_GFX_HEIGHT);
+		vc_dispmanx_rect_set( &dst_rect_menu, (dispmanxdinfo.width * 3)/100,
+	                             (dispmanxdinfo.height * 3)/100 ,
+	                             dispmanxdinfo.width - (dispmanxdinfo.width * 6)/100 ,
+	                             dispmanxdinfo.height - (dispmanxdinfo.height * 7)/100 );
+
+		//vc_dispmanx_rect_set( &dst_rect_menu, (dispmanxdinfo.width /2),
+	        //                     (dispmanxdinfo.height * 3)/100 ,
+	        //                     (dispmanxdinfo.width - (dispmanxdinfo.width * 6)/100 )/2,
+	        //                     (dispmanxdinfo.height - (dispmanxdinfo.height * 7)/100)/2 );
+
+
+	}
+	dispmanxupdate = vc_dispmanx_update_start( 10 );
+	dispmanxelement_menu = vc_dispmanx_element_add( dispmanxupdate,
+	                                        dispmanxdisplay,
+	                                        2000,               // layer
+	                                        &dst_rect_menu,
+	                                        dispmanxresource_menu,
+	                                        &src_rect_menu,
+	                                        DISPMANX_PROTECTION_NONE,
+	                                        &alpha,
+	                                        NULL,             // clamp
+	                                        DISPMANX_NO_ROTATE );
+
+	vc_dispmanx_update_submit_sync(dispmanxupdate);
+
+#else
 	if (prSDLScreen==NULL)
 	{
 		SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_JOYSTICK);
@@ -208,12 +299,15 @@ void init_text(int splash)
  	   	SDL_JoystickEventState(SDL_ENABLE);
     		SDL_JoystickOpen(0);
 	}
+#endif
 #ifdef DREAMCAST
         __sdl_dc_emulate_keyboard=1;
 #endif
 	if (!text_screen)
 	{
-		text_screen=SDL_CreateRGBSurface(prSDLScreen->flags,prSDLScreen->w,prSDLScreen->h,prSDLScreen->format->BitsPerPixel,prSDLScreen->format->Rmask,prSDLScreen->format->Gmask,prSDLScreen->format->Bmask,prSDLScreen->format->Amask);
+                // FDA
+		//text_screen=SDL_CreateRGBSurface(prSDLScreen->flags,prSDLScreen->w,prSDLScreen->h,prSDLScreen->format->BitsPerPixel,prSDLScreen->format->Rmask,prSDLScreen->format->Gmask,prSDLScreen->format->Bmask,prSDLScreen->format->Amask);
+		text_screen=SDL_CreateRGBSurface(prSDLScreen->flags,MENU_GFX_WIDTH,MENU_GFX_HEIGHT,16,0xF800,0x7E0,0x1F,0);
 		tmp=SDL_LoadBMP(MENU_FILE_TEXT);
 		if (text_screen==NULL || tmp==NULL)
 			exit(-1);
@@ -247,7 +341,8 @@ void init_text(int splash)
 
 		obten_colores();
 		uae4all_init_sound();
-#if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
+#if 0
+//#if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
 		tmp=SDL_LoadBMP(MENU_FILE_SPLASH);
 		if (tmp==NULL)
 			exit(-6);
@@ -258,7 +353,7 @@ void init_text(int splash)
 		r.h=sur->w;
 		r.w=sur->h;
 		SDL_FillRect(text_screen,NULL,0xFFFFFFFF);
-		while(SDL_PollEvent(&ev));
+		while(SDL_PollEvent(&ev)) SDL_Delay(50);
 		for (i=128;(i>-8)&&(!toexit);i-=8)
 		{
 #ifdef DREAMCAST
@@ -312,14 +407,9 @@ void init_text(int splash)
 #endif
 #endif
 #endif
-		toexit = 0;
-
-		while(!toexit)
+		for(i=0;i<10;i++)
 		{
 			SDL_Event ev;
-#ifdef HOME_DIR
-			int config_dir_len = strlen(config_dir);
-#endif
 			if (!uae4all_init_rom(romfile))
 				break;
 #ifdef DREAMCAST
@@ -330,62 +420,32 @@ void init_text(int splash)
 
 			text_draw_background();
 			text_draw_window(54,110,250,64,"--- ERROR ---");
-#if defined(RS97) || defined(MIYOO)
-#ifdef HOME_DIR
-			write_text(9,14,"kick.rom not found in:");
-
-			if(config_dir_len < 26) /* Center the text */
-			{
-				write_text(7 + 13 - config_dir_len/2, 16, config_dir);
-			}
-			else
-			{
-				write_text(7,16,config_dir);
-			}
-
-#else
-			write_text(11,14,"kick.rom not found");
-			write_text(8,16,"Press any button to exit");
-#endif
-#else
 			write_text(11,14,"KICK.ROM not found");
-			write_text(8,16,"Press any button to exit");
-#endif
+			write_text(8,16,"Press any button to retry");
 			text_flip();
+			SDL_Delay(333);
 			while(SDL_PollEvent(&ev))
-			{
 #ifndef DREAMCAST
 				if (ev.type==SDL_QUIT)
-					toexit = 1;
+					exit(1);
 				else
 #endif
-				if (ev.type==SDL_KEYDOWN)
-				{
-					if(ev.key.keysym.sym==SDLK_LCTRL)
-						toexit = 1;
-					else if(ev.key.keysym.sym==SDLK_RETURN)
-						toexit = 1;
-					else if(ev.key.keysym.sym==SDLK_ESCAPE)
-						toexit = 1;
-				}
-				else if (ev.type==SDL_JOYBUTTONDOWN)
-				{
-					toexit = 1;
-				}
-			}	
-
+				SDL_Delay(10);
+			while(!SDL_PollEvent(&ev))
+				SDL_Delay(10);
+			while(SDL_PollEvent(&ev))
+				if (ev.type==SDL_QUIT)
+					exit(1);
+			text_draw_background();
 			text_flip();
+			SDL_Delay(333);
 		}
-
-		if(toexit)
-		{
-			SDL_Quit();
+		if (i>=10)
 			exit(1);
-		}
 	}
 	else
 	{
-		SDL_FillRect(text_screen,NULL,0xFFFFFFFF);
+		//SDL_FillRect(text_screen,NULL,0xFFFFFFFF);
 		text_flip();
 		uae4all_resume_music();
 	}
@@ -395,6 +455,11 @@ void init_text(int splash)
 
 void quit_text(void)
 {
+#ifdef RASPBERRY
+	dispmanxupdate = vc_dispmanx_update_start( 10 );
+	vc_dispmanx_element_remove(dispmanxupdate,dispmanxelement_menu);
+	vc_dispmanx_update_submit_sync(dispmanxupdate);
+#endif
 /*
 	SDL_FreeSurface(text_image);
 	SDL_FreeSurface(text_background);
@@ -403,12 +468,12 @@ void quit_text(void)
 */
 }
 
-void write_text_pos(int x, int y, const char *str)
+void write_text_pos(int x, int y, char * str)
 {
   int i, c;
   SDL_Rect src, dest;
   
-  for (i = 0; str[i] != '\0'; i++)
+  for (i = 0; i < strlen(str); i++)
     {
       c = -1;
       
@@ -432,6 +497,8 @@ void write_text_pos(int x, int y, const char *str)
 	c = 65;
       else if (str[i] == ')')
 	c = 66;
+      else if (str[i] == '/')
+	c = 67;
       
       if (c >= 0)
 	{
@@ -465,7 +532,7 @@ void write_text_pos(int x, int y, const char *str)
     }
 }
 
-void _write_text_pos(SDL_Surface *sf, int x, int y, const char *str)
+void _write_text_pos(SDL_Surface *sf, int x, int y, char * str)
 {
 	SDL_Surface *back=text_screen;
 	text_screen=sf;
@@ -473,12 +540,12 @@ void _write_text_pos(SDL_Surface *sf, int x, int y, const char *str)
 	text_screen=back;
 }
 
-void write_text(int x, int y, const char *str)
+void write_text(int x, int y, char * str)
 {
   int i, c;
   SDL_Rect src, dest;
   
-  for (i = 0; str[i] != '\0'; i++)
+  for (i = 0; i < strlen(str); i++)
     {
       c = -1;
       
@@ -498,14 +565,12 @@ void write_text(int x, int y, const char *str)
 	c = -2;
       else if (str[i] == '-')
 	c = -3;
-      else if (str[i] == '/')
-	c = -4;
-      else if (str[i] == ':')
-	c = -5;
       else if (str[i] == '(')
 	c = 65;
       else if (str[i] == ')')
 	c = 66;
+      else if (str[i] == '/')
+	c = 67;
       
       if (c >= 0)
 	{
@@ -536,49 +601,10 @@ void write_text(int x, int y, const char *str)
 	  
 	  SDL_FillRect(text_screen, &dest, menu_barra0_color);
 	}
-      else if (c == -4)
-	{
-	  /* upper segment of '/' */
-	  dest.x = (x + i) * 8 + 4;
-	  dest.y = y * 8 /*10*/;
-	  dest.w = 1;
-	  dest.h = 2;
-	  SDL_FillRect(text_screen, &dest, menu_barra0_color);
-
-	  /* middle segment of '/' */
-	  dest.x = (x + i) * 8 + 3;
-	  dest.y = y * 8 /*10*/ + 2;
-	  dest.w = 1;
-	  dest.h = 3;
-	  SDL_FillRect(text_screen, &dest, menu_barra0_color);
-
-	  /* lower segment of '/' */
-	  dest.x = (x + i) * 8 + 2;
-	  dest.y = y * 8 /*10*/ + 5;
-	  dest.w = 1;
-	  dest.h = 2;
-	  SDL_FillRect(text_screen, &dest, menu_barra0_color);
-	}
-      else if (c == -5)
-	{
-	  /* upper point of ':' */
-	  dest.x = (x + i) * 8 + 2;
-	  dest.y = y * 8 /*10*/ + 2;
-	  dest.w = 1;
-	  dest.h = 1;
-	  SDL_FillRect(text_screen, &dest, menu_barra0_color);
-
-	  /* lower point of ':' */
-	  dest.x = (x + i) * 8 + 2;
-	  dest.y = y * 8 /*10*/ + 6;
-	  dest.w = 1;
-	  dest.h = 1;
-	  SDL_FillRect(text_screen, &dest, menu_barra0_color);
-	}
     }
 }
 
-void _write_text(SDL_Surface *sf, int x, int y, const char *str)
+void _write_text(SDL_Surface *sf, int x, int y, char * str)
 {
 	SDL_Surface *back=text_screen;
 	text_screen=sf;
@@ -589,7 +615,7 @@ void _write_text(SDL_Surface *sf, int x, int y, const char *str)
 
 /* Write text, inverted: */
 
-void write_text_inv(int x, int y, const char *str)
+void write_text_inv(int x, int y, char * str)
 {
   SDL_Rect dest;
   
@@ -604,7 +630,7 @@ void write_text_inv(int x, int y, const char *str)
   write_text(x, y, str);
 }
 
-void _write_text_inv(SDL_Surface *sf, int x, int y, const char *str)
+void _write_text_inv(SDL_Surface *sf, int x, int y, char * str)
 {
 	SDL_Surface *back=text_screen;
 	text_screen=sf;
@@ -612,7 +638,7 @@ void _write_text_inv(SDL_Surface *sf, int x, int y, const char *str)
 	text_screen=back;
 }
 
-void write_text_inv_n(int x, int y, int n, const char *str)
+void write_text_inv_n(int x, int y, int n, char * str)
 {
   SDL_Rect dest;
   
@@ -634,7 +660,7 @@ void write_text_inv_n(int x, int y, int n, const char *str)
   write_text(x+1, y, str);
 }
 
-void _write_text_inv_n(SDL_Surface *sf, int x, int y, int n, const char *str)
+void _write_text_inv_n(SDL_Surface *sf, int x, int y, int n, char * str)
 {
 	SDL_Surface *back=text_screen;
 	text_screen=sf;
@@ -645,12 +671,12 @@ void _write_text_inv_n(SDL_Surface *sf, int x, int y, int n, const char *str)
 
 /* Write text, horizontally centered... */
 
-void write_centered_text(int y, const char *str)
+void write_centered_text(int y, char * str)
 {
   write_text(20 - (strlen(str) / 2), y/2, str);
 }
 
-void _write_centered_text(SDL_Surface *sf, int x, int y, const char *str)
+void _write_centered_text(SDL_Surface *sf, int x, int y, char * str)
 {
 	SDL_Surface *back=text_screen;
 	text_screen=sf;
@@ -705,7 +731,7 @@ void _write_num_inv(SDL_Surface *sf, int x, int y, int v)
 	text_screen=back;
 }
 
-void text_draw_window(int x, int y, int w, int h, const char *title)
+void text_draw_window(int x, int y, int w, int h, char *title)
 {
 	int i,j;
 	int r8x = x / 8;
@@ -748,7 +774,7 @@ void text_draw_window(int x, int y, int w, int h, const char *title)
 
 }
 
-void _text_draw_window(SDL_Surface *sf, int x, int y, int w, int h, const char *title)
+void _text_draw_window(SDL_Surface *sf, int x, int y, int w, int h, char *title)
 {
 	SDL_Surface *back=text_screen;
 	text_screen=sf;
@@ -773,14 +799,14 @@ if (h>5) h-=4;
 	SDL_FillRect(text_screen, &dest, menu_barra0_color); //0x8888);
 }
 
-void text_draw_window_bar(int x, int y, int w, int h, int per, int max, const char *title)
+void text_draw_window_bar(int x, int y, int w, int h, int per, int max, char *title)
 {
 	text_draw_window(x,y,w,h,title);
 	text_draw_barra(x+4, y+28, w-24, 12, per, max);
 	write_text((x/8)+4,(y/8)+1,"Please wait");
 }
 
-void _text_draw_window_bar(SDL_Surface *sf, int x, int y, int w, int h, int per, int max, const char *title)
+void _text_draw_window_bar(SDL_Surface *sf, int x, int y, int w, int h, int per, int max, char *title)
 {
 	SDL_Surface *back=text_screen;
 	text_screen=sf;

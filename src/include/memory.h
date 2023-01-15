@@ -8,6 +8,8 @@
 #ifndef UAE_MEMORY_H
 #define UAE_MEMORY_H
 
+void swab_memory (uae_u8 *apMemory, uae_u32 aSize);
+
 #if defined(WIN32)||defined(DINGOO)
 #define bzero(BUF,SIZ) memset(BUF,0,SIZ)
 #endif
@@ -254,7 +256,7 @@ extern int canbang;
 
 #endif
 
-extern uae_u8 *mapped_malloc (size_t, const char *);
+extern uae_u8 *mapped_malloc (size_t, char *);
 extern void mapped_free (uae_u8 *);
 
 #if defined(DREAMCAST) && defined(DC_SQ)
