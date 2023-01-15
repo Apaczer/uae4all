@@ -1,10 +1,15 @@
 NAME    = uae4all
 O       = o
 RM      = rm -f
+ifeq ($(platform),)
 #CC     = gcc
 #CXX    = g++
 STRIP   = strip
-
+else  ifeq ($(platform), miyoo)
+CC     = /opt/miyoo/usr/bin/arm-linux-gcc
+CXX    = /opt/miyoo/usr/bin/arm-linux-g++
+STRIP  = /opt/miyoo/usr/bin/arm-linux-strip
+endif
 TARGET = $(NAME)_libretro.so
 
 all: $(TARGET)
@@ -13,8 +18,12 @@ all: $(TARGET)
 FAME_CORE=1
 FAME_CORE_C=1
 #LIB7Z=1
-
+ifeq ($(platform),)
 LDFLAGS     = -lz -lpthread
+else  ifeq ($(platform), miyoo)
+LDFLAGS = -lSDL -lSDL_image -lz -lpthread -flto
+DEFAULT_CFLAGS = -I/opt/miyoo/usr/include/ -I/opt/miyoo/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/include/  -I/opt/miyoo/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/include/SDL
+endif
 SHARED      = -shared -Wl,--version-script=libretro/link.T 
 
 MORE_CFLAGS = -g -O3 -Isrc/ -Isrc/include/ -Isrc/menu -Isrc/vkbd -fomit-frame-pointer -fno-threadsafe-statics -Wno-unused -Wno-format -DGCCCONSTFUNC="__attribute__((const))" -DUSE_UNDERSCORE -fno-exceptions -DUNALIGNED_PROFITABLE -DREGPARAM="__attribute__((regparm(3)))" -DOPTIMIZED_FLAGS -D__inline__=__inline__ -DSHM_SUPPORT_LINKS=0 -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
