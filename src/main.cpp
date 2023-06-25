@@ -144,7 +144,7 @@ void default_prefs ()
     strcpy (romfile, "kick.rom");
 #endif
 
-    prefs_chipmem_size=0x00100000;
+    prefs_chipmem_size=0x00200000;
 }
 
 int quit_program = 0;
