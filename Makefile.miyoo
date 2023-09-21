@@ -257,6 +257,5 @@ almostclean:
 clean:
 	$(RM) $(PROG) $(OBJS)
 	rm -rf $(RELEASEDIR)
-	rm -rf package
 	rm -f *.ipk
 	rm -f *.zip

@@ -100,6 +100,22 @@ void loadConfig()
 	char *config = (char *)malloc(strlen(config_dir) + strlen("/uae4all.cfg") + 1);
 	extern char last_directory[PATH_MAX];
 
+	FILE *k;
+	char *kickrom = (char *)malloc(strlen(config_dir) + strlen("/kick.rom") + 1);
+	if (kickrom != NULL)
+	{
+		sprintf(kickrom, "%s/kick.rom", config_dir);
+		k = fopen(kickrom, "r");
+
+		if(k == NULL)
+		{
+			printf("ERROR - missing Kickstart ROM: \"%s\" file.\n", kickrom);
+		} else {
+			fclose(k);
+		}
+		free(kickrom);
+	}
+
 	if(config == NULL)
 		return;
 
@@ -172,6 +188,22 @@ void storeConfig()
 	FILE *f;
 	char *config = (char *)malloc(strlen(config_dir) + strlen("/uae4all.cfg") + 1);
 	extern char last_directory[PATH_MAX];
+
+	FILE *k;
+	char *kickrom = (char *)malloc(strlen(config_dir) + strlen("/kick.rom") + 1);
+	if (kickrom != NULL)
+	{
+		sprintf(kickrom, "%s/kick.rom", config_dir);
+		k = fopen(kickrom, "r");
+
+		if(k == NULL)
+		{
+			printf("ERROR - missing Kickstart ROM: \"%s\" file.\n", kickrom);
+		} else {
+			fclose(k);
+		}
+		free(kickrom);
+	}
 
 	if(config == NULL)
 		return;
