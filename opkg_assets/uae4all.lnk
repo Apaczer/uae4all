@@ -1,0 +1,5 @@
+title=AMIGA
+description=COMMODORE AMIGA-500 OCS/1MB Emulator
+exec=/mnt/emus/uae4all/uae4all
+selectordir=/mnt/roms/AMIGA
+selectorfilter=.adf

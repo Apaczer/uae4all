@@ -1,4 +1,13 @@
-NAME   = uae4all
+TARGET         ?= uae4all
+VERSION        ?= $(shell date +%Y-%m-%d\ %H:%M)
+ASSETSDIR      = assets
+OPKG_ASSETSDIR = opkg_assets
+LINK           = $(TARGET).lnk
+DESTDIR        = emus
+SECTION        = emulators
+ALIASES        = aliases.txt
+
+NAME   = $(TARGET)
 O      = o
 RM     = rm -f
 CC     = /opt/miyoo/usr/bin/arm-linux-gcc
@@ -6,7 +15,7 @@ CXX    = /opt/miyoo/usr/bin/arm-linux-g++
 STRIP  = /opt/miyoo/usr/bin/arm-linux-strip
 
 PROG		= $(NAME)
-RELEASEDIR	= release
+RELEASEDIR	= package
 DATADIR		= data
 OPKDIR		= opk_data
 
@@ -205,6 +214,31 @@ $(PROG): $(OBJS)
 run: $(PROG)
 	./$(PROG)
 
+package: $(PROG)
+	@mkdir -p $(RELEASEDIR)
+	@cp *$(TARGET) $(RELEASEDIR)/
+	@mkdir -p $(RELEASEDIR)/mnt/$(DESTDIR)/$(TARGET)
+	@mkdir -p $(RELEASEDIR)/mnt/gmenu2x/sections/$(SECTION)
+	@mv $(RELEASEDIR)/*$(TARGET) $(RELEASEDIR)/mnt/$(DESTDIR)/$(TARGET)/
+	@cp -r $(ASSETSDIR)/* $(RELEASEDIR)/mnt/$(DESTDIR)/$(TARGET)
+	@cp $(OPKG_ASSETSDIR)/$(LINK) $(RELEASEDIR)/mnt/gmenu2x/sections/$(SECTION)
+	@cp $(OPKG_ASSETSDIR)/$(ALIASES) $(RELEASEDIR)/mnt/$(DESTDIR)/$(TARGET)
+
+zip: package
+	@cd $(RELEASEDIR) && zip -rq $(TARGET)$(VERSION).zip ./* && mv *.zip ..
+	@rm -rf $(RELEASEDIR)
+
+ipk: package
+	@mkdir -p $(RELEASEDIR)/data
+	@mv $(RELEASEDIR)/mnt $(RELEASEDIR)/data/
+	@cp -r $(OPKG_ASSETSDIR)/CONTROL $(RELEASEDIR)
+	@sed "s/^Version:.*/Version: $(VERSION)/" $(OPKG_ASSETSDIR)/CONTROL/control > $(RELEASEDIR)/CONTROL/control
+	@echo 2.0 > $(RELEASEDIR)/debian-binary
+	@tar --owner=0 --group=0 -czvf $(RELEASEDIR)/data.tar.gz -C $(RELEASEDIR)/data/ . >/dev/null 2>&1
+	@tar --owner=0 --group=0 -czvf $(RELEASEDIR)/control.tar.gz -C $(RELEASEDIR)/CONTROL/ . >/dev/null 2>&1
+	@ar r $(TARGET).ipk $(RELEASEDIR)/control.tar.gz $(RELEASEDIR)/data.tar.gz $(RELEASEDIR)/debian-binary
+	@rm -rf $(RELEASEDIR)
+
 opk: $(PROG)
 	mkdir -p $(RELEASEDIR)
 	cp $(PROG) $(RELEASEDIR)
@@ -223,3 +257,6 @@ almostclean:
 clean:
 	$(RM) $(PROG) $(OBJS)
 	rm -rf $(RELEASEDIR)
+	rm -rf package
+	rm -f *.ipk
+	rm -f *.zip

@@ -1,0 +1,7 @@
+Package: uae4all
+Version: 1.1
+Description: AMIGA 500 OCS 1MB emulator
+Section: emulators
+Priority: optional
+Maintainer: Apacz
+Architecture: arm
