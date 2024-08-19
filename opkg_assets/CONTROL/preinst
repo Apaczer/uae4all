@@ -1,0 +1,2 @@
+#!/bin/sh
+sync; echo 'Installing new uae4all..'; rm /var/lib/opkg/info/uae4all.list; exit 0

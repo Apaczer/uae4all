@@ -1,0 +1,2 @@
+#!/bin/sh
+sync; echo 'Installation finished.'; echo 'Restarting uae4all..'; sleep 1; killall uae4all; exit 0

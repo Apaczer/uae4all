@@ -26,13 +26,7 @@ This revision replaces FAME m68k emulation library with UAE core. Major advantag
 - compatibility increase (revert from FAME m68k library to UAE core, may introduce slight performance drawback) speed)
 
 ## Compiling instructions
-1. Set up your environment with @steward-fu toolchain (preferably in Debian 9 distro): 
-```
-$ cd
-$ wget https://github.com/steward-fu/miyoo/releases/download/v1.0/toolchain.7z
-$ 7za x toolchain.7z
-$ sudo cp -a miyoo /opt/
-```
+1. Set up your environment with current MiyooCFW toolchain (preferably in Debian 9 distro)
 2. Copy this repo & compile
 ``` 
 git clone https://github.com/Apaczer/uae4all

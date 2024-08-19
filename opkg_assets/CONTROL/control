@@ -1,7 +1,10 @@
 Package: uae4all
-Version: 1.1
+Version: rev1.1a
+Depends: 
+Source: https://github.com/Apaczer/uae4all
+License: GPL-2.0
 Description: AMIGA 500 OCS 1MB emulator
 Section: emulators
 Priority: optional
-Maintainer: Apacz
+Maintainer: Apaczer
 Architecture: arm

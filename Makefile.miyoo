@@ -33,7 +33,9 @@ all: $(PROG)
 # Possible values : 0, YES, APPLY
 PROFILE = 0
 
+## either FAME or UAE
 #FAME_CORE=1
+## use 7z savestate compression for *.asf files
 #LIB7Z=1
 HOME_DIR=1
 
@@ -225,8 +227,8 @@ package: $(PROG)
 	@mkdir -p $(RELEASEDIR)/mnt/gmenu2x/sections/$(SECTION)
 	@mv $(RELEASEDIR)/*$(TARGET) $(RELEASEDIR)/mnt/$(DESTDIR)/$(TARGET)/
 	@cp -r $(ASSETSDIR)/* $(RELEASEDIR)/mnt/$(DESTDIR)/$(TARGET)
-	@cp $(OPKG_ASSETSDIR)/$(LINK) $(RELEASEDIR)/mnt/gmenu2x/sections/$(SECTION)
-	@cp $(OPKG_ASSETSDIR)/$(ALIASES) $(RELEASEDIR)/mnt/$(DESTDIR)/$(TARGET)
+	@cp $(LINK) $(RELEASEDIR)/mnt/gmenu2x/sections/$(SECTION)
+	-@cp $(OPKG_ASSETSDIR)/$(ALIASES) $(RELEASEDIR)/mnt/$(DESTDIR)/$(TARGET)
 
 zip: package
 	@cd $(RELEASEDIR) && zip -rq $(TARGET)$(VERSION).zip ./* && mv *.zip ..
@@ -242,6 +244,9 @@ ipk: package
 	@tar --owner=0 --group=0 -czvf $(RELEASEDIR)/control.tar.gz -C $(RELEASEDIR)/CONTROL/ . >/dev/null 2>&1
 	@ar r $(TARGET).ipk $(RELEASEDIR)/control.tar.gz $(RELEASEDIR)/data.tar.gz $(RELEASEDIR)/debian-binary
 	@rm -rf $(RELEASEDIR)
+
+gm2xpkg-ipk: $(PROG)
+	gm2xpkg -i pkg.cfg
 
 opk: $(PROG)
 	mkdir -p $(RELEASEDIR)

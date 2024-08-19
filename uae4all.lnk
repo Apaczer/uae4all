@@ -1,0 +1,5 @@
+title=UAE4All
+description=AMIGA 500 OCS 1MB emulator
+exec=/mnt/emus/uae4all/uae4all
+selectordir=/mnt/roms/AMIGA/
+selectorfilter=.adf,.adh,.zip
