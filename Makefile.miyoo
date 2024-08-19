@@ -1,23 +1,32 @@
-TARGET         ?= uae4all
-VERSION        ?= $(shell date +%Y-%m-%d\ %H:%M)
-ASSETSDIR      = assets
-OPKG_ASSETSDIR = opkg_assets
-LINK           = $(TARGET).lnk
-DESTDIR        = emus
-SECTION        = emulators
-ALIASES        = aliases.txt
+TARGET			?= uae4all
+VERSION			?= $(shell date +%Y-%m-%d\ %H:%M)
+ASSETSDIR		= assets
+OPKG_ASSETSDIR	= opkg_assets
+LINK			= $(TARGET).lnk
+DESTDIR			= emus
+SECTION			= emulators
+ALIASES			= aliases.txt
 
-NAME   = $(TARGET)
-O      = o
-RM     = rm -f
-CC     = /opt/miyoo/usr/bin/arm-linux-gcc
-CXX    = /opt/miyoo/usr/bin/arm-linux-g++
-STRIP  = /opt/miyoo/usr/bin/arm-linux-strip
+NAME	= $(TARGET)
+O		= o
+RM 		= rm -f
 
 PROG		= $(NAME)
 RELEASEDIR	= package
 DATADIR		= data
 OPKDIR		= opk_data
+
+CHAINPREFIX ?= /opt/miyoo
+CROSS_COMPILE ?= $(CHAINPREFIX)/usr/bin/arm-linux-
+
+CC = $(CROSS_COMPILE)gcc
+CXX = $(CROSS_COMPILE)g++
+STRIP = $(CROSS_COMPILE)strip
+
+SYSROOT		:= $(shell $(CC) --print-sysroot)
+PKGS		:= sdl SDL_image zlib
+PKGS_CFLAGS	:= $(shell $(SYSROOT)/../../usr/bin/pkg-config --cflags $(PKGS))
+PKGS_LIBS	:= $(shell $(SYSROOT)/../../usr/bin/pkg-config --libs $(PKGS))
 
 all: $(PROG)
 
@@ -25,36 +34,34 @@ all: $(PROG)
 PROFILE = 0
 
 #FAME_CORE=1
-LIB7Z=1
-
+#LIB7Z=1
 HOME_DIR=1
 
-DEFAULT_CFLAGS = -I/opt/miyoo/usr/include/ -I/opt/miyoo/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/include/  -I/opt/miyoo/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/include/SDL -DMIYOO
+DEFAULT_CFLAGS = $(PKGS_CFLAGS) -DMIYOO
+LDFLAGS = $(PKGS_LIBS)
 
-LDFLAGS = -lSDL -lSDL_image -lz -lpthread -flto
-# add -lSDL_mixer if -DMENU_MUSIC below
 ifndef FAME_CORE
 LDFLAGS += -lm
 endif
-#-s -static
 
 ifeq ($(PROFILE), YES)
 LDFLAGS		+= -lgcov
 endif
 
-MORE_CFLAGS = -Isrc/ -Isrc/include/ -Isrc/menu -Isrc/vkbd -fomit-frame-pointer  -Wno-unused -Wno-format -DUSE_SDL -DGCCCONSTFUNC="__attribute__((const))" -DUSE_UNDERSCORE -fno-exceptions -DUNALIGNED_PROFITABLE -DREGPARAM="__attribute__((regparm(3)))" -DOPTIMIZED_FLAGS -D__inline__=__inline__ -DSHM_SUPPORT_LINKS=0 -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
+MORE_CFLAGS = -Isrc/ -Isrc/include/ -Isrc/menu -Isrc/vkbd
 
-MORE_CFLAGS += -O3 -flto -pipe -fno-exceptions -fno-rtti
+MORE_CFLAGS += -DUSE_SDL -DDOUBLEBUFFER -DNO_DEFAULT_THROTTLE -DUNALIGNED_PROFITABLE -DREGPARAM="__attribute__((regparm(3)))" -D__inline__=__inline__
+MORE_CFLAGS += -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
+MORE_CFLAGS += -DROM_PATH_PREFIX=\"./\" -DDATA_PREFIX=\"./data/\" -DSAVE_PREFIX=\"./\"
 
-MORE_CFLAGS+= -DROM_PATH_PREFIX=\"./\" -DDATA_PREFIX=\"./data/\" -DSAVE_PREFIX=\"./\"
-
-MORE_CFLAGS+= -DDOUBLEBUFFER
-MORE_CFLAGS+= -DNO_DEFAULT_THROTTLE
+OPTIMIZE_CFLAGS = -Ofast -fno-exceptions -fno-rtti -fomit-frame-pointer -Wno-unused -Wno-format
 
 ifeq ($(PROFILE), YES)
-MORE_CFLAGS		+= -fprofile-generate=/mnt/profile
+OPTIMIZE_CFLAGS		+= -fprofile-generate=/mnt/profile
 else ifeq ($(PROFILE), APPLY)
-MORE_CFLAGS		+= -fprofile-use -fbranch-probabilities
+OPTIMIZE_CFLAGS		+= -fprofile-use -fbranch-probabilities
+else
+OPTIMIZE_CFLAGS		+= -flto
 endif
 
 #MORE_CFLAGS+= -DSTATUS_ALWAYS
@@ -83,7 +90,7 @@ MORE_CFLAGS+= -DNO_THREADS
 #MORE_CFLAGS+= -DDEBUG_TIMESLICE
 
 MORE_CFLAGS+= -DEMULATED_JOYSTICK
-MORE_CFLAGS+= -DFAME_INTERRUPTS_PATCH
+#MORE_CFLAGS+= -DFAME_INTERRUPTS_PATCH
 #MORE_CFLAGS+= -DFAME_INTERRUPTS_SECURE_PATCH
 #MORE_CFLAGS+= -DSECURE_BLITTER
 
@@ -117,10 +124,9 @@ MORE_CFLAGS+= -DFAME_INTERRUPTS_PATCH
 #MORE_CFLAGS+= -DAUTO_PROFILER=4000
 #MORE_CFLAGS+= -DMAX_AUTO_PROFILER=5000
 
-
 #MORE_CFLAGS+= -DPROFILER_UAE4ALL
 
-CFLAGS  = $(DEFAULT_CFLAGS) $(MORE_CFLAGS)
+CFLAGS  = $(DEFAULT_CFLAGS) $(MORE_CFLAGS) $(OPTIMIZE_CFLAGS)
 
 OBJS =	\
 	src/savestate.o \
@@ -201,7 +207,6 @@ OBJS += \
 	src/m68k/uae/fpp.o \
 	src/m68k/uae/cpustbl.o \
 	src/m68k/uae/cpuemu.o
-
 endif
 
 CPPFLAGS  = $(CFLAGS)
@@ -209,7 +214,6 @@ CPPFLAGS  = $(CFLAGS)
 $(PROG): $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LDFLAGS)
 	$(STRIP) $(PROG)
-
 
 run: $(PROG)
 	./$(PROG)
