@@ -1,48 +1,69 @@
-NAME   = uae4all.dge
-O      = o
-RM     = rm -f
+TARGET			= uae4all
+VERSION			?= $(shell date +%Y-%m-%d\ %H:%M)
+ASSETSDIR		= assets
+OPKG_ASSETSDIR	= opkg_assets
+LINK			= $(TARGET).lnk
+DESTDIR			= emus
+SECTION			= emulators
+ALIASES			= aliases.txt
 
-CHAINPREFIX := /opt/mipsel-linux-uclibc
-CROSS_COMPILE := $(CHAINPREFIX)/usr/bin/mipsel-linux-
+NAME	= $(TARGET)
+O		= o
+RM 		= rm -f
+
+PROG		= $(NAME)
+RELEASEDIR	= package
+DATADIR		= data
+OPKDIR		= opk_data
+
+CHAINPREFIX ?= /opt/miyoo
+CROSS_COMPILE ?= $(CHAINPREFIX)/usr/bin/arm-linux-
 
 CC = $(CROSS_COMPILE)gcc
 CXX = $(CROSS_COMPILE)g++
 STRIP = $(CROSS_COMPILE)strip
 
-SYSROOT     := $(shell $(CC) --print-sysroot)
-SDL_CFLAGS  := $(shell $(SYSROOT)/usr/bin/sdl-config --cflags)
-SDL_LIBS    := $(shell $(SYSROOT)/usr/bin/sdl-config --libs)
-
-PROG		= $(NAME)
-RELEASEDIR	= uae4all
-DATADIR		= data
-OPKDIR		= opk_data
+SYSROOT		:= $(shell $(CC) --print-sysroot)
+PKGS		:= sdl SDL_image zlib
+PKGS_CFLAGS	:= $(shell $(SYSROOT)/../../usr/bin/pkg-config --cflags $(PKGS))
+PKGS_LIBS	:= $(shell $(SYSROOT)/../../usr/bin/pkg-config --libs $(PKGS))
 
 all: $(PROG)
 
-#FAME_CORE=1
-LIB7Z=1
+# Possible values : 0, YES, APPLY
+PROFILE ?= 0
 
+## either FAME or UAE
+#FAME_CORE=1
+## use 7z savestate compression for *.asf files
+#LIB7Z=1
 HOME_DIR=1
 
-DEFAULT_CFLAGS = -I$(CHAINPREFIX)/usr/include/ $(SDL_CFLAGS) -DRS97
+DEFAULT_CFLAGS = $(PKGS_CFLAGS) -DMIYOO
+LDFLAGS = $(PKGS_LIBS)
 
-LDFLAGS = -lSDL -lSDL_image -lz -lpthread -flto
-# add -lSDL_mixer if -DMENU_MUSIC below
 ifndef FAME_CORE
 LDFLAGS += -lm
 endif
-#-s -static
 
+ifeq ($(PROFILE), YES)
+LDFLAGS		+= -lgcov
+endif
 
-MORE_CFLAGS = -Isrc/ -Isrc/include/ -Isrc/menu -Isrc/vkbd -fomit-frame-pointer  -Wno-unused -Wno-format -DUSE_SDL -DGCCCONSTFUNC="__attribute__((const))" -DUSE_UNDERSCORE -fno-exceptions -DUNALIGNED_PROFITABLE -DREGPARAM="__attribute__((regparm(3)))" -DOPTIMIZED_FLAGS -D__inline__=__inline__ -DSHM_SUPPORT_LINKS=0 -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
+MORE_CFLAGS = -Isrc/ -Isrc/include/ -Isrc/menu -Isrc/vkbd
 
-MORE_CFLAGS += -O3 -flto -mno-shared -pipe -fno-exceptions -fno-rtti
+MORE_CFLAGS += -DUSE_SDL -DDOUBLEBUFFER -DNO_DEFAULT_THROTTLE -DUNALIGNED_PROFITABLE -DREGPARAM="__attribute__((regparm(3)))" -D__inline__=__inline__
+MORE_CFLAGS += -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
+MORE_CFLAGS += -DROM_PATH_PREFIX=\"./\" -DDATA_PREFIX=\"./data/\" -DSAVE_PREFIX=\"./\"
 
-MORE_CFLAGS+= -DROM_PATH_PREFIX=\"./\" -DDATA_PREFIX=\"./data/\" -DSAVE_PREFIX=\"./\"
+OPTIMIZE_CFLAGS = -Ofast -fno-exceptions -fno-rtti -fomit-frame-pointer -Wno-unused -Wno-format
 
-MORE_CFLAGS+= -DDOUBLEBUFFER
-MORE_CFLAGS+= -DNO_DEFAULT_THROTTLE
+ifeq ($(PROFILE), YES)
+OPTIMIZE_CFLAGS		+= -fprofile-generate=/mnt/profile
+else ifeq ($(PROFILE), APPLY)
+OPTIMIZE_CFLAGS		+= -fprofile-use -fbranch-probabilities
+OPTIMIZE_CFLAGS		+= -flto
+endif
 
 #MORE_CFLAGS+= -DSTATUS_ALWAYS
 #MORE_CFLAGS+= -DUSE_MAYBE_BLIT
@@ -70,7 +91,7 @@ MORE_CFLAGS+= -DNO_THREADS
 #MORE_CFLAGS+= -DDEBUG_TIMESLICE
 
 MORE_CFLAGS+= -DEMULATED_JOYSTICK
-MORE_CFLAGS+= -DFAME_INTERRUPTS_PATCH
+#MORE_CFLAGS+= -DFAME_INTERRUPTS_PATCH
 #MORE_CFLAGS+= -DFAME_INTERRUPTS_SECURE_PATCH
 #MORE_CFLAGS+= -DSECURE_BLITTER
 
@@ -104,10 +125,9 @@ MORE_CFLAGS+= -DFAME_INTERRUPTS_PATCH
 #MORE_CFLAGS+= -DAUTO_PROFILER=4000
 #MORE_CFLAGS+= -DMAX_AUTO_PROFILER=5000
 
-
 #MORE_CFLAGS+= -DPROFILER_UAE4ALL
 
-CFLAGS  = $(DEFAULT_CFLAGS) $(MORE_CFLAGS)
+CFLAGS  = $(DEFAULT_CFLAGS) $(MORE_CFLAGS) $(OPTIMIZE_CFLAGS)
 
 OBJS =	\
 	src/savestate.o \
@@ -176,8 +196,8 @@ OBJS+= \
 endif
 
 ifdef FAME_CORE
-#CFLAGS+=-DUSE_FAME_CORE -DUSE_FAME_CORE_C -DFAME_INLINE_LOOP -DFAME_IRQ_CLOCKING -DFAME_CHECK_BRANCHES -DFAME_EMULATE_TRACE -DFAME_DIRECT_MAPPING -DFAME_BYPASS_TAS_WRITEBACK -DFAME_ACCURATE_TIMING -DFAME_GLOBAL_CONTEXT -DFAME_FETCHBITS=8 -DFAME_DATABITS=8 -DFAME_GOTOS -DFAME_EXTRA_INLINE=__inline__ -DINLINE=__inline__ -DFAME_NO_RESTORE_PC_MASKED_BITS
 CFLAGS+=-DUSE_FAME_CORE -DUSE_FAME_CORE_C -DFAME_IRQ_CLOCKING -DFAME_CHECK_BRANCHES -DFAME_EMULATE_TRACE -DFAME_DIRECT_MAPPING -DFAME_BYPASS_TAS_WRITEBACK -DFAME_ACCURATE_TIMING -DFAME_GLOBAL_CONTEXT -DFAME_FETCHBITS=8 -DFAME_DATABITS=8 -DFAME_GOTOS -DFAME_EXTRA_INLINE=__inline__ -DINLINE=__inline__ -DFAME_NO_RESTORE_PC_MASKED_BITS
+#CFLAGS+-DFAME_INLINE_LOOP
 src/m68k/fame/famec.o: src/m68k/fame/famec.cpp
 OBJS += src/m68k/fame/famec.o src/m68k/fame/m68k_intrf.o
 else
@@ -188,33 +208,54 @@ OBJS += \
 	src/m68k/uae/fpp.o \
 	src/m68k/uae/cpustbl.o \
 	src/m68k/uae/cpuemu.o
-
 endif
 
 CPPFLAGS  = $(CFLAGS)
 
-$(PROG): $(OBJS) 
+$(PROG): $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LDFLAGS)
 	$(STRIP) $(PROG)
-
 
 run: $(PROG)
 	./$(PROG)
 
-ipk: $(PROG)
+package: $(PROG)
 	@mkdir -p $(RELEASEDIR)
-	@rm -rf /tmp/.uae4all-ipk/ && mkdir -p /tmp/.uae4all-ipk/root/home/retrofw/emus/uae4all /tmp/.uae4all-ipk/root/home/retrofw/apps/gmenu2x/sections/emulators /tmp/.uae4all-ipk/root/home/retrofw/apps/gmenu2x/sections/emulators.systems
-	@cp -R $(DATADIR) ./docs/ /tmp/.uae4all-ipk/root/home/retrofw/emus/uae4all
-	@rm /tmp/.uae4all-ipk/root/home/retrofw/emus/uae4all/$(DATADIR)/music.mod /tmp/.uae4all-ipk/root/home/retrofw/emus/uae4all/$(DATADIR)/click.wav
-	@cp $(PROG) $(OPKDIR)/uae4all.png $(OPKDIR)/readme.man.txt /tmp/.uae4all-ipk/root/home/retrofw/emus/uae4all
-	@cp $(OPKDIR)/uae4all.lnk /tmp/.uae4all-ipk/root/home/retrofw/apps/gmenu2x/sections/emulators
-	@cp $(OPKDIR)/amiga.uae4all.lnk /tmp/.uae4all-ipk/root/home/retrofw/apps/gmenu2x/sections/emulators.systems
-	@sed "s/^Version:.*/Version: $$(date +%Y%m%d)/" $(OPKDIR)/control > /tmp/.uae4all-ipk/control
-	@cp $(OPKDIR)/conffiles /tmp/.uae4all-ipk/
-	@tar --owner=0 --group=0 -czvf /tmp/.uae4all-ipk/control.tar.gz -C /tmp/.uae4all-ipk/ control conffiles
-	@tar --owner=0 --group=0 -czvf /tmp/.uae4all-ipk/data.tar.gz -C /tmp/.uae4all-ipk/root/ .
-	@echo 2.0 > /tmp/.uae4all-ipk/debian-binary
-	@ar r $(RELEASEDIR)/uae4all.ipk /tmp/.uae4all-ipk/control.tar.gz /tmp/.uae4all-ipk/data.tar.gz /tmp/.uae4all-ipk/debian-binary
+	@cp *$(TARGET) $(RELEASEDIR)/
+	@mkdir -p $(RELEASEDIR)/mnt/$(DESTDIR)/$(TARGET)
+	@mkdir -p $(RELEASEDIR)/mnt/gmenu2x/sections/$(SECTION)
+	@mv $(RELEASEDIR)/*$(TARGET) $(RELEASEDIR)/mnt/$(DESTDIR)/$(TARGET)/
+	@cp -r $(ASSETSDIR)/* $(RELEASEDIR)/mnt/$(DESTDIR)/$(TARGET)
+	@cp $(LINK) $(RELEASEDIR)/mnt/gmenu2x/sections/$(SECTION)
+	-@cp $(OPKG_ASSETSDIR)/$(ALIASES) $(RELEASEDIR)/mnt/$(DESTDIR)/$(TARGET)
+
+zip: package
+	@cd $(RELEASEDIR) && zip -rq $(TARGET)$(VERSION).zip ./* && mv *.zip ..
+	@rm -rf $(RELEASEDIR)
+
+ipk: package
+	@mkdir -p $(RELEASEDIR)/data
+	@mv $(RELEASEDIR)/mnt $(RELEASEDIR)/data/
+	@cp -r $(OPKG_ASSETSDIR)/CONTROL $(RELEASEDIR)
+	@sed "s/^Version:.*/Version: $(VERSION)/" $(OPKG_ASSETSDIR)/CONTROL/control > $(RELEASEDIR)/CONTROL/control
+	@echo 2.0 > $(RELEASEDIR)/debian-binary
+	@tar --owner=0 --group=0 -czvf $(RELEASEDIR)/data.tar.gz -C $(RELEASEDIR)/data/ . >/dev/null 2>&1
+	@tar --owner=0 --group=0 -czvf $(RELEASEDIR)/control.tar.gz -C $(RELEASEDIR)/CONTROL/ . >/dev/null 2>&1
+	@ar r $(TARGET).ipk $(RELEASEDIR)/control.tar.gz $(RELEASEDIR)/data.tar.gz $(RELEASEDIR)/debian-binary
+	@rm -rf $(RELEASEDIR)
+
+gm2xpkg-ipk: $(PROG)
+	gm2xpkg -i -f pkg.cfg
+
+opk: $(PROG)
+	mkdir -p $(RELEASEDIR)
+	cp $(PROG) $(RELEASEDIR)
+	cp -R $(DATADIR) $(RELEASEDIR)
+	rm $(RELEASEDIR)/$(DATADIR)/music.mod
+	rm $(RELEASEDIR)/$(DATADIR)/click.wav
+	cp $(OPKDIR)/* $(RELEASEDIR)
+	cp -R ./docs/ $(RELEASEDIR)
+	mksquashfs $(RELEASEDIR) uae4all.opk -all-root -noappend -no-exports -no-xattrs
 
 almostclean:
 	cp src/m68k/fame/famec.o src/m68k/fame/famec.preserved.o
@@ -224,3 +265,5 @@ almostclean:
 clean:
 	$(RM) $(PROG) $(OBJS)
 	rm -rf $(RELEASEDIR)
+	rm -f *.ipk
+	rm -f *.zip

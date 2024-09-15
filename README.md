@@ -28,12 +28,20 @@ This revision replaces FAME m68k emulation library with UAE core. Major advantag
 ## Compiling instructions
 1. Set up your environment with current MiyooCFW toolchain (preferably in Debian 9 distro)
 2. Copy this repo & compile
+- binary:
 ``` 
 git clone https://github.com/Apaczer/uae4all
 cd uae4all
 make clean
-make -f Makefile.miyoo
+make -j$(nproc)
 ```
+- OR distribution IPK package:
+```
+make -j$(nproc) gm2xpkg-ipk
+```
+
+NOTE: Use `CROSS_COMPILE=""` for general UNIX like build
+
 ## PGO instructions :
 All builds (from release section) have Profile-Guided Optimization applied, which gives approx 5-10% performance boost.
 - set ``PROFILE = YES`` in Makefile
