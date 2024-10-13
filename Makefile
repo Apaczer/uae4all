@@ -72,6 +72,9 @@ OPTIMIZE_CFLAGS		+= -fprofile-use -fbranch-probabilities
 OPTIMIZE_CFLAGS		+= -flto
 endif
 
+#omits compile error on newer gcc
+MORE_CFLAGS += -fpermissive
+
 #MORE_CFLAGS+= -DSTATUS_ALWAYS
 #MORE_CFLAGS+= -DUSE_MAYBE_BLIT
 #MORE_CFLAGS+= -DUSE_BLITTER_DELAYED
