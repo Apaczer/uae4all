@@ -40,7 +40,7 @@ make -j$(nproc)
 make -j$(nproc) gm2xpkg-ipk
 ```
 
-NOTE: Use `CROSS_COMPILE=""` for general UNIX like build
+NOTE: Use `LINUX="YES"` for native unix build
 
 ## PGO instructions :
 All builds (from release section) have Profile-Guided Optimization applied, which gives approx 5-10% performance boost.

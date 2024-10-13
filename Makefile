@@ -16,8 +16,10 @@ RELEASEDIR	= package
 DATADIR		= data
 OPKDIR		= opk_data
 
+ifneq ($(LINUX), YES)
 CHAINPREFIX ?= /opt/miyoo
 CROSS_COMPILE ?= $(CHAINPREFIX)/usr/bin/arm-linux-
+endif
 
 CC = $(CROSS_COMPILE)gcc
 CXX = $(CROSS_COMPILE)g++
@@ -54,7 +56,12 @@ MORE_CFLAGS = -Isrc/ -Isrc/include/ -Isrc/menu -Isrc/vkbd
 
 MORE_CFLAGS += -DUSE_SDL -DDOUBLEBUFFER -DNO_DEFAULT_THROTTLE -DUNALIGNED_PROFITABLE -DREGPARAM="__attribute__((regparm(3)))" -D__inline__=__inline__
 MORE_CFLAGS += -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
-MORE_CFLAGS += -DROM_PATH_PREFIX=\"./\" -DDATA_PREFIX=\"./data/\" -DSAVE_PREFIX=\"./\"
+MORE_CFLAGS += -DROM_PATH_PREFIX=\"./\" -DSAVE_PREFIX=\"./\"
+ifeq ($(LINUX), YES)
+MORE_CFLAGS += -DDATA_PREFIX=\"./assets/data/\"
+else
+MORE_CFLAGS += -DDATA_PREFIX=\"./data/\"
+endif
 
 OPTIMIZE_CFLAGS = -Ofast -fno-exceptions -fno-rtti -fomit-frame-pointer -Wno-unused -Wno-format
 
