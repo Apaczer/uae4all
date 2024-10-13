@@ -1580,7 +1580,11 @@ uae_u8 *restore_disk(int num,uae_u8 *src)
 	    check_prefs_changed_cpu();
     }
 
+#ifdef USE_CAST_UNSIGNED
     src = (uae_u8 *)(((unsigned)src)+strlen((char *)src) + 1);
+#else
+    src = (uae_u8 *)((src)+strlen((char *)src) + 1);
+#endif
 
     return src;
 }
@@ -1615,7 +1619,11 @@ uae_u8 *save_disk(int num,int *len)
 	dst[0]=dst[1]=0;
     }
 
+#ifdef USE_CAST_UNSIGNED
     dst = (uae_u8 *)(((unsigned)dst)+strlen((char *)dst) + 1);
+#else
+    dst = (uae_u8 *)((dst)+strlen((char *)dst) + 1);
+#endif
     *len = dst - dstbak;
     return dstbak;
 }

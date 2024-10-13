@@ -72,6 +72,7 @@ static const int aprox_vol[128]= {-16, 0, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4,
 	sndbufpt = (uae_u16 *)(((uae_u8 *)sndbufpt) + 2); \
 }
 
+#ifdef USE_CAST_UNSIGNED
 #define CHECK_SOUND_BUFFERS() \
 { \
     if ((unsigned)sndbufpt - (unsigned)render_sndbuff >= SNDBUFFER_LEN) { \
@@ -79,6 +80,15 @@ static const int aprox_vol[128]= {-16, 0, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4,
     } \
 } \
 
+#else
+#define CHECK_SOUND_BUFFERS() \
+{ \
+    if (sndbufpt - render_sndbuff >= SNDBUFFER_LEN) { \
+	finish_sound_buffer (); \
+    } \
+} \
+
+#endif
 
 #define SAMPLE_HANDLER_AHI \
 	{ \
