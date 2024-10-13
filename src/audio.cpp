@@ -74,7 +74,7 @@ static const int aprox_vol[128]= {-16, 0, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4,
 
 #define CHECK_SOUND_BUFFERS() \
 { \
-    if ((unsigned)sndbufpt - (unsigned)render_sndbuff >= SNDBUFFER_LEN) { \
+    if (sndbufpt - render_sndbuff >= SNDBUFFER_LEN) { \
 	finish_sound_buffer (); \
     } \
 } \

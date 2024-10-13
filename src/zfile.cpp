@@ -371,7 +371,7 @@ size_t uae4all_fread( void *ptr, size_t tam, size_t nmiemb, FILE *flujo)
 		return 0;
 	if (uae4all_disk_pos[i]>=uae4all_disk_len[i])
 		return 0;
-	memcpy(ptr,(void *)(((unsigned)uae4all_disk_memory[i])+((unsigned)uae4all_disk_pos[i])),tam*nmiemb);
+	memcpy(ptr,(void *)((uae4all_disk_memory[i])+(uae4all_disk_pos[i])),tam*nmiemb);
 	uae4all_disk_pos[i]+=tam*nmiemb;
 	return nmiemb;
 }
@@ -386,7 +386,7 @@ size_t uae4all_fwrite( void *ptr, size_t tam, size_t nmiemb, FILE *flujo)
 		return 0;
 	if (uae4all_disk_pos[i]>=uae4all_disk_len[i])
 		return 0;
-	memcpy((void *)(((unsigned)uae4all_disk_memory[i])+((unsigned)uae4all_disk_pos[i])),ptr,tam*nmiemb);
+	memcpy((void *)((uae4all_disk_memory[i])+(uae4all_disk_pos[i])),ptr,tam*nmiemb);
 	uae4all_disk_pos[i]+=tam*nmiemb;
 	uae4all_disk_writed[i]=1;
 	return nmiemb;
@@ -504,7 +504,7 @@ size_t uae4all_rom_fread(void *ptr, size_t tam, size_t nmiemb, FILE *flujo)
 		return 0;
 	if (uae4all_rom_pos>=uae4all_rom_len)
 		return 0;
-	memcpy(ptr,(void *)(((unsigned)uae4all_rom_memory)+((unsigned)uae4all_rom_pos)),tam*nmiemb);
+	memcpy(ptr,(void *)((uae4all_rom_memory)+(uae4all_rom_pos)),tam*nmiemb);
 
 	uae4all_rom_fseek(flujo,tam*nmiemb,SEEK_CUR);
 	return (uae4all_rom_pos-rpos)/tam;
