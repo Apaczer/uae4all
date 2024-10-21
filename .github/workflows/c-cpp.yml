@@ -6,14 +6,14 @@ on: [push, pull_request]
 jobs:   
   build-modern:
     name: UAE4ALL for MiyooCFW (uClibc)
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
-      image: nfriedly/miyoo-toolchain:steward
+      image: miyoocfw/toolchain-shared-uclibc
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: build
-      run: make -f Makefile.miyoo
-    - uses: actions/upload-artifact@v3
+      run: make -j$(nproc)
+    - uses: actions/upload-artifact@v4
       with:
         name: UAE4ALL binary
         path: uae4all
