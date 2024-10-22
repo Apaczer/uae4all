@@ -3,7 +3,22 @@ name: CI Build
 
 on: [push, pull_request]
 
-jobs:   
+jobs:
+  build-native:
+    name: UAE4ALL for PC (Linux)
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: build
+      run: |
+        sudo apt-get update && sudo apt-get install -y build-essential libsdl1.2-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libbz2-dev
+        make -j$(nproc) LINUX=YES
+    - uses: actions/upload-artifact@v4
+      with:
+        name: UAE4ALL (Linux)
+        path: uae4all
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+
   build-modern:
     name: UAE4ALL for MiyooCFW (uClibc)
     runs-on: ubuntu-22.04
@@ -15,6 +30,6 @@ jobs:
       run: make -j$(nproc)
     - uses: actions/upload-artifact@v4
       with:
-        name: UAE4ALL binary
+        name: UAE4ALL (MiyooCFW)
         path: uae4all
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
