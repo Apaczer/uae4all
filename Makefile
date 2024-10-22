@@ -63,6 +63,10 @@ else
 MORE_CFLAGS += -DDATA_PREFIX=\"./data/\"
 endif
 
+ifeq ($(DEBUG),YES)
+MORE_CFLAGS += -g3
+endif
+
 OPTIMIZE_CFLAGS = -Ofast -fno-exceptions -fno-rtti -fomit-frame-pointer -Wno-unused -Wno-format
 
 ifeq ($(PROFILE), YES)
@@ -225,7 +229,9 @@ CPPFLAGS  = $(CFLAGS)
 
 $(PROG): $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LDFLAGS)
+ifneq ($(DEBUG),YES)
 	$(STRIP) $(PROG)
+endif
 
 run: $(PROG)
 	./$(PROG)
