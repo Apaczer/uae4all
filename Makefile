@@ -26,9 +26,10 @@ CXX = $(CROSS_COMPILE)g++
 STRIP = $(CROSS_COMPILE)strip
 
 SYSROOT		:= $(shell $(CC) --print-sysroot)
-PKGS		:= sdl SDL_image zlib
-PKGS_CFLAGS	:= $(shell $(SYSROOT)/../../usr/bin/pkg-config --cflags $(PKGS))
-PKGS_LIBS	:= $(shell $(SYSROOT)/../../usr/bin/pkg-config --libs $(PKGS))
+
+PKGS		= sdl SDL_image zlib SDL_mixer
+PKGS_CFLAGS	= $(shell $(SYSROOT)/../../usr/bin/pkg-config --cflags $(PKGS))
+PKGS_LIBS	= $(shell $(SYSROOT)/../../usr/bin/pkg-config --libs $(PKGS))
 
 all: $(PROG)
 
@@ -88,7 +89,7 @@ MORE_CFLAGS+= -DUSE_BLIT_MASKTABLE
 #MORE_CFLAGS+= -DUSE_ALL_LINES
 #MORE_CFLAGS+= -DUSE_LINESTATE
 #MORE_CFLAGS+= -DUSE_DISK_UPDATE_PER_LINE
-#MORE_CFLAGS+= -DMENU_MUSIC
+MORE_CFLAGS+= -DMENU_MUSIC
 #MORE_CFLAGS+= -DUSE_AUTOCONFIG
 #MORE_CFLAGS+= -DUAE_CONSOLE
 

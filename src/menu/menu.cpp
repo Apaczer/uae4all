@@ -4,7 +4,9 @@
 #include "config.h"
 #include "menu.h"
 
+#ifdef MENU_MUSIC
 #include <SDL_mixer.h>
+#endif
 
 #include "sysconfig.h"
 #include "sysdeps.h"
