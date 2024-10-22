@@ -198,7 +198,7 @@ void text_flip(void)
 	SDL_Flip(prSDLScreen);
 }
 
-void init_text(int splash)
+void init_text(int splash, int args)
 {
 	SDL_Surface *tmp;
 
@@ -387,6 +387,8 @@ void init_text(int splash)
 	}
 	else
 	{
+		if (args)
+			uae4all_init_sound();
 		SDL_FillRect(text_screen,NULL,0xFFFFFFFF);
 		text_flip();
 		uae4all_resume_music();

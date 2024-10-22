@@ -287,7 +287,10 @@ int gui_init (int argc, char **argv)
 	#endif
 
 	vkbd_init();
-	init_text(0);
+	if (argc == 1)
+		init_text(1,0);
+	else
+		init_text(0,1);
 	loadConfig();
 	// Display the menu if no parameter exists
 	if (argc == 1)
@@ -463,7 +466,7 @@ static void goMenu(void)
 #endif
    emulating=1;
 //   vkbd_quit();
-   init_text(0);
+   init_text(0,0);
    pause_sound();
    menu_raise();
    exitmode=run_mainMenu();

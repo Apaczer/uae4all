@@ -26,7 +26,7 @@ enum DiskOrder
 };
 
 void text_draw_background();
-void init_text(int splash);
+void init_text(int splash, int args);
 void quit_text(void);
 void write_text(int x, int y, const char *str);
 void write_text_inv(int x, int y, const char *str);
