@@ -714,6 +714,14 @@ break;
 		    rEvent.key.keysym.sym=vkbd_button3;
 	    else if ((rEvent.jbutton.button==1) && (vkbd_button4!=(SDLKey)0))
 		    rEvent.key.keysym.sym=vkbd_button4;
+	    else if ((rEvent.jbutton.button==7) && (vkbd_button5!=(SDLKey)0))
+		    rEvent.key.keysym.sym=vkbd_button5;
+	    else if ((rEvent.jbutton.button==8) && (vkbd_button6!=(SDLKey)0))
+		    rEvent.key.keysym.sym=vkbd_button6;
+	    else if ((rEvent.jbutton.button==9) && (vkbd_button7!=(SDLKey)0))
+		    rEvent.key.keysym.sym=vkbd_button7;
+	    else if ((rEvent.jbutton.button==10) && (vkbd_button8!=(SDLKey)0))
+		    rEvent.key.keysym.sym=vkbd_button8;
 	    else
 	    	break;
         case SDL_KEYDOWN:
@@ -721,20 +729,43 @@ break;
 	    dbg("Event: key down");
 #endif
 #ifndef DREAMCAST
-	    if ((rEvent.key.keysym.sym!=SDLK_F11)&&(rEvent.key.keysym.sym!=SDLK_F12)&&(rEvent.key.keysym.sym!=SDLK_PAGEUP)
+	    if ((rEvent.key.keysym.sym!=SDLK_F11)&&(rEvent.key.keysym.sym!=SDLK_F12)
 #ifdef EMULATED_JOYSTICK
-		&&(rEvent.key.keysym.sym!=SDLK_ESCAPE)&&((rEvent.key.keysym.sym!=SDLK_SPACE)||((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode)))&&(rEvent.key.keysym.sym!=SDLK_LCTRL)&&((rEvent.key.keysym.sym!=SDLK_LALT)||((rEvent.key.keysym.sym==SDLK_LALT)&&(vkbd_button2!=(SDLKey)0)&&(!vkbd_mode)))&&(rEvent.key.keysym.sym!=SDLK_RETURN)&&((rEvent.key.keysym.sym!=SDLK_LSHIFT)||((rEvent.key.keysym.sym==SDLK_LSHIFT)&&(vkbd_button4!=(SDLKey)0)&&(!vkbd_mode)))&&(rEvent.key.keysym.sym!=SDLK_TAB)&&(rEvent.key.keysym.sym!=SDLK_BACKSPACE)&&(rEvent.key.keysym.sym!=SDLK_UP)&&(rEvent.key.keysym.sym!=SDLK_DOWN)&&(rEvent.key.keysym.sym!=SDLK_LEFT)&&(rEvent.key.keysym.sym!=SDLK_RIGHT)
+		&&(rEvent.key.keysym.sym!=SDLK_ESCAPE)&&
+		((rEvent.key.keysym.sym!=SDLK_SPACE)||((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode)))&&
+		(rEvent.key.keysym.sym!=SDLK_LCTRL)&&
+		((rEvent.key.keysym.sym!=SDLK_LALT)||((rEvent.key.keysym.sym==SDLK_LALT)&&(vkbd_button2!=(SDLKey)0)&&(!vkbd_mode)))&&
+		(rEvent.key.keysym.sym!=SDLK_RETURN)&&
+		((rEvent.key.keysym.sym!=SDLK_LSHIFT)||((rEvent.key.keysym.sym==SDLK_LSHIFT)&&(vkbd_button4!=(SDLKey)0)&&(!vkbd_mode)))&&
+		((rEvent.key.keysym.sym!=SDLK_PAGEUP)||((rEvent.key.keysym.sym==SDLK_PAGEUP)&&(vkbd_button5!=(SDLKey)0)&&(!vkbd_mode)))&&
+		((rEvent.key.keysym.sym!=SDLK_PAGEDOWN)||((rEvent.key.keysym.sym==SDLK_PAGEDOWN)&&(vkbd_button6!=(SDLKey)0)&&(!vkbd_mode)))&&
+		((rEvent.key.keysym.sym!=SDLK_RALT)||((rEvent.key.keysym.sym==SDLK_RALT)&&(vkbd_button7!=(SDLKey)0)&&(!vkbd_mode)))&&
+		((rEvent.key.keysym.sym!=SDLK_RSHIFT)||((rEvent.key.keysym.sym==SDLK_RSHIFT)&&(vkbd_button8!=(SDLKey)0)&&(!vkbd_mode)))&&
+		(rEvent.key.keysym.sym!=SDLK_TAB)&&(rEvent.key.keysym.sym!=SDLK_BACKSPACE)&&
+		(rEvent.key.keysym.sym!=SDLK_UP)&&(rEvent.key.keysym.sym!=SDLK_DOWN)&&(rEvent.key.keysym.sym!=SDLK_LEFT)&&(rEvent.key.keysym.sym!=SDLK_RIGHT)
 #endif
 			    )
 	    {
 		    if ((rEvent.key.keysym.sym==SDLK_LALT)&&(vkbd_button2!=(SDLKey)0)&&(!vkbd_mode))
 			    rEvent.key.keysym.sym=vkbd_button2;
 		    else
+		    if ((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode))
+			    rEvent.key.keysym.sym=vkbd_button3;
+		    else
 		    if ((rEvent.key.keysym.sym==SDLK_LSHIFT)&&(vkbd_button4!=(SDLKey)0)&&(!vkbd_mode))
 			    rEvent.key.keysym.sym=vkbd_button4;
 		    else
-		    if ((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode))
-			    rEvent.key.keysym.sym=vkbd_button3;
+		    if ((rEvent.key.keysym.sym==SDLK_PAGEUP)&&(vkbd_button5!=(SDLKey)0)&&(!vkbd_mode))
+			    rEvent.key.keysym.sym=vkbd_button5;
+		    else
+		    if ((rEvent.key.keysym.sym==SDLK_PAGEDOWN)&&(vkbd_button6!=(SDLKey)0)&&(!vkbd_mode))
+			    rEvent.key.keysym.sym=vkbd_button6;
+		    else
+		    if ((rEvent.key.keysym.sym==SDLK_RALT)&&(vkbd_button7!=(SDLKey)0)&&(!vkbd_mode))
+			    rEvent.key.keysym.sym=vkbd_button7;
+		    else
+		    if ((rEvent.key.keysym.sym==SDLK_RSHIFT)&&(vkbd_button8!=(SDLKey)0)&&(!vkbd_mode))
+			    rEvent.key.keysym.sym=vkbd_button8;
 #else
 	    {
 #endif
@@ -757,6 +788,14 @@ break;
 		    rEvent.key.keysym.sym=vkbd_button3;
 	    else if ((rEvent.jbutton.button==1) && (vkbd_button4!=(SDLKey)0))
 		    rEvent.key.keysym.sym=vkbd_button4;
+	    else if ((rEvent.jbutton.button==7) && (vkbd_button5!=(SDLKey)0))
+		    rEvent.key.keysym.sym=vkbd_button5;
+	    else if ((rEvent.jbutton.button==8) && (vkbd_button6!=(SDLKey)0))
+		    rEvent.key.keysym.sym=vkbd_button6;
+	    else if ((rEvent.jbutton.button==9) && (vkbd_button7!=(SDLKey)0))
+		    rEvent.key.keysym.sym=vkbd_button7;
+	    else if ((rEvent.jbutton.button==10) && (vkbd_button8!=(SDLKey)0))
+		    rEvent.key.keysym.sym=vkbd_button8;
 	    else
 	    	break;
 	case SDL_KEYUP:
@@ -764,20 +803,43 @@ break;
 	    dbg("Event: key up");
 #endif
 #ifndef DREAMCAST
-	    if ((rEvent.key.keysym.sym!=SDLK_F11)&&(rEvent.key.keysym.sym!=SDLK_F12)&&(rEvent.key.keysym.sym!=SDLK_PAGEUP)
+	    if ((rEvent.key.keysym.sym!=SDLK_F11)&&(rEvent.key.keysym.sym!=SDLK_F12)
 #ifdef EMULATED_JOYSTICK
-		&&(rEvent.key.keysym.sym!=SDLK_ESCAPE)&&((rEvent.key.keysym.sym!=SDLK_SPACE)||((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode)))&&(rEvent.key.keysym.sym!=SDLK_LCTRL)&&((rEvent.key.keysym.sym!=SDLK_LALT)||((rEvent.key.keysym.sym==SDLK_LALT)&&(vkbd_button2!=(SDLKey)0)&&(!vkbd_mode)))&&(rEvent.key.keysym.sym!=SDLK_RETURN)&&((rEvent.key.keysym.sym!=SDLK_LSHIFT)||((rEvent.key.keysym.sym==SDLK_LSHIFT)&&(vkbd_button4!=(SDLKey)0)&&(!vkbd_mode)))&&(rEvent.key.keysym.sym!=SDLK_TAB)&&(rEvent.key.keysym.sym!=SDLK_BACKSPACE)&&(rEvent.key.keysym.sym!=SDLK_UP)&&(rEvent.key.keysym.sym!=SDLK_DOWN)&&(rEvent.key.keysym.sym!=SDLK_LEFT)&&(rEvent.key.keysym.sym!=SDLK_RIGHT)
+		&&(rEvent.key.keysym.sym!=SDLK_ESCAPE)&&
+		((rEvent.key.keysym.sym!=SDLK_SPACE)||((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode)))&&
+		(rEvent.key.keysym.sym!=SDLK_LCTRL)&&
+		((rEvent.key.keysym.sym!=SDLK_LALT)||((rEvent.key.keysym.sym==SDLK_LALT)&&(vkbd_button2!=(SDLKey)0)&&(!vkbd_mode)))&&
+		(rEvent.key.keysym.sym!=SDLK_RETURN)&&
+		((rEvent.key.keysym.sym!=SDLK_LSHIFT)||((rEvent.key.keysym.sym==SDLK_LSHIFT)&&(vkbd_button4!=(SDLKey)0)&&(!vkbd_mode)))&&
+		((rEvent.key.keysym.sym!=SDLK_PAGEUP)||((rEvent.key.keysym.sym==SDLK_PAGEUP)&&(vkbd_button5!=(SDLKey)0)&&(!vkbd_mode)))&&
+		((rEvent.key.keysym.sym!=SDLK_PAGEDOWN)||((rEvent.key.keysym.sym==SDLK_PAGEDOWN)&&(vkbd_button6!=(SDLKey)0)&&(!vkbd_mode)))&&
+		((rEvent.key.keysym.sym!=SDLK_RALT)||((rEvent.key.keysym.sym==SDLK_RALT)&&(vkbd_button7!=(SDLKey)0)&&(!vkbd_mode)))&&
+		((rEvent.key.keysym.sym!=SDLK_RSHIFT)||((rEvent.key.keysym.sym==SDLK_RSHIFT)&&(vkbd_button8!=(SDLKey)0)&&(!vkbd_mode)))&&
+		(rEvent.key.keysym.sym!=SDLK_TAB)&&(rEvent.key.keysym.sym!=SDLK_BACKSPACE)&&
+		(rEvent.key.keysym.sym!=SDLK_UP)&&(rEvent.key.keysym.sym!=SDLK_DOWN)&&(rEvent.key.keysym.sym!=SDLK_LEFT)&&(rEvent.key.keysym.sym!=SDLK_RIGHT)
 #endif
 			    )
 	    {
 		    if ((rEvent.key.keysym.sym==SDLK_LALT)&&(vkbd_button2!=(SDLKey)0)&&(!vkbd_mode))
 			    rEvent.key.keysym.sym=vkbd_button2;
 		    else
+		    if ((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode))
+			    rEvent.key.keysym.sym=vkbd_button3;
+		    else
 		    if ((rEvent.key.keysym.sym==SDLK_LSHIFT)&&(vkbd_button4!=(SDLKey)0)&&(!vkbd_mode))
 			    rEvent.key.keysym.sym=vkbd_button4;
 		    else
-		    if ((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode))
-			    rEvent.key.keysym.sym=vkbd_button3;
+		    if ((rEvent.key.keysym.sym==SDLK_PAGEUP)&&(vkbd_button5!=(SDLKey)0)&&(!vkbd_mode))
+			    rEvent.key.keysym.sym=vkbd_button5;
+		    else
+		    if ((rEvent.key.keysym.sym==SDLK_PAGEDOWN)&&(vkbd_button6!=(SDLKey)0)&&(!vkbd_mode))
+			    rEvent.key.keysym.sym=vkbd_button6;
+		    else
+		    if ((rEvent.key.keysym.sym==SDLK_RALT)&&(vkbd_button7!=(SDLKey)0)&&(!vkbd_mode))
+			    rEvent.key.keysym.sym=vkbd_button7;
+		    else
+		    if ((rEvent.key.keysym.sym==SDLK_RSHIFT)&&(vkbd_button8!=(SDLKey)0)&&(!vkbd_mode))
+			    rEvent.key.keysym.sym=vkbd_button8;
 #else
 	    {
 #endif

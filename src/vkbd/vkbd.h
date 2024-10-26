@@ -11,6 +11,10 @@
 #define VKBD_BUTTON2	32
 #define VKBD_BUTTON3	64
 #define VKBD_BUTTON4	128
+#define VKBD_BUTTON5	256
+#define VKBD_BUTTON6	512
+#define VKBD_BUTTON7	1024
+#define VKBD_BUTTON8	2048
 
 int vkbd_init(void);
 void vkbd_quit(void);
@@ -26,3 +30,7 @@ extern int vkbd_keysave;
 extern SDLKey vkbd_button2;
 extern SDLKey vkbd_button3;
 extern SDLKey vkbd_button4;
+extern SDLKey vkbd_button5;
+extern SDLKey vkbd_button6;
+extern SDLKey vkbd_button7;
+extern SDLKey vkbd_button8;

@@ -76,7 +76,9 @@ void read_joystick(int nr, unsigned int *dir, int *button)
 	*button |= (SDL_JoystickGetButton (joy, i) & 1) << i;
      }
 #ifdef EMULATED_JOYSTICK
-    extern int emulated_left, emulated_right, emulated_top, emulated_bot, emulated_button1, emulated_button2, emulated_mouse_button1, emulated_mouse_button2;
+    extern int emulated_left, emulated_right, emulated_top, emulated_bot,
+	emulated_button1, emulated_button2, emulated_button3, emulated_button4, emulated_button5, emulated_button6,
+	emulated_mouse_button1, emulated_mouse_button2;
     if (nr)
     {
 	left|=emulated_left;
@@ -152,6 +154,30 @@ void read_joystick(int nr, unsigned int *dir, int *button)
 	else if (SDL_JoystickGetButton(joy,1)&1)
 #endif
 		vkbd_move=VKBD_BUTTON4;
+#ifndef DREAMCAST
+	else if (emulated_button3)
+#else
+	else if (SDL_JoystickGetButton(joy,7)&1)
+#endif
+		vkbd_move=VKBD_BUTTON5;
+#ifndef DREAMCAST
+	else if (emulated_button4)
+#else
+	else if (SDL_JoystickGetButton(joy,8)&1)
+#endif
+		vkbd_move=VKBD_BUTTON6;
+#ifndef DREAMCAST
+	else if (emulated_button5)
+#else
+	else if (SDL_JoystickGetButton(joy,9)&1)
+#endif
+		vkbd_move=VKBD_BUTTON7;
+#ifndef DREAMCAST
+	else if (emulated_button6)
+#else
+	else if (SDL_JoystickGetButton(joy,10)&1)
+#endif
+		vkbd_move=VKBD_BUTTON8;
 #endif
     }
     else

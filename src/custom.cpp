@@ -3975,6 +3975,10 @@ void custom_prepare_savestate (void)
 extern SDLKey vkbd_button2;
 extern SDLKey vkbd_button3;
 extern SDLKey vkbd_button4;
+extern SDLKey vkbd_button5;
+extern SDLKey vkbd_button6;
+extern SDLKey vkbd_button7;
+extern SDLKey vkbd_button8;
 #define RB restore_u8 ()
 #define RW restore_u16 ()
 #define RL restore_u32 ()
@@ -4101,6 +4105,10 @@ uae_u8 *restore_custom (uae_u8 *src)
     vkbd_button2 = (SDLKey) RW;
     vkbd_button3 = (SDLKey) RW;
     vkbd_button4 = (SDLKey) RW;
+    vkbd_button5 = (SDLKey) RW;
+    vkbd_button6 = (SDLKey) RW;
+    vkbd_button7 = (SDLKey) RW;
+    vkbd_button8 = (SDLKey) RW;
 #endif
     RW;				/* 1E6 ? */
     RW;				/* 1E8 ? */
@@ -4247,6 +4255,10 @@ uae_u8 *save_custom (int *len)
     SW (vkbd_button2);
     SW (vkbd_button3);
     SW (vkbd_button4);
+    SW (vkbd_button5);
+    SW (vkbd_button6);
+    SW (vkbd_button7);
+    SW (vkbd_button8);
 #endif
     SW (0);			/* 1E6 */
     SW (0);			/* 1E8 */

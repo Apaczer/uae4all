@@ -89,6 +89,10 @@ int emulated_top=0;
 int emulated_bot=0;
 int emulated_button1=0;
 int emulated_button2=0;
+int emulated_button3=0;
+int emulated_button4=0;
+int emulated_button5=0;
+int emulated_button6=0;
 int emulated_mouse=0;
 int emulated_mouse_button1=0;
 int emulated_mouse_button2=0;
@@ -737,6 +741,10 @@ void gui_handle_events (void)
 	}
 	emulated_button1=keystate[SDLK_LCTRL];
 	emulated_button2=keystate[SDLK_LALT];
+	emulated_button3=keystate[SDLK_PAGEUP];
+	emulated_button4=keystate[SDLK_PAGEDOWN];
+	emulated_button5=keystate[SDLK_RALT];
+	emulated_button6=keystate[SDLK_RSHIFT];
 	emulated_mouse_button1=keystate[SDLK_SPACE];
 	emulated_mouse_button2=keystate[SDLK_LSHIFT];
 #endif
