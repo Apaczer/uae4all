@@ -39,7 +39,7 @@ PROFILE ?= 0
 ## either FAME or UAE
 #FAME_CORE=1
 ## use 7z savestate compression for *.asf files
-#LIB7Z=1
+LIB7Z=1
 HOME_DIR=1
 
 DEFAULT_CFLAGS = $(PKGS_CFLAGS) -DMIYOO
