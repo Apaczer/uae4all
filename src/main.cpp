@@ -58,6 +58,8 @@ int no_gui = 0;
 int joystickpresent = 0;
 int cloanto_rom = 0;
 
+extern int mainMenu_ram;
+
 struct gui_info gui_data;
 
 char warning_buffer[256];
@@ -143,8 +145,6 @@ void default_prefs ()
 //    strcpy (romfile, "/cdrom/kick.rom");
     strcpy (romfile, "kick.rom");
 #endif
-
-    prefs_chipmem_size=0x00100000;
 }
 
 int quit_program = 0;
@@ -317,6 +317,18 @@ void real_main (int argc, char **argv)
 	write_log ("Sound driver unavailable: Sound output disabled\n");
 	produce_sound = 0;
     }
+
+#ifdef MIYOO
+    prefs_chipmem_size=(!mainMenu_ram ? 0x00100000 : 0x00200000);
+#ifdef DEBUG_RAM
+	if (prefs_chipmem_size==0x00100000)
+		printf ("\nRAM 1MB\n");
+	else
+		printf ("\nRAM 2MB\n");
+#endif
+#else
+    prefs_chipmem_size=0x00100000;
+#endif
 
     /* Install resident module to get 8MB chipmem, if requested */
     rtarea_setup ();
