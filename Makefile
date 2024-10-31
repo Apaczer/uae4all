@@ -73,7 +73,7 @@ OPTIMIZE_CFLAGS = -Ofast -fno-exceptions -fno-rtti -fomit-frame-pointer -Wno-unu
 ifeq ($(PROFILE), YES)
 OPTIMIZE_CFLAGS		+= -fprofile-generate=/mnt/profile
 else ifeq ($(PROFILE), APPLY)
-OPTIMIZE_CFLAGS		+= -fprofile-use -fbranch-probabilities
+OPTIMIZE_CFLAGS		+= -fprofile-use=profile -fbranch-probabilities
 OPTIMIZE_CFLAGS		+= -flto
 endif
 

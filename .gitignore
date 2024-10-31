@@ -1,6 +1,5 @@
 *.o
 *.dge
-*.gcda
 *.opk
 *.ipk
 *.zip
