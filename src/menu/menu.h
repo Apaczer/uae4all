@@ -7,13 +7,13 @@ extern SDL_Surface *prSDLScreen;
 #define MENU_FILE_BACKGROUND DATA_PREFIX "background.bmp"
 #define MENU_FILE_WINDOW DATA_PREFIX "window.bmp"
 #define MENU_FILE_TEXT DATA_PREFIX "text.bmp"
-#ifdef DREAMCAST
+#if defined(DREAMCAST) && !defined(CWD_MENU_DIR)
 #ifdef AUTO_RUN
 #define MENU_DIR_DEFAULT "/cd/"
 #else
 #define MENU_DIR_DEFAULT "/"
 #endif
-#elif defined(MIYOO)
+#elif defined(MIYOO) && !defined(CWD_MENU_DIR)
 #define MENU_DIR_DEFAULT "/mnt/roms/AMIGA"
 #else
 #define MENU_DIR_DEFAULT "."
