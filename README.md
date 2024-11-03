@@ -10,6 +10,15 @@ Stock emulator for 1.3.3 MiyooCFW was based (possibly) of upstream by zear (http
 This revision replaces FAME m68k emulation library with UAE core. Major advantages would be wider game compatibility, however some games may produce fps drawback due to UAE being less optimized.
 
 ### Changelog:
+**UAE4ALL rev. 1.2**
+- added extra "2MB RAM" option in menu (increased memory to enable extra features in particural games)
+- added virtual buttons mapping to L2/R2 and L3/R3 (more keyboard bindings at your will)
+- enabled Music in menu (via SDL_mixer, probably no in-game performance impact)
+
+
+**UAE4ALL rev. 1.1a**
+- added small LOG warning about missing `kick.rom` file when not provided in `/mnt/.uae4all` dir
+
 **UAE4ALL rev. 1.1**
 - the "Status bar" option is now visible in main menu and uae4all.cfg file ( ``STATUS_BAR 0`` or ``-1``)
 - added hotkeys to increase/decrease "Throttle" (SELECT+X/Y)
