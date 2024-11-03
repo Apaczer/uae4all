@@ -14,7 +14,7 @@ extern SDL_Surface *prSDLScreen;
 #define MENU_DIR_DEFAULT "/"
 #endif
 #elif defined(MIYOO)
-#define MENU_DIR_DEFAULT "/media/"
+#define MENU_DIR_DEFAULT "/mnt/roms/AMIGA"
 #else
 #define MENU_DIR_DEFAULT "."
 #endif
