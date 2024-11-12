@@ -69,7 +69,7 @@ ifeq ($(DEBUG),YES)
 MORE_CFLAGS += -g3
 endif
 
-OPTIMIZE_CFLAGS = -Ofast -fno-exceptions -fno-rtti -fomit-frame-pointer -Wno-unused -Wno-format
+OPTIMIZE_CFLAGS = -O2 -fno-exceptions -fno-rtti -fomit-frame-pointer -Wno-unused -Wno-format
 
 ifeq ($(PROFILE), YES)
 OPTIMIZE_CFLAGS		+= -fprofile-generate=/mnt/profile
