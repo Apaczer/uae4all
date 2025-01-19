@@ -27,9 +27,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: build
-      run: make -j$(nproc)
+      run: make -j$(nproc) gm2xpkg-ipk
     - uses: actions/upload-artifact@v4
       with:
         name: UAE4ALL (MiyooCFW)
         path: uae4all
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+    - uses: actions/upload-artifact@v4
+      with:
+        name: UAE4ALL package IPK (MiyooCFW)
+        path: uae4all.ipk
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
