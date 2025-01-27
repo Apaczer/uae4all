@@ -1,20 +1,34 @@
 
 name: CI Build
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:   
-  build-modern:
-    name: UAE4ALL_libretro for Miyoo
-    runs-on: ubuntu-20.04
+  build-uclibc:
+    name: UAE4ALL_libretro for Miyoo (uClibc)
+    runs-on: ubuntu-22.04
     container:
-      image: nfriedly/miyoo-toolchain:steward
+      image: miyoocfw/toolchain-shared-uclibc
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: build
-      run: make -f Makefile.libretro platform=miyoo
-    - uses: actions/upload-artifact@v3
+      run: make -j$(nproc) -f Makefile.libretro platform=miyoo
+    - uses: actions/upload-artifact@v4
       with:
-        name: UAE4ALL_libretro core
+        name: UAE4ALL_libretro (uClibc)
+        path: uae4all_libretro.so
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+  build-musl:
+    name: UAE4ALL_libretro for Miyoo (musl)
+    runs-on: ubuntu-22.04
+    container:
+      image: miyoocfw/toolchain-shared-musl
+    steps:
+    - uses: actions/checkout@v4
+    - name: build
+      run: make -j$(nproc) -f Makefile.libretro platform=miyoo
+    - uses: actions/upload-artifact@v4
+      with:
+        name: UAE4ALL_libretro (musl)
         path: uae4all_libretro.so
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
