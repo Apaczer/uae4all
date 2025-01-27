@@ -1,38 +1,25 @@
-# uae4all for Raspberry Pi
+## UAE4ALL Libretro
 
-Very fast amiga emulator suitable for low-end devices like raspberry pi one and zero.
+This is downstream fork of https://github.com/Chips-fr/uae4all-rpi aimed at Libretro implementation of a "Lite" Amiga Emulator. It is based on E-UAE core and it can utilize FAME (no Cyclone or UAE currently supported in ARMv5) for Motorola 68000 microprocessor emulation. It emulates most Commodore Amiga 500 hardware with OSC 1MB Chip.
 
-Emulate an amiga 500.
+## Native build
 
-Need kick.rom file containing kickstart 1.3
+```
+no instructions available
+```
 
-How to compile:
+## Cross-Compiling instructions
 
-   Retrieve the source of this emulator:
-
-      git clone https://github.com/Chips-fr/uae4all-rpi
-      cd uae4all-rpi
-
-   Install following packages:
-
-      sudo apt-get install libsdl1.2-dev 
-      sudo apt-get install libsdl-gfx1.2-dev
-
-   Then :
-
-      make
-
-For even faster emulation speed (but lower compatibility) uncomment in makefile CYCLONE_CORE and comment FAME_CORE.
-
-# uae4all-libretro core
-
-How to compile:
-
-     make -f Makefile.libretro
-
-Then copy the core to retroarch core directory:
-
-     cp uae4all_libretro.so ~/.config/retroarch/cores/
+1. Clone this repo & set up your environment with docker:
+```
+git clone -b libretro --single-branch https://github.com/Apaczer/uae4all
+docker run --volume ./:/src/ -it miyoocfw/toolchain-shared-uclibc:latest
+cd /src
+```
+2. Compile `uae4all_libretro.so` core
+``` 
+make -j$(nproc) -f Makefile.miyoo platform=miyoo
+```
 
 ## Controls
 
@@ -47,7 +34,7 @@ Then copy the core to retroarch core directory:
 |Select|Toggle virtual keyboard|
 |Start|Toggle mouse emulation|
 
-Right analog stick controls the mouse.
+~~Right analog stick controls the mouse.~~
 
 In mouse emulation dpad and fire buttons controls the mouse.
 
