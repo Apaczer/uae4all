@@ -1,15 +1,21 @@
 NAME    = uae4all
 O       = o
 RM      = rm -f
-ifeq ($(platform),)
-CC     ?= gcc
-CXX    ?= g++
-STRIP  ?= strip
-else ifeq ($(platform), miyoo)
-CC     ?= /opt/miyoo/usr/bin/arm-linux-gcc
-CXX    ?= /opt/miyoo/usr/bin/arm-linux-g++
-STRIP  ?= /opt/miyoo/usr/bin/arm-linux-strip
+ifeq ($(platform), miyoo)
+ifeq (,$(findstring arm,$(CC)))
+CC     = /opt/miyoo/usr/bin/arm-linux-gcc
 endif
+ifeq (,$(findstring arm,$(CXX)))
+CXX    = /opt/miyoo/usr/bin/arm-linux-g++
+endif
+ifeq (,$(findstring arm,$(STRIP)))
+STRIP  = /opt/miyoo/usr/bin/arm-linux-strip
+endif
+endif
+
+$(info CC=$(CC))
+$(info CXX=$(CXX))
+
 TARGET = $(NAME)_libretro.so
 
 all: $(TARGET)
