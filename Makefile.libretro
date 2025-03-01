@@ -28,8 +28,11 @@ ifeq ($(platform),)
 LDFLAGS     = -lz -lpthread
 MORE_CFLAGS = -g -O0 -fpermissive -fPIC
 else ifeq ($(platform), miyoo)
-LDFLAGS     = -lz -lpthread -flto
+LDFLAGS     = -lz -lpthread
 MORE_CFLAGS = -g -O3 -fno-PIC
+endif
+ifeq ($(LTO),yes)
+LDFLAGS += -flto
 endif
 SHARED      = -shared -Wl,--version-script=libretro/link.T 
 
