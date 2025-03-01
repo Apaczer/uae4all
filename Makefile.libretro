@@ -1,6 +1,9 @@
 NAME    = uae4all
 O       = o
 RM      = rm -f
+STATIC_LINKING ?= 0
+
+AR     = ar
 ifeq ($(platform), miyoo)
 ifeq (,$(findstring arm,$(CC)))
 CC     = /opt/miyoo/usr/bin/arm-linux-gcc
@@ -16,7 +19,11 @@ endif
 $(info CC=$(CC))
 $(info CXX=$(CXX))
 
+ifeq ($(STATIC_LINKING),1)
+TARGET = $(NAME)_libretro.a
+else
 TARGET = $(NAME)_libretro.so
+endif
 
 all: $(TARGET)
 
@@ -34,7 +41,10 @@ endif
 ifeq ($(LTO),yes)
 LDFLAGS += -flto
 endif
-SHARED      = -shared -Wl,--version-script=libretro/link.T 
+
+ifeq ($(STATIC_LINKING),0)
+SHARED      = -shared -Wl,--version-script=libretro/link.T
+endif
 
 MORE_CFLAGS+= -Isrc/ -Isrc/include/ -Isrc/menu -Isrc/vkbd -fomit-frame-pointer -fno-threadsafe-statics -Wno-unused -Wno-format -DGCCCONSTFUNC="__attribute__((const))" -DUSE_UNDERSCORE -fno-exceptions -DUNALIGNED_PROFITABLE -DREGPARAM="__attribute__((regparm(3)))" -DOPTIMIZED_FLAGS -D__inline__=__inline__ -DSHM_SUPPORT_LINKS=0 -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
 
@@ -213,9 +223,12 @@ endif
 CPPFLAGS  = $(CFLAGS)
 
 $(TARGET): $(OBJS) 
+ifeq ($(STATIC_LINKING), 1)
+	$(AR) rcs $@ $(OBJECTS)
+else
 	$(CC) $(SHARED) -o $(TARGET) $(OBJS) $(LDFLAGS)
 #	$(STRIP) $(TARGET)
-
+endif
 
 install:$(TARGET)
 	cp $(TARGET) ~/.config/retroarch/cores/
