@@ -14,6 +14,9 @@ endif
 ifeq (,$(findstring arm,$(STRIP)))
 STRIP  = /opt/miyoo/usr/bin/arm-linux-strip
 endif
+ifeq (,$(findstring arm,$(AS)))
+AS  = /opt/miyoo/usr/bin/arm-linux-as
+endif
 endif
 
 $(info CC=$(CC))
@@ -27,9 +30,9 @@ endif
 
 all: $(TARGET)
 
-#CYCLONE_CORE=1
-FAME_CORE=1
-FAME_CORE_C=1
+CYCLONE_CORE=1
+#FAME_CORE=1
+#FAME_CORE_C=1
 #LIB7Z=1
 ifeq ($(platform),)
 LDFLAGS     = -lz -lpthread
@@ -204,6 +207,9 @@ ifdef CYCLONE_CORE
 CFLAGS+=-DUSE_FAME_CORE
 CFLAGS+=-DUSE_CYCLONE_CORE
 #ASFLAGS+=-mfloat-abi=soft -mcpu=arm920t
+ifeq ($(platform),miyoo)
+ASFLAGS+=-mcpu=arm926ej-s
+endif
 OBJS += src/m68k/cyclone/cyclone.o
 OBJS += src/m68k/m68k_cmn_intrf.o
 OBJS += src/m68k/cyclone/m68k_intrf.o
