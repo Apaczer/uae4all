@@ -18,6 +18,7 @@
 #include "savestate.h"
 
 #include "zlib.h"
+#include "zfile.h"
 #include "fsdb.h"
 #include "filesys.h"
 #include "autoconf.h"
@@ -356,7 +357,7 @@ void retro_init(void)
    static uint64_t quirks = RETRO_SERIALIZATION_QUIRK_INCOMPLETE;
    environ_cb(RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS, &quirks);
 
-#if 0
+#if 1
    // > Ensure save state de-serialization file
    //   is closed/NULL
    //   (redundant safety check, possibly required
@@ -484,7 +485,7 @@ void retro_run(void)
    {
       if (Deffered == 1)
       {
-#if 0
+#if 1
          // Save states
          // > Ensure that save state file path is empty,
          //   since we use memory based save states
@@ -556,7 +557,7 @@ bool retro_load_game(const struct retro_game_info *info)
 
 void retro_unload_game(void)
 {
-#if 0
+#if 1
    // Ensure save state de-serialization file
    // is closed/NULL
    // Note: Have to do this here (not in retro_deinit())
@@ -586,7 +587,7 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info, 
 
 size_t retro_serialize_size(void)
 {
-#if 0
+#if 1
    return save_state_file_size;
 #else
    return 0;
@@ -595,7 +596,7 @@ size_t retro_serialize_size(void)
 
 bool retro_serialize(void *data_, size_t size)
 {
-#if 0
+#if 1
    struct zfile *state_file = save_state("libretro", (uae_u64)save_state_file_size);
    bool success = false;
 
@@ -622,7 +623,7 @@ bool retro_serialize(void *data_, size_t size)
 
 bool retro_unserialize(const void *data_, size_t size)
 {
-#if 0
+#if 1
    // TODO: When attempting to use runahead, CD32
    // and WHDLoad content will hang on boot. It seems
    // we cannot restore a state until the system has
@@ -699,8 +700,8 @@ bool retro_unserialize(const void *data_, size_t size)
             // handle this here, so just assume the restore
             // completed successfully...
             request_reset_drawing = true;
-            success               = true;
 #endif
+            success               = true;
          }
          else
          {
