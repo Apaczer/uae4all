@@ -1291,9 +1291,13 @@ printf("m68k_go state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_
 		break;
 	    quit_program = 0;
 	    if (savestate_state == STATE_RESTORE) {
-puts("Restaurando");fflush(stdout);
+#ifdef __LIBRETRO__
+		    restore_state ();
+#else
+//puts("Restaurando");fflush(stdout);
 		    restore_state (savestate_filename);
-	    }
+#endif
+		}
 	    m68k_reset ();
 	    reset_all_systems ();
 	    customreset ();
