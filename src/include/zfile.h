@@ -7,7 +7,9 @@
   */
 
 extern FILE *zfile_open (const char *, const char *);
+extern FILE *zfile_open_empty (const char *, int size);
 extern int zfile_close (FILE *);
+extern int zfile_size (FILE *z);
 extern void zfile_exit (void);
 
 extern size_t uae4all_fread( void *ptr, size_t tam, size_t nmiemb, FILE *flujo);

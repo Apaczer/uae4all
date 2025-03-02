@@ -67,7 +67,7 @@ static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 static retro_environment_t environ_cb;
 
-struct zfile *retro_deserialize_file = NULL;
+FILE *retro_deserialize_file = NULL;
 static size_t save_state_file_size = 0;
 
 int libretroreset = 1;
@@ -364,7 +364,7 @@ void retro_init(void)
    //   for static builds...)
    if (retro_deserialize_file)
    {
-      zfile_fclose(retro_deserialize_file);
+      zfile_close(retro_deserialize_file);
       retro_deserialize_file = NULL;
    }
 #endif
@@ -489,7 +489,7 @@ void retro_run(void)
          // Save states
          // > Ensure that save state file path is empty,
          //   since we use memory based save states
-         savestate_fname[0] = '\0';
+         savestate_filename[0] = '\0';
          // > Get save state size
          //   Here we use initial size + 5%
          //   Should be sufficient in all cases
@@ -506,13 +506,13 @@ void retro_run(void)
          // then this is not adequate at all). Untangling the
          // full set of values that are recorded is beyond
          // my patience...
-         struct zfile *state_file = save_state("libretro", 0);
+         FILE *state_file = save_state("libretro", 0);
 
          if (state_file)
          {
-            save_state_file_size  = (size_t)zfile_size(state_file);
+            save_state_file_size  = (size_t)uae4all_ftell(state_file);
             save_state_file_size += (size_t)(((float)save_state_file_size * 0.05f) + 0.5f);
-            zfile_fclose(state_file);
+            zfile_close(state_file);
          }
 #endif
          Deffered = 2;
@@ -564,7 +564,7 @@ void retro_unload_game(void)
    // since leave_program() calls zfile_exit()
    if (retro_deserialize_file)
    {
-      zfile_fclose(retro_deserialize_file);
+      zfile_close(retro_deserialize_file);
       retro_deserialize_file = NULL;
    }
 #endif
@@ -597,7 +597,7 @@ size_t retro_serialize_size(void)
 bool retro_serialize(void *data_, size_t size)
 {
 #if 1
-   struct zfile *state_file = save_state("libretro", (uae_u64)save_state_file_size);
+   FILE *state_file = save_state("libretro", (uae_u16)save_state_file_size);
    bool success = false;
 
    if (state_file)
@@ -606,13 +606,13 @@ bool retro_serialize(void *data_, size_t size)
 
       if (size >= state_file_size)
       {
-         size_t len = zfile_fread(data_, 1, state_file_size, state_file);
+         size_t len = uae4all_fread(data_, 1, state_file_size, state_file);
 
          if (len == state_file_size)
             success = true;
       }
 
-      zfile_fclose(state_file);
+      zfile_close(state_file);
    }
 
    return success;
@@ -650,22 +650,22 @@ bool retro_unserialize(const void *data_, size_t size)
 
       if (retro_deserialize_file)
       {
-         zfile_fclose(retro_deserialize_file);
+         zfile_close(retro_deserialize_file);
          retro_deserialize_file = NULL;
       }
 
-      retro_deserialize_file = zfile_fopen_empty(NULL, "libretro", size);
+      retro_deserialize_file = zfile_open_empty("libretro", size);
 
       if (retro_deserialize_file)
       {
-         size_t len = zfile_fwrite(data_, 1, size, retro_deserialize_file);
+         size_t len = uae4all_fwrite(data_, 1, size, retro_deserialize_file);
 
          if (len == size)
          {
             unsigned frame_counter = 0;
             unsigned max_frames    = 50;
 
-            zfile_fseek(retro_deserialize_file, 0, SEEK_SET);
+            uae4all_fseek(retro_deserialize_file, 0, SEEK_SET);
             savestate_state = STATE_DORESTORE;
 
             // For correct operation of the frontend,
@@ -705,7 +705,7 @@ bool retro_unserialize(const void *data_, size_t size)
          }
          else
          {
-            zfile_fclose(retro_deserialize_file);
+            zfile_close(retro_deserialize_file);
             retro_deserialize_file = NULL;
          }
       }
