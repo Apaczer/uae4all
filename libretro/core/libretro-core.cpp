@@ -18,6 +18,7 @@
 #include "savestate.h"
 
 #include "zlib.h"
+#include "zfile.h"
 #include "fsdb.h"
 #include "filesys.h"
 #include "autoconf.h"
@@ -73,7 +74,7 @@ static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 static retro_environment_t environ_cb;
 
-struct zfile *retro_deserialize_file = NULL;
+FILE *retro_deserialize_file = NULL;
 static size_t save_state_file_size = 0;
 
 int libretroreset = 1;
@@ -506,7 +507,7 @@ void retro_init(void)
    static uint64_t quirks = RETRO_SERIALIZATION_QUIRK_INCOMPLETE;
    environ_cb(RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS, &quirks);
 
-#if 0
+#if 1
    // > Ensure save state de-serialization file
    //   is closed/NULL
    //   (redundant safety check, possibly required
@@ -634,11 +635,11 @@ void retro_run(void)
    {
       if (Deffered == 1)
       {
-#if 0
+#if 1
          // Save states
          // > Ensure that save state file path is empty,
          //   since we use memory based save states
-         savestate_fname[0] = '\0';
+         savestate_filename[0] = '\0';
          // > Get save state size
          //   Here we use initial size + 5%
          //   Should be sufficient in all cases
@@ -655,7 +656,7 @@ void retro_run(void)
          // then this is not adequate at all). Untangling the
          // full set of values that are recorded is beyond
          // my patience...
-         struct zfile *state_file = save_state("libretro", 0);
+         FILE *state_file = save_state("libretro", 0);
 
          if (state_file)
          {
@@ -706,7 +707,7 @@ bool retro_load_game(const struct retro_game_info *info)
 
 void retro_unload_game(void)
 {
-#if 0
+#if 1
    // Ensure save state de-serialization file
    // is closed/NULL
    // Note: Have to do this here (not in retro_deinit())
@@ -736,7 +737,7 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info, 
 
 size_t retro_serialize_size(void)
 {
-#if 0
+#if 1
    return save_state_file_size;
 #else
    return 0;
@@ -745,8 +746,11 @@ size_t retro_serialize_size(void)
 
 bool retro_serialize(void *data_, size_t size)
 {
-#if 0
-   struct zfile *state_file = save_state("libretro", (uae_u64)save_state_file_size);
+#if 1
+   if (savestate_state || !data_)
+      return false;
+
+   FILE *state_file = save_state("libretro", save_state_file_size);
    bool success = false;
 
    if (state_file)
@@ -755,6 +759,9 @@ bool retro_serialize(void *data_, size_t size)
 
       if (size >= state_file_size)
       {
+         /* serialize_size() includes headroom, so make the unused tail
+          * deterministic before handing the buffer back to the frontend. */
+         memset(data_, 0, size);
          size_t len = zfile_fread(data_, 1, state_file_size, state_file);
 
          if (len == state_file_size)
@@ -772,7 +779,7 @@ bool retro_serialize(void *data_, size_t size)
 
 bool retro_unserialize(const void *data_, size_t size)
 {
-#if 0
+#if 1
    // TODO: When attempting to use runahead, CD32
    // and WHDLoad content will hang on boot. It seems
    // we cannot restore a state until the system has
@@ -803,7 +810,7 @@ bool retro_unserialize(const void *data_, size_t size)
          retro_deserialize_file = NULL;
       }
 
-      retro_deserialize_file = zfile_fopen_empty(NULL, "libretro", size);
+      retro_deserialize_file = zfile_open_empty("libretro", size);
 
       if (retro_deserialize_file)
       {
@@ -811,46 +818,23 @@ bool retro_unserialize(const void *data_, size_t size)
 
          if (len == size)
          {
-            unsigned frame_counter = 0;
-            unsigned max_frames    = 50;
-
             zfile_fseek(retro_deserialize_file, 0, SEEK_SET);
             savestate_state = STATE_DORESTORE;
 
             // For correct operation of the frontend,
             // the save state restore must be completed
-            // by the time this function returns.
-            // Since P-UAE requires several (2) frames to get
-            // itself in order during a restore event, we
-            // have to keep emulating frames until the
-            // restore is complete...
-            // > Note that we set a 'timeout' of 50 frames
-            //   here (1s of emulated time at 50Hz) to
-            //   prevent lock-ups in the event of unexpected
-            //   errors
-            // > Temporarily 'deactivate' runloop - this lets
-            //   us call m68k_go() without accessing frontend
-            //   features - specifically, it disables the audio
-            //   callback functionality
-#if 0 // TEMP
-            libretro_runloop_active = 0;
-            while (savestate_state && (frame_counter < max_frames))
-            {
-               // Note that retro_deserialize_file will be
-               // closed inside m68k_go() upon successful
-               // completion of the restore event
-               restart_pending = m68k_go(1, 1);
-               frame_counter++;
-            }
-            libretro_runloop_active = 1;
+            // by the time this function returns. The active
+            // CPU loop processes STATE_DORESTORE on the next
+            // emulated frame and returns at its normal frame boundary.
+            m68k_go(1);
+            success = savestate_state == 0;
 
-            // If the above while loop times out, then
-            // everything is completely broken. We cannot
-            // handle this here, so just assume the restore
-            // completed successfully...
-            request_reset_drawing = true;
-            success               = true;
-#endif
+            if (!success && retro_deserialize_file)
+            {
+               zfile_fclose(retro_deserialize_file);
+               retro_deserialize_file = NULL;
+               savestate_state = 0;
+            }
          }
          else
          {
@@ -886,4 +870,3 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code)
    (void)enabled;
    (void)code;
 }
-

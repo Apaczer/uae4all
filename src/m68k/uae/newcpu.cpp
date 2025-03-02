@@ -1312,8 +1312,12 @@ void m68k_go (int may_quit)
 #ifdef DEBUG_SAVESTATE
 			puts("Restaurando");fflush(stdout);
 #endif
+#ifdef __LIBRETRO__
+		    restore_state ();
+#else
 		    restore_state (savestate_filename);
-	    }
+#endif
+		}
 	    m68k_reset ();
 	    reset_all_systems ();
 	    customreset ();
