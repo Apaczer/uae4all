@@ -425,11 +425,19 @@ extern int console_get (char *, int);
 
    We define this value here rather than in events.h so that gencpu.c sees
    it.  */
+#ifdef USE_CYCLONE_CORE
+#define CYCLE_UNIT 1
+#else
 #define CYCLE_UNIT 512
+#endif
 
 /* This one is used by cfgfile.c.  We could reduce the CYCLE_UNIT back to 1,
    I'm not 100% sure this code is bug free yet.  */
+#ifdef USE_CYCLONE_CORE
+#define OFFICIAL_CYCLE_UNIT 1
+#else
 #define OFFICIAL_CYCLE_UNIT 512
+#endif
 
 /*
  * You can specify numbers from 0 to 5 here. It is possible that higher
@@ -437,7 +445,7 @@ extern int console_get (char *, int);
  * is too high, you will run out of memory while compiling.
  * Best to leave this as it is.
  */
-#define CPU_EMU_SIZE 0
+#define CPU_EMU_SIZE 5
 
 #undef REGPARAM
 #define REGPARAM
