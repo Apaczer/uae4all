@@ -351,7 +351,9 @@ void parse_cmdline(int argc, char **argv)
 	}
 }
 
+#ifdef __LIBRETRO__
 extern void update_prefs_retrocfg(void);
+#endif
 
 void real_main (int argc, char **argv)
 {
