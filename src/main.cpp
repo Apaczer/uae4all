@@ -251,7 +251,7 @@ typedef struct _cmdline_opt
 	void *opt;
 } cmdline_opt;
 
-extern int  mainMenu_throttle, mainMenu_frameskip, mainMenu_sound, mainMenu_case, mainMenu_autosave, mainMenu_vpos;
+extern int  mainMenu_throttle, mainMenu_frameskip, mainMenu_sound, mainMenu_case, mainMenu_autosave, mainMenu_vpos  ;
 extern unsigned int sound_rate;
 
 extern char uae4all_image_file[128];
@@ -312,7 +312,9 @@ void parse_cmdline(int argc, char **argv)
 	}
 }
 
+#ifdef __LIBRETRO__
 extern void update_prefs_retrocfg(void);
+#endif
 
 void real_main (int argc, char **argv)
 {

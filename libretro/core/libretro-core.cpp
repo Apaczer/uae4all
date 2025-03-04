@@ -156,6 +156,7 @@ void retro_set_environment(retro_environment_t cb)
 //      { "uae4all_leds_on_screen", "Leds on screen; on|off", },
 //      { "uae4all_floppy_speed",   "Floppy speed; 100|200|400|800", },
       { "uae4all_throttle",   "Optimize level; none|1|2|3|4|5", },
+      { "uae4all_memchip",   "Chip RAM; default|512 KB|1 MB|1.5 MB|2 MB", },
       { NULL, NULL },
    };
 
@@ -203,6 +204,33 @@ void update_prefs_retrocfg(void)
       else
          mainMenu_throttle = atoi(var.value);
       
+   }
+
+   var.key = "uae4all_memchip";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (strcmp(var.value, "default") == 0)
+      {
+         prefs_chipmem_size = 0x100000;
+      }
+      if (strcmp(var.value, "512 KB") == 0)
+      {
+         prefs_chipmem_size = 0x080000;
+      }
+      if (strcmp(var.value, "1 MB") == 0)
+      {
+         prefs_chipmem_size = 0x100000;
+      }
+      if (strcmp(var.value, "1.5 MB") == 0)
+      {
+         prefs_chipmem_size = 0x180000;
+      }
+      if (strcmp(var.value, "2 MB") == 0)
+      {
+         prefs_chipmem_size = 0x200000;
+      }
    }
 
 #if 0
