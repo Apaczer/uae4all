@@ -174,7 +174,6 @@ int zfile_close (FILE *f)
 	return 0;
 }
 
-
 #ifdef USE_ZFILE
 #define mi_z_type gzFile
 #define mi_z_open(NAME,P) gzopen(NAME,P)
@@ -358,6 +357,26 @@ FILE *zfile_open (const char *name, const char *mode)
 	    return (FILE *)uae4all_disk_memory[i];
     }
     return NULL;
+}
+
+int zfile_fclose (FILE *f)
+{
+	return;
+}
+
+int zfile_fseek (FILE *z, long offset, int mode);
+{
+	return;
+}
+
+size_t zfile_fread (void *b, size_t l1, size_t l2, FILE *z)
+{
+	return fread (b, l1, l2, z->f);
+}
+
+size_t zfile_fwrite (void *b, size_t l1, size_t l2, FILE *z);
+{
+	return;
 }
 
 FILE *zfile_open_empty (const char *filename, int size)

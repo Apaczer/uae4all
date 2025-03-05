@@ -364,7 +364,7 @@ void retro_init(void)
    //   for static builds...)
    if (retro_deserialize_file)
    {
-      zfile_close(retro_deserialize_file);
+      zfile_fclose(retro_deserialize_file);
       retro_deserialize_file = NULL;
    }
 #endif
@@ -512,7 +512,7 @@ void retro_run(void)
          {
             save_state_file_size  = (size_t)zfile_size(state_file);
             save_state_file_size += (size_t)(((float)save_state_file_size * 0.05f) + 0.5f);
-            zfile_close(state_file);
+            zfile_fclose(state_file);
          }
 #endif
          Deffered = 2;
@@ -564,7 +564,7 @@ void retro_unload_game(void)
    // since leave_program() calls zfile_exit()
    if (retro_deserialize_file)
    {
-      zfile_close(retro_deserialize_file);
+      zfile_fclose(retro_deserialize_file);
       retro_deserialize_file = NULL;
    }
 #endif
@@ -606,13 +606,13 @@ bool retro_serialize(void *data_, size_t size)
 
       if (size >= state_file_size)
       {
-         size_t len = uae4all_fread(data_, 1, state_file_size, state_file);
+         size_t len = zfile_fread(data_, 1, state_file_size, state_file);
 
          if (len == state_file_size)
             success = true;
       }
 
-      zfile_close(state_file);
+      zfile_fclose(state_file);
    }
 
    return success;
@@ -621,7 +621,7 @@ bool retro_serialize(void *data_, size_t size)
 #endif
 }
 
-bool retro_unserialize(void *data_, size_t size)
+bool retro_unserialize(const void *data_, size_t size)
 {
 #if 1
    // TODO: When attempting to use runahead, CD32
@@ -650,7 +650,7 @@ bool retro_unserialize(void *data_, size_t size)
 
       if (retro_deserialize_file)
       {
-         zfile_close(retro_deserialize_file);
+         zfile_fclose(retro_deserialize_file);
          retro_deserialize_file = NULL;
       }
 
@@ -658,14 +658,14 @@ bool retro_unserialize(void *data_, size_t size)
 
       if (retro_deserialize_file)
       {
-         size_t len = uae4all_fwrite(data_, 1, size, retro_deserialize_file);
+         size_t len = zfile_fwrite(data_, 1, size, retro_deserialize_file);
 
          if (len == size)
          {
             unsigned frame_counter = 0;
             unsigned max_frames    = 50;
 
-            uae4all_fseek(retro_deserialize_file, 0, SEEK_SET);
+            zfile_fseek(retro_deserialize_file, 0, SEEK_SET);
             savestate_state = STATE_DORESTORE;
 
             // For correct operation of the frontend,
@@ -705,7 +705,7 @@ bool retro_unserialize(void *data_, size_t size)
          }
          else
          {
-            zfile_close(retro_deserialize_file);
+            zfile_fclose(retro_deserialize_file);
             retro_deserialize_file = NULL;
          }
       }

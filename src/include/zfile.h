@@ -9,6 +9,10 @@
 extern FILE *zfile_open (const char *, const char *);
 extern FILE *zfile_open_empty (const char *, int size);
 extern int zfile_close (FILE *);
+extern int zfile_fclose (FILE *);
+extern int zfile_fseek (FILE *z, long offset, int mode);
+extern size_t zfile_fread (void *b, size_t l1, size_t l2, FILE *z);
+extern size_t zfile_fwrite (const void *b, size_t l1, size_t l2, FILE *z);
 extern int zfile_size (FILE *z);
 extern void zfile_exit (void);
 
