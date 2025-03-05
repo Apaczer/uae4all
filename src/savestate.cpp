@@ -478,7 +478,7 @@ void savestate_restore_finish (void)
 
 /* Save all subsystems  */
 #ifdef __LIBRETRO__
-FILE *save_state (const char *description, uae_u16 size)
+FILE *save_state (char *description, uae_u16 size)
 #else
 void save_state (char *filename, char *description)
 #endif
@@ -504,7 +504,7 @@ custom_prepare_savestate ();
 
 
 #ifdef __LIBRETRO__
-    f = NULL;
+    f = zfile_open_empty (description, size);
 #else
     f = fopen (filename, "wb");
 #endif
@@ -517,7 +517,11 @@ custom_prepare_savestate ();
 	free(ad);
 	if (!f)
 #endif
+#ifdef __LIBRETRO__
+	return NULL;
+#else
 	return;
+#endif
     } 
 
     gui_show_window_bar(0, 10, 0);

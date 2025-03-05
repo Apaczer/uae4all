@@ -510,7 +510,7 @@ void retro_run(void)
 
          if (state_file)
          {
-            save_state_file_size  = (size_t)uae4all_ftell(state_file);
+            save_state_file_size  = (size_t)zfile_size(state_file);
             save_state_file_size += (size_t)(((float)save_state_file_size * 0.05f) + 0.5f);
             zfile_close(state_file);
          }
@@ -597,7 +597,7 @@ size_t retro_serialize_size(void)
 bool retro_serialize(void *data_, size_t size)
 {
 #if 1
-   FILE *state_file = save_state("libretro", (uae_u16)save_state_file_size);
+   FILE *state_file = save_state("libretro", (uae_u64)save_state_file_size);
    bool success = false;
 
    if (state_file)
@@ -621,7 +621,7 @@ bool retro_serialize(void *data_, size_t size)
 #endif
 }
 
-bool retro_unserialize(const void *data_, size_t size)
+bool retro_unserialize(void *data_, size_t size)
 {
 #if 1
    // TODO: When attempting to use runahead, CD32

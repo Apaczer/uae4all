@@ -360,16 +360,12 @@ FILE *zfile_open (const char *name, const char *mode)
     return NULL;
 }
 
-FILE *zfile_open_empty (const char *name, int size)
+FILE *zfile_open_empty (const char *filename, int size)
 {
     FILE *f = fopen(filename, "wb");
-    if (!f) {
-        return -1;
-    }
     if (size > 0) {
         if (fseek(f, size - 1, SEEK_SET) != 0) {
             fclose(f);
-            return -1;
         }
         fputc('\0', f);
     }
@@ -377,10 +373,8 @@ FILE *zfile_open_empty (const char *name, int size)
     return f;
 }
 
-int *zfile_size (FILE *z)
+int zfile_size (FILE *z)
 {
-	if (!z) 
-		return -1;
 	int current = ftell(z);
 	fseek(z, 0, SEEK_END);
 	int size = ftell(z);
