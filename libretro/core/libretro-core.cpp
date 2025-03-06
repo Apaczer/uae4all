@@ -32,6 +32,7 @@ extern char uae4all_image_file[];
 extern char uae4all_image_file2[];
 
 extern int mainMenu_throttle;
+extern int mainMenu_vpos;
 
 extern void DISK_GUI_change (void);
 
@@ -157,6 +158,7 @@ void retro_set_environment(retro_environment_t cb)
 //      { "uae4all_floppy_speed",   "Floppy speed; 100|200|400|800", },
       { "uae4all_throttle",   "Optimize level; none|1|2|3|4|5", },
       { "uae4all_memchip",   "Chip RAM; default|512 KB|1 MB|1.5 MB|2 MB", },
+      { "uae4all_vpos",   "Adjust screen Vertically; default|0|8|16|24|32|40", },
       { NULL, NULL },
    };
 
@@ -230,6 +232,41 @@ void update_prefs_retrocfg(void)
       if (strcmp(var.value, "2 MB") == 0)
       {
          prefs_chipmem_size = 0x200000;
+      }
+   }
+
+   var.key = "uae4all_vpos";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (strcmp(var.value, "default") == 0)
+      {
+         mainMenu_vpos = 1;
+      }
+      if (strcmp(var.value, "0") == 0)
+      {
+         mainMenu_vpos = 0;
+      }
+      if (strcmp(var.value, "8") == 0)
+      {
+         mainMenu_vpos = 1;
+      }
+      if (strcmp(var.value, "16") == 0)
+      {
+         mainMenu_vpos = 2;
+      }
+      if (strcmp(var.value, "24") == 0)
+      {
+         mainMenu_vpos = 3;
+      }
+      if (strcmp(var.value, "32") == 0)
+      {
+         mainMenu_vpos = 4;
+      }
+      if (strcmp(var.value, "40") == 0)
+      {
+         mainMenu_vpos = 5;
       }
    }
 
