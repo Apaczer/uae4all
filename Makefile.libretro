@@ -44,8 +44,8 @@ ifeq ($(platform),)
 LDFLAGS     = -lz -lpthread
 MORE_CFLAGS = -g -O0 -fpermissive -fPIC
 else ifeq ($(platform), miyoo)
-LDFLAGS     = -lz -lpthread -lgcov
-MORE_CFLAGS = -g -O3 -fno-PIC -fprofile-generate=/mnt/profile
+LDFLAGS     = -lz -lpthread
+MORE_CFLAGS = -g -O3 -fno-PIC -fprofile-use -fbranch-probabilities -Wno-error=coverage-mismatch
 endif
 ifeq ($(LTO),yes)
 LDFLAGS += -flto
