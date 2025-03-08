@@ -36,9 +36,9 @@ endif
 
 all: $(TARGET)
 
-CYCLONE_CORE=1
-#FAME_CORE=1
-#FAME_CORE_C=1
+#CYCLONE_CORE=1
+FAME_CORE=1
+FAME_CORE_C=1
 #LIB7Z=1
 ifeq ($(platform),)
 LDFLAGS     = -lz -lpthread
