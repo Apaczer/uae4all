@@ -43,6 +43,8 @@ int pauseg=0; //enter_gui
 
 
 
+//JOY
+
 //MOUSE
 int gmx,gmy; //gui mouse
 int mouse_wu=0,mouse_wd=0;
@@ -457,8 +459,8 @@ int Retro_PollEvent()
     if(SHOWKEY==-1 && pauseg==0)
     { 
         // if emulation running
-
-        Process_keyboard();
+        if(!input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK))
+            Process_keyboard();
 
         if(second_joystick_enable)
         {
