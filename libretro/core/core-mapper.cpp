@@ -44,7 +44,7 @@ int pauseg=0; //enter_gui
 
 
 //JOY
-
+int JOYSTICK_EMULATED=1;
 //MOUSE
 int gmx,gmy; //gui mouse
 int mouse_wu=0,mouse_wd=0;
@@ -105,7 +105,7 @@ void read_joystick(int nr, unsigned int *dir, int *button)
     *dir = 0;
     *button = 0;
 
-    if ((nr == 0) && (SHOWKEY==1) || (pauseg==1) || (MOUSE_EMULATED==1))
+    if ((nr == 0) && (SHOWKEY==1) || (pauseg==1) || (MOUSE_EMULATED==1) || (JOYSTICK_EMULATED==-1))
         return;
 
     if ((nr == 1) && (!second_joystick_enable))
@@ -459,7 +459,7 @@ int Retro_PollEvent()
     if(SHOWKEY==-1 && pauseg==0)
     { 
         // if emulation running
-        if(!input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK))
+        if(!(input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK)) || (JOYSTICK_EMULATED==-1) && (MOUSE_EMULATED==-1))
             Process_keyboard();
 
         if(second_joystick_enable)

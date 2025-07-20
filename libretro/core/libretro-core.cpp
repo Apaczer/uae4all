@@ -35,6 +35,8 @@ extern int mainMenu_throttle;
 extern int mainMenu_vpos;
 extern int mainMenu_frameskip;
 
+extern int JOYSTICK_EMULATED;
+
 extern void DISK_GUI_change (void);
 
 static unsigned msg_interface_version = 0;
@@ -161,6 +163,7 @@ void retro_set_environment(retro_environment_t cb)
       { "uae4all_frameskip",   "Frameskip; 0|1|2|3|4|5|auto", },
       { "uae4all_memchip",   "Chip RAM; default|512 KB|1 MB|1.5 MB|2 MB", },
       { "uae4all_vpos",   "Adjust screen Vertically; default|0|8|16|24|32|40", },
+      { "uae4all_joystick",   "Joystick emulation; on|off", },
       { NULL, NULL },
    };
 
@@ -307,6 +310,14 @@ void update_prefs_retrocfg(void)
       }
    }
 
+   var.key = "uae4all_joystick";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (strcmp(var.value, "on")  == 0) JOYSTICK_EMULATED = 1;
+      if (strcmp(var.value, "off") == 0) JOYSTICK_EMULATED = -1;
+   }
 #if 0
 
    var.key = "uae4all_resolution";
