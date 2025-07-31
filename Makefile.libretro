@@ -45,7 +45,7 @@ LDFLAGS     = -lz -lpthread
 MORE_CFLAGS = -g -O0 -fpermissive -fPIC
 else ifeq ($(platform), miyoo)
 LDFLAGS     = -lz -lpthread
-MORE_CFLAGS = -g -O3 -fno-PIC -DFAST_COMPILER
+MORE_CFLAGS = -g -O3 -fno-PIC -DFAST_COMPILER -DHAVE_KBDJOYPAD
 endif
 ifeq ($(LTO),yes)
 LDFLAGS += -flto
