@@ -165,7 +165,11 @@ void retro_set_environment(retro_environment_t cb)
       { "uae4all_memchip",   "Chip RAM; default|512 KB|1 MB|1.5 MB|2 MB", },
       { "uae4all_vpos",   "Adjust screen Vertically; default|0|8|16|24|32|40", },
       { "uae4all_joystick",   "Joystick emulation; on|off", },
+#ifdef HAVE_KBDJOYPAD
+      { "uae4all_keyboard",   "Keyboard emulation; off|on", },
+#else
       { "uae4all_keyboard",   "Keyboard emulation; on|off", },
+#endif
       { NULL, NULL },
    };
 

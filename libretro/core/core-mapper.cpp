@@ -401,8 +401,64 @@ void Process_keyboard()
 {
     int i;
 
+#ifdef HAVE_KBDJOYPAD
+    int i1 = 0;
+    int i2 = 0;
+    for(i=0;i<320;i++)
+    {
+        if (input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0,i)){
+            Key_State[i]= 0x80;
+            if (i1 == 0) i1 = i;
+            else i2 = i;
+        } else
+            Key_State[i]= 0;
+    }
+    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0,RETRO_DEVICE_ID_JOYPAD_MASK) && i1 && i2){
+            switch (i1) {
+                // case RETROK_UP:
+                // case RETROK_DOWN:
+                // case RETROK_RIGHT:
+                // case RETROK_LEFT:
+                case RETROK_LALT:
+                case RETROK_LCTRL:
+                case RETROK_LSHIFT:
+                case RETROK_SPACE:
+                case RETROK_TAB:
+                case RETROK_BACKSPACE:
+                case RETROK_PAGEUP:
+                case RETROK_PAGEDOWN:
+                case RETROK_RSHIFT:
+                case RETROK_RCTRL:
+                case RETROK_RETURN:
+                case RETROK_ESCAPE:
+                    Key_State[i1]= 0;
+                break;
+            }
+            switch (i2) {
+                // case RETROK_UP:
+                // case RETROK_DOWN:
+                // case RETROK_RIGHT:
+                // case RETROK_LEFT:
+                case RETROK_LALT:
+                case RETROK_LCTRL:
+                case RETROK_LSHIFT:
+                case RETROK_SPACE:
+                case RETROK_TAB:
+                case RETROK_BACKSPACE:
+                case RETROK_PAGEUP:
+                case RETROK_PAGEDOWN:
+                case RETROK_RSHIFT:
+                case RETROK_RCTRL:
+                case RETROK_RETURN:
+                case RETROK_ESCAPE:
+                    Key_State[i2]= 0;
+                break;
+            }
+    }
+#else
     for(i=0;i<320;i++)
         Key_State[i]=input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0,i) ? 0x80: 0;
+#endif
 
     if(memcmp( Key_State,old_Key_State , sizeof(Key_State) ) )
         for(i=0;i<320;i++)
