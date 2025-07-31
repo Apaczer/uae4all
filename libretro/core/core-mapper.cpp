@@ -105,7 +105,7 @@ void read_joystick(int nr, unsigned int *dir, int *button)
     *dir = 0;
     *button = 0;
 
-    if ((nr == 0) && (SHOWKEY==1) || (pauseg==1))
+    if ((nr == 0) && (SHOWKEY==1) || (pauseg==1) || (MOUSE_EMULATED==1))
         return;
 
     if ((nr == 1) && (!second_joystick_enable))
