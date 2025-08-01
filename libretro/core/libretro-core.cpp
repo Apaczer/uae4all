@@ -160,7 +160,7 @@ void retro_set_environment(retro_environment_t cb)
 //      { "uae4all_resolution",     "Internal resolution; 320x240", },
 //      { "uae4all_leds_on_screen", "Leds on screen; on|off", },
 //      { "uae4all_floppy_speed",   "Floppy speed; 100|200|400|800", },
-      { "uae4all_throttle",   "Optimize level (need Restart); none|1|2|3|4|5", },
+      { "uae4all_throttle",   "Optimize level (need Restart); none|20|40|60|80|100", },
       { "uae4all_frameskip",   "Frameskip (need Restart); 0|1|2|3|4|5|auto", },
       { "uae4all_memchip",   "Chip RAM (need Restart); default(512 KB)|512 KB|1 MB|1.5 MB|2 MB", },
       { "uae4all_vpos",   "Adjust screen Vertically (need Restart); default(8)|0|8|16|24|32|40", },
@@ -215,7 +215,7 @@ void update_prefs_retrocfg(void)
       if (strcmp(var.value, "none")  == 0)
          mainMenu_throttle = 0;
       else
-         mainMenu_throttle = atoi(var.value);
+         mainMenu_throttle = atoi(var.value/20);
       
    }
 
