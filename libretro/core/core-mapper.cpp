@@ -49,7 +49,7 @@ int JOYSTICK_EMULATED=1;
 int gmx,gmy; //gui mouse
 int mouse_wu=0,mouse_wd=0;
 //KEYBOARD
-int KEYBOARD_EMULATED=1;
+int KEYBOARD_PROCESS=1;
 char Key_State[512];
 static char old_Key_State[512];
 
@@ -516,7 +516,7 @@ int Retro_PollEvent()
     if(SHOWKEY==-1 && pauseg==0)
     { 
         // if emulation running
-        if(KEYBOARD_EMULATED==1 || (JOYSTICK_EMULATED==-1) && (MOUSE_EMULATED==-1))
+        if(KEYBOARD_PROCESS==1 || (JOYSTICK_EMULATED==-1) && (MOUSE_EMULATED==-1))
             Process_keyboard();
 
         if(second_joystick_enable)
