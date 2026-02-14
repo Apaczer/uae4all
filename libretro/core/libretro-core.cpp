@@ -36,7 +36,7 @@ extern int mainMenu_vpos;
 extern int mainMenu_frameskip;
 
 extern int JOYSTICK_EMULATED;
-extern int KEYBOARD_EMULATED;
+extern int KEYBOARD_PROCESS;
 
 extern void DISK_GUI_change (void);
 
@@ -166,9 +166,9 @@ void retro_set_environment(retro_environment_t cb)
       { "uae4all_vpos",   "Adjust screen Vertically (need Restart); default(8)|0|8|16|24|32|40", },
       { "uae4all_joystick",   "Joystick emulation; on|off", },
 #ifdef HAVE_KBDJOYPAD
-      { "uae4all_keyboard",   "Keyboard emulation; off|on", },
+      { "uae4all_keyboard",   "Keyboard processing; off|on", },
 #else
-      { "uae4all_keyboard",   "Keyboard emulation; on|off", },
+      { "uae4all_keyboard",   "Keyboard processing; on|off", },
 #endif
       { NULL, NULL },
    };
@@ -330,8 +330,8 @@ void update_prefs_retrocfg(void)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      if (strcmp(var.value, "on")  == 0) KEYBOARD_EMULATED = 1;
-      if (strcmp(var.value, "off") == 0) KEYBOARD_EMULATED = -1;
+      if (strcmp(var.value, "on")  == 0) KEYBOARD_PROCESS = 1;
+      if (strcmp(var.value, "off") == 0) KEYBOARD_PROCESS = -1;
    }
 #if 0
 
