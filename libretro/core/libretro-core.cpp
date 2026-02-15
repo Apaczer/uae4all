@@ -213,9 +213,29 @@ void update_prefs_retrocfg(void)
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
       if (strcmp(var.value, "none")  == 0)
+      {
          mainMenu_throttle = 0;
-      else
-         mainMenu_throttle = atoi(var.value/20);
+      }
+      if (strcmp(var.value, "20") == 0)
+      {
+         mainMenu_throttle = 1;
+      }
+      if (strcmp(var.value, "40") == 0)
+      {
+         mainMenu_throttle = 2;
+      }
+      if (strcmp(var.value, "60") == 0)
+      {
+         mainMenu_throttle = 3;
+      }
+      if (strcmp(var.value, "80") == 0)
+      {
+         mainMenu_throttle = 4;
+      }
+      if (strcmp(var.value, "100") == 0)
+      {
+         mainMenu_throttle = 5;
+      }
       
    }
 
