@@ -83,7 +83,7 @@ extern uae_u8 *restore_rom (uae_u8 *);
 extern uae_u8 *save_rom (int, int *);
 
 #ifdef __LIBRETRO__
-extern FILE *save_state (const char *description, uae_u16 size);
+extern FILE *save_state (const char *description, size_t size);
 void restore_state (void);
 #else
 extern void save_state (char *filename, char *description);

@@ -359,47 +359,142 @@ FILE *zfile_open (const char *name, const char *mode)
     return NULL;
 }
 
-int zfile_fclose (FILE *f)
+/* FILE is used as an opaque handle here to preserve the existing emulator
+ * interfaces.  Never pass this handle to stdio; use the zfile_f* helpers. */
+struct zfile_memory_stream {
+    unsigned char *data;
+    size_t size;
+    size_t capacity;
+    size_t position;
+};
+
+static zfile_memory_stream *savestate_stream;
+
+static zfile_memory_stream *memory_stream(FILE *file)
 {
-	return;
+    return (zfile_memory_stream *)file == savestate_stream ? savestate_stream : NULL;
 }
 
-int zfile_fseek (FILE *z, long offset, int mode);
+static int memory_stream_reserve(zfile_memory_stream *stream, size_t required)
 {
-	return;
-}
+    if (required <= stream->capacity)
+        return 0;
 
-size_t zfile_fread (void *b, size_t l1, size_t l2, FILE *z)
-{
-	return fread (b, l1, l2, z->f);
-}
-
-size_t zfile_fwrite (void *b, size_t l1, size_t l2, FILE *z);
-{
-	return;
-}
-
-FILE *zfile_open_empty (const char *filename, int size)
-{
-    FILE *f = fopen(filename, "wb");
-    if (size > 0) {
-        if (fseek(f, size - 1, SEEK_SET) != 0) {
-            fclose(f);
+    size_t capacity = stream->capacity ? stream->capacity : 4096;
+    while (capacity < required) {
+        if (capacity > ((size_t)-1) / 2) {
+            capacity = required;
+            break;
         }
-        fputc('\0', f);
+        capacity *= 2;
     }
-    fclose(f);
-    return f;
+
+    unsigned char *data = (unsigned char *)realloc(stream->data, capacity);
+    if (!data)
+        return -1;
+    stream->data = data;
+    stream->capacity = capacity;
+    return 0;
 }
 
-int zfile_size (FILE *z)
+FILE *zfile_open_empty (const char *filename, size_t size)
 {
-	int current = ftell(z);
-	fseek(z, 0, SEEK_END);
-	int size = ftell(z);
-	fseek(z, current, SEEK_SET);
+    (void)filename;
+    /* Only one state stream may exist: restore keeps its stream alive until
+     * the CPU loop consumes it. */
+    if (savestate_stream)
+        return NULL;
+    zfile_memory_stream *stream = (zfile_memory_stream *)calloc(1, sizeof(*stream));
+    if (!stream)
+        return NULL;
+    if (size && memory_stream_reserve(stream, size)) {
+        free(stream);
+        return NULL;
+    }
+    savestate_stream = stream;
+    return (FILE *)stream;
+}
 
-	return size;
+int zfile_fclose (FILE *file)
+{
+    zfile_memory_stream *stream = memory_stream(file);
+    if (!stream)
+        return fclose(file);
+    free(stream->data);
+    free(stream);
+    savestate_stream = NULL;
+    return 0;
+}
+
+int zfile_fseek (FILE *file, long offset, int mode)
+{
+    zfile_memory_stream *stream = memory_stream(file);
+    if (!stream)
+        return fseek(file, offset, mode);
+
+    long base = mode == SEEK_SET ? 0 : mode == SEEK_CUR ? (long)stream->position : (long)stream->size;
+    if ((offset > 0 && base > LONG_MAX - offset) || (offset < 0 && base < LONG_MIN - offset))
+        return -1;
+    long position = base + offset;
+    if (position < 0 || (size_t)position > stream->size)
+        return -1;
+    stream->position = (size_t)position;
+    return 0;
+}
+
+long zfile_ftell (FILE *file)
+{
+    zfile_memory_stream *stream = memory_stream(file);
+    if (!stream)
+        return ftell(file);
+    return stream->position > LONG_MAX ? -1 : (long)stream->position;
+}
+
+size_t zfile_fread (void *buffer, size_t item_size, size_t item_count, FILE *file)
+{
+    zfile_memory_stream *stream = memory_stream(file);
+    if (!stream)
+        return fread(buffer, item_size, item_count, file);
+    if (!item_size || !item_count)
+        return 0;
+    size_t available = stream->size - stream->position;
+    size_t count = available / item_size;
+    if (count > item_count)
+        count = item_count;
+    memcpy(buffer, stream->data + stream->position, count * item_size);
+    stream->position += count * item_size;
+    return count;
+}
+
+size_t zfile_fwrite (const void *buffer, size_t item_size, size_t item_count, FILE *file)
+{
+    zfile_memory_stream *stream = memory_stream(file);
+    if (!stream)
+        return fwrite(buffer, item_size, item_count, file);
+    if (!item_size || !item_count || item_count > ((size_t)-1) / item_size)
+        return 0;
+    size_t bytes = item_size * item_count;
+    if (stream->position > ((size_t)-1) - bytes || memory_stream_reserve(stream, stream->position + bytes))
+        return 0;
+    memcpy(stream->data + stream->position, buffer, bytes);
+    stream->position += bytes;
+    if (stream->position > stream->size)
+        stream->size = stream->position;
+    return item_count;
+}
+
+int zfile_size (FILE *file)
+{
+    zfile_memory_stream *stream = memory_stream(file);
+    if (!stream) {
+        long current = ftell(file);
+        if (current < 0 || fseek(file, 0, SEEK_END))
+            return -1;
+        long size = ftell(file);
+        fseek(file, current, SEEK_SET);
+        return size > INT_MAX ? -1 : (int)size;
+    }
+    return stream->size > INT_MAX ? -1 : (int)stream->size;
 }
 
 size_t uae4all_fread( void *ptr, size_t tam, size_t nmiemb, FILE *flujo)
@@ -568,4 +663,3 @@ void uae4all_flush_disk(int n)
 		}
 	}
 }
-

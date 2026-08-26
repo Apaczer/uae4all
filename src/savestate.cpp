@@ -70,6 +70,13 @@
 #ifdef __LIBRETRO__
 #include "libretro-core.h"
 extern FILE *retro_deserialize_file;
+
+/* Libretro saves to an in-memory zfile. */
+#define fclose zfile_fclose
+#define fseek zfile_fseek
+#define ftell zfile_ftell
+#define fread zfile_fread
+#define fwrite zfile_fwrite
 #endif
 
 int savestate_state;
@@ -441,7 +448,7 @@ void restore_state (char *filename)
 #ifdef __LIBRETRO__
 	if (retro_deserialize_file)
 	{
-		zfile_close (retro_deserialize_file);
+		zfile_fclose (retro_deserialize_file);
 		retro_deserialize_file = NULL;
 	}
 #else
@@ -471,6 +478,9 @@ void savestate_restore_finish (void)
     	update_audio();
     savestate_file = 0;
     savestate_state = 0;
+#ifdef __LIBRETRO__
+    retro_deserialize_file = NULL;
+#endif
 //    unset_special(SPCFLAG_BRK);
     notice_screen_contents_lost();
     gui_set_message("Restored", 50);
@@ -478,7 +488,7 @@ void savestate_restore_finish (void)
 
 /* Save all subsystems  */
 #ifdef __LIBRETRO__
-FILE *save_state (char *description, uae_u16 size)
+FILE *save_state (const char *description, size_t size)
 #else
 void save_state (char *filename, char *description)
 #endif
@@ -659,7 +669,7 @@ custom_prepare_savestate ();
 #ifdef __LIBRETRO__
     write_log ("STATESAVE libretro serialization complete\n");
     savestate_state = 0;
-    uae4all_fseek (f, 0, SEEK_SET);
+    zfile_fseek (f, 0, SEEK_SET);
     return f;
 #else
     write_log ("Save of '%s' complete\n", filename);

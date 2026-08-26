@@ -597,7 +597,10 @@ size_t retro_serialize_size(void)
 bool retro_serialize(void *data_, size_t size)
 {
 #if 1
-   FILE *state_file = save_state("libretro", (uae_u64)save_state_file_size);
+   if (savestate_state || !data_)
+      return false;
+
+   FILE *state_file = save_state("libretro", save_state_file_size);
    bool success = false;
 
    if (state_file)
@@ -606,6 +609,9 @@ bool retro_serialize(void *data_, size_t size)
 
       if (size >= state_file_size)
       {
+         /* serialize_size() includes headroom, so make the unused tail
+          * deterministic before handing the buffer back to the frontend. */
+         memset(data_, 0, size);
          size_t len = zfile_fread(data_, 1, state_file_size, state_file);
 
          if (len == state_file_size)
@@ -662,46 +668,23 @@ bool retro_unserialize(const void *data_, size_t size)
 
          if (len == size)
          {
-            unsigned frame_counter = 0;
-            unsigned max_frames    = 50;
-
             zfile_fseek(retro_deserialize_file, 0, SEEK_SET);
             savestate_state = STATE_DORESTORE;
 
             // For correct operation of the frontend,
             // the save state restore must be completed
-            // by the time this function returns.
-            // Since P-UAE requires several (2) frames to get
-            // itself in order during a restore event, we
-            // have to keep emulating frames until the
-            // restore is complete...
-            // > Note that we set a 'timeout' of 50 frames
-            //   here (1s of emulated time at 50Hz) to
-            //   prevent lock-ups in the event of unexpected
-            //   errors
-            // > Temporarily 'deactivate' runloop - this lets
-            //   us call m68k_go() without accessing frontend
-            //   features - specifically, it disables the audio
-            //   callback functionality
-#if 0 // TEMP
-            libretro_runloop_active = 0;
-            while (savestate_state && (frame_counter < max_frames))
-            {
-               // Note that retro_deserialize_file will be
-               // closed inside m68k_go() upon successful
-               // completion of the restore event
-               restart_pending = m68k_go(1, 1);
-               frame_counter++;
-            }
-            libretro_runloop_active = 1;
+            // by the time this function returns. The active
+            // CPU loop processes STATE_DORESTORE on the next
+            // emulated frame and returns at its normal frame boundary.
+            m68k_go(1);
+            success = savestate_state == 0;
 
-            // If the above while loop times out, then
-            // everything is completely broken. We cannot
-            // handle this here, so just assume the restore
-            // completed successfully...
-            request_reset_drawing = true;
-#endif
-            success               = true;
+            if (!success && retro_deserialize_file)
+            {
+               zfile_fclose(retro_deserialize_file);
+               retro_deserialize_file = NULL;
+               savestate_state = 0;
+            }
          }
          else
          {
@@ -737,4 +720,3 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code)
    (void)enabled;
    (void)code;
 }
-
