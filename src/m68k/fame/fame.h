@@ -100,6 +100,17 @@ typedef enum
       M68K_REG_SR
 } m68k_register;
 
+#ifndef USE_CAST_UNSIGNED
+#include <stdint.h>
+
+/* The memory blocks must be in native (Motorola) format */
+typedef struct
+{
+	unsigned low_addr;
+	unsigned high_addr;
+	uintptr_t offset;
+} M68K_PROGRAM;
+#else
 /* The memory blocks must be in native (Motorola) format */
 typedef struct
 {
@@ -107,6 +118,7 @@ typedef struct
 	unsigned high_addr;
 	unsigned offset;
 } M68K_PROGRAM;
+#endif
 
 /* The memory blocks must be in native (Motorola) format */
 typedef struct
@@ -137,7 +149,11 @@ typedef struct
 	M68K_DATA *user_write_word;
 	void           (*reset_handler)(void);
 	void           (*iack_handler)(unsigned level);
+#ifndef USE_CAST_UNSIGNED
+	uintptr_t *    icust_handler;
+#else
 	unsigned *     icust_handler;
+#endif
 	unsigned       dreg[8];
 	unsigned       areg[8];
 	unsigned       asp;
