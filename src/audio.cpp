@@ -74,14 +74,25 @@ static const int aprox_vol[128]= {-16, 0, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4,
 	sndbufpt = (uae_u16 *)(((uae_u8 *)sndbufpt) + 2); \
 	*(uae_u16 *)sndbufpt = b; \
 	sndbufpt = (uae_u16 *)(((uae_u8 *)sndbufpt) + 2); \
-}
+} \
 
+#ifdef USE_CAST_UNSIGNED
 #define CHECK_SOUND_BUFFERS() \
 { \
     if ((unsigned)sndbufpt - (unsigned)render_sndbuff >= SNDBUFFER_LEN*2) { \
 	finish_sound_buffer (); \
     } \
-}
+} \
+
+#else
+#define CHECK_SOUND_BUFFERS() \
+{ \
+    if (sndbufpt - render_sndbuff >= SNDBUFFER_LEN*2) { \
+	finish_sound_buffer (); \
+    } \
+} \
+
+#endif
 #else
 #define PUT_SOUND_WORD(b) \
 { \
@@ -89,12 +100,23 @@ static const int aprox_vol[128]= {-16, 0, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4,
 	sndbufpt = (uae_u16 *)(((uae_u8 *)sndbufpt) + 2); \
 }
 
+#ifdef USE_CAST_UNSIGNED
 #define CHECK_SOUND_BUFFERS() \
 { \
     if ((unsigned)sndbufpt - (unsigned)render_sndbuff >= SNDBUFFER_LEN) { \
 	finish_sound_buffer (); \
     } \
-}
+} \
+
+#else
+#define CHECK_SOUND_BUFFERS() \
+{ \
+    if (sndbufpt - render_sndbuff >= SNDBUFFER_LEN) { \
+	finish_sound_buffer (); \
+    } \
+} \
+
+#endif
 #endif
 
 #define SAMPLE_HANDLER_AHI \
