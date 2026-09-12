@@ -2133,8 +2133,13 @@ void vsync_handle_redraw (int long_frame, int lof_changed)
 	    set_inhibit_frame (IHF_QUIT_PROGRAM);
 	    set_special (SPCFLAG_BRK);
 #ifdef USE_FAME_CORE
+#ifdef USE_CYCLONE_CORE
+            m68k_release_timeslice();
+#else
             m68k_stop_emulating();
 #endif
+#endif
+
 	    return;
 	}
 

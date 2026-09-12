@@ -249,10 +249,11 @@ static void m68k_run (void)
 		libretroreset = 0;
 		uae4all_reset ();
 	}
+	static unsigned cycles, cycles_actual=M68KCONTEXT.cycles_counter;
 #else
 	uae4all_reset ();
+	unsigned cycles, cycles_actual=M68KCONTEXT.cycles_counter;
 #endif
-	static unsigned cycles, cycles_actual=M68KCONTEXT.cycles_counter;
 
 	for (;;) {
 #ifdef DEBUG_M68K

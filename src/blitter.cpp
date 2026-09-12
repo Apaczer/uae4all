@@ -33,7 +33,11 @@
 static __inline__ void setnasty(void)
 {
 #ifdef USE_FAME_CORE
+#ifdef USE_CYCLONE_CORE
+    m68k_release_timeslice();
+#else
 	m68k_stop_emulating();
+#endif
 #endif
 	set_special (SPCFLAG_BLTNASTY);
 }
