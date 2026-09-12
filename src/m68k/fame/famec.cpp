@@ -9,6 +9,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef USE_CAST_UNSIGNED
+#include <stdint.h>
+#endif
 #include <string.h>
 #include <assert.h>
 
@@ -340,7 +343,11 @@
 
 #else
 
+#ifndef USE_CAST_UNSIGNED
+#define UNBASED_PC ((u32)((uintptr_t)PC - BasePC))
+#else
 #define UNBASED_PC ((u32)PC - BasePC)
+#endif
 
 #define READ_BASED_PC (*PC)
 
@@ -4630,12 +4637,21 @@ typedef enum
 
 
 /* The memory blocks must be in native (Motorola) format */
+#ifndef USE_CAST_UNSIGNED
+typedef struct
+{
+    u32 low_addr;
+    u32 high_addr;
+    uintptr_t offset;
+} M68K_PROGRAM;
+#else
 typedef struct
 {
     u32 low_addr;
     u32 high_addr;
     u32 offset;
 } M68K_PROGRAM;
+#endif
 
 /* The memory blocks must be in native (Motorola) format */
 typedef struct
@@ -4666,7 +4682,11 @@ typedef struct
     M68K_DATA *user_write_word;
     void           (*reset_handler)(void);
     void           (*iack_handler)(u32 level);
+#ifndef USE_CAST_UNSIGNED
+    uintptr_t *icust_handler;
+#else
     u32 *icust_handler;
+#endif
     famec_union32   dreg[8];
     famec_union32   areg[8];
     u32 asp;
@@ -4701,9 +4721,17 @@ static u32 PC;
 static u16* BasePC;
 #else
 static u16 *PC;
+#ifndef USE_CAST_UNSIGNED
+static uintptr_t BasePC;
+#else
 static u32 BasePC;
 #endif
+#endif
+#ifndef USE_CAST_UNSIGNED
+static uintptr_t Fetch[M68K_FETCHBANK];
+#else
 static u32 Fetch[M68K_FETCHBANK];
+#endif
 
 /* Lookup IRQ level to attend */
 /* Indexed by interrupts[0] */
@@ -4854,13 +4882,21 @@ static void famec_SetDummyFetch(void)
     j = (0xFFFFFFFF >> M68K_FETCHSFT) & M68K_FETCHMASK;
     while (i <= j)
     {
+#ifndef USE_CAST_UNSIGNED
+        Fetch[i] = ((uintptr_t)&dummy_fetch)-(i*(1<<M68K_FETCHSFT));
+#else
         Fetch[i] = ((u32)&dummy_fetch)-(i*(1<<M68K_FETCHSFT));
+#endif
         i++;
     }
 #endif
 }
 
+#ifndef USE_CAST_UNSIGNED
+static void famec_SetFetch(u32 low_adr, u32 high_adr, uintptr_t fetch_adr)
+#else
 static void famec_SetFetch(u32 low_adr, u32 high_adr, u32 fetch_adr)
+#endif
 {
     u32 i, j;
 
@@ -5110,9 +5146,17 @@ static EXTRA_INLINE u32 Read_Byte(u32 addr)
         val= (*((mem8_handler_func *)&DataRB[i].mem_handler))(addr);
     else
 #ifndef FAME_BIG_ENDIAN
+#ifndef USE_CAST_UNSIGNED
+        val = *((u8 *)(((uintptr_t)DataRB[i].data) + (addr^1)));
+#else
         val = *((u8 *)(((u32)DataRB[i].data) + (addr^1)));
+#endif
+#else
+#ifndef USE_CAST_UNSIGNED
+        val = *((u8 *)(((uintptr_t)DataRB[i].data) + (addr)));
 #else
         val = *((u8 *)(((u32)DataRB[i].data) + (addr)));
+#endif
 #endif
 
 #ifdef FAME_DEBUG
@@ -5145,7 +5189,11 @@ static EXTRA_INLINE u32 Read_Word(u32 addr)
     if (DataRW[i].mem_handler)
         val= (*((mem16_handler_func *)&DataRW[i].mem_handler))(addr);
     else
+#ifndef USE_CAST_UNSIGNED
+        val = *((u16 *)(((uintptr_t)DataRW[i].data) + addr));
+#else
         val = *((u16 *)(((u32)DataRW[i].data) + addr));
+#endif
 
 #ifdef FAME_DEBUG
     printf("Reading 0x%08X = 0x%04X...\n",addr,val);
@@ -5176,9 +5224,17 @@ static EXTRA_INLINE void Write_Byte(u32 addr, u32 data)
         (*((memw_handler_func *)&DataWB[i].mem_handler))(addr,data);
     else
 #ifndef FAME_BIG_ENDIAN
+#ifndef USE_CAST_UNSIGNED
+        *((u8 *)(((uintptr_t)DataWB[i].data)+ (addr^1))) = data;
+#else
         *((u8 *)(((u32)DataWB[i].data)+ (addr^1))) = data;
+#endif
+#else
+#ifndef USE_CAST_UNSIGNED
+        *((u8 *)(((uintptr_t)DataWB[i].data)+ (addr))) = data;
 #else
         *((u8 *)(((u32)DataWB[i].data)+ (addr))) = data;
+#endif
 #endif
 }
 
@@ -5204,7 +5260,11 @@ static EXTRA_INLINE void Write_Word(u32 addr, u32 data)
     if (DataWW[i].mem_handler != NULL)
         (*((memw_handler_func *)&DataWW[i].mem_handler))(addr,data);
     else
+#ifndef USE_CAST_UNSIGNED
+        *((u16 *)(((uintptr_t)DataWW[i].data) + addr)) = data;
+#else
         *((u16 *)(((u32)DataWW[i].data) + addr)) = data;
+#endif
 }
 
 static u32 Opcode;
@@ -5250,7 +5310,11 @@ static EXTRA_INLINE void execute_exception(s32 vect)
     {
         FAME_CONTEXT.sr = GET_SR;
         FAME_CONTEXT.pc = UNBASED_PC;
+#ifndef USE_CAST_UNSIGNED
+        ((icust_handler_func)FAME_CONTEXT.icust_handler[vect])(vect);
+#else
         (*(icust_handler_func*)&FAME_CONTEXT.icust_handler[vect])(vect);
+#endif
     }
     else
     {
@@ -5734,7 +5798,11 @@ s32 FAME_API(fetch)(u32 addr, u32 memory_space)
 #ifdef FAME_DEBUG
                 printf("Ptr en region %d... addr: %p\n",i,ds[i].data);
 #endif
+#ifndef USE_CAST_UNSIGNED
+                val = *((u16 *)(((uintptr_t)ds[i].data) + addr));
+#else
                 val = *((u16 *)(((u32)ds[i].data) + addr));
+#endif
 #ifdef FAME_DEBUG
                 puts("read");
 #endif
@@ -5747,7 +5815,11 @@ s32 FAME_API(fetch)(u32 addr, u32 memory_space)
     }
     else
     {
+#ifndef USE_CAST_UNSIGNED
+        uintptr_t tmp=Fetch[((addr) >> M68K_FETCHSFT) & M68K_FETCHMASK];
+#else
         u32 tmp=Fetch[((addr) >> M68K_FETCHSFT) & M68K_FETCHMASK];
+#endif
         u16 *p= (u16*)(((addr) & M68K_ADDR_MASK) + (tmp));
         val = *p;
 #ifdef FAME_DEBUG

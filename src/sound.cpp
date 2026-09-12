@@ -211,7 +211,11 @@ static void sound_callback (void *userdata, Uint8 *stream, int len)
     in_callback = 1;
     if (! closing_sound) {
 #ifdef USE_SOUND_SEMS
+#ifdef USE_CAST_UNSIGNED
          while ((!closing_sound) && (((unsigned)render_sndbuff)==((unsigned)callback_sndbuff)))
+#else
+         while ((!closing_sound) && (((uintptr_t)render_sndbuff)==((uintptr_t)callback_sndbuff)))
+#endif
 	 		uae_sem_wait (&data_available_sem);
 #else
 	n_callback_sndbuff=(n_callback_sndbuff+1)&7;
@@ -228,7 +232,11 @@ static void sound_callback (void *userdata, Uint8 *stream, int len)
 	}
 #endif
 #ifdef USE_SOUND_SEMS
+#ifdef USE_CAST_UNSIGNED
 	 if (((unsigned)render_sndbuff)!=((unsigned)callback_sndbuff)) 
+#else
+	 if (((uintptr_t)render_sndbuff)!=((uintptr_t)callback_sndbuff))
+#endif
 #endif
 	 {
 #ifndef DREAMCAST

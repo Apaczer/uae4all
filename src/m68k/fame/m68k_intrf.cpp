@@ -123,7 +123,11 @@ M68K_DATA midato_read_8[257];
 M68K_DATA midato_read_16[257];
 M68K_DATA midato_write_8[257];
 M68K_DATA midato_write_16[257];
+#ifndef USE_CAST_UNSIGNED
+static uintptr_t micontexto_fpa[256];
+#else
 static unsigned micontexto_fpa[256];
+#endif
 
 unsigned mispcflags=0;
 
@@ -560,11 +564,19 @@ void init_memmaps(addrbank* banco)
 
 	memset(&micontexto,0,sizeof(M68K_CONTEXT));
 
+#ifndef USE_CAST_UNSIGNED
+	memset(&micontexto_fpa,0,sizeof(uintptr_t)*256);
+
+	micontexto_fpa[0x04]=(uintptr_t)&uae_chk_handler;
+//	micontexto_fpa[0x10]=(uintptr_t)&uae_chk_handler; // FAME BUG !!!
+	micontexto.icust_handler = micontexto_fpa;
+#else
 	memset(&micontexto_fpa,0,sizeof(unsigned)*256);
 
 	micontexto_fpa[0x04]=(unsigned)&uae_chk_handler;
 //	micontexto_fpa[0x10]=(unsigned)&uae_chk_handler; // FAME BUG !!!
 	micontexto.icust_handler = (unsigned int*)&micontexto_fpa;
+#endif
 
 	micontexto.fetch=(M68K_PROGRAM *)&miprograma;
 	micontexto.read_byte=(M68K_DATA *)&midato_read_8;
@@ -589,7 +601,11 @@ void init_memmaps(addrbank* banco)
 	
 	for(i=0;i<256;i++)
 	{
+#ifndef USE_CAST_UNSIGNED
+		uintptr_t offset=(uintptr_t)banco->baseaddr;
+#else
 		unsigned offset=(unsigned)banco->baseaddr;
+#endif
 		unsigned low_addr=(i<<16);
 		unsigned high_addr=((i+1)<<16)-1;
 		void *data=NULL;
@@ -610,7 +626,11 @@ void init_memmaps(addrbank* banco)
 
 		miprograma[i].low_addr=low_addr;
 		miprograma[i].high_addr=high_addr;
+#ifndef USE_CAST_UNSIGNED
+		miprograma[i].offset=((uintptr_t)&mimemoriadummy)-low_addr;
+#else
 		miprograma[i].offset=((unsigned)&mimemoriadummy)-low_addr;
+#endif
 		midato_read_8[i].low_addr=low_addr;
 		midato_read_8[i].high_addr=high_addr;
 		midato_read_8[i].mem_handler=mem_handler_r8;
@@ -630,7 +650,11 @@ void init_memmaps(addrbank* banco)
 	}
 	miprograma[256].low_addr=(unsigned)-1;
 	miprograma[256].high_addr=(unsigned)-1;
+#ifndef USE_CAST_UNSIGNED
+	miprograma[256].offset=0;
+#else
 	miprograma[256].offset=(unsigned)NULL;
+#endif
 	midato_read_8[256].low_addr=(unsigned)-1;
 	midato_read_8[256].high_addr=(unsigned)-1;
 	midato_read_8[256].mem_handler=NULL;
@@ -653,7 +677,11 @@ void init_memmaps(addrbank* banco)
 
 void map_zone(unsigned addr, addrbank* banco, unsigned realstart)
 {
+#ifndef USE_CAST_UNSIGNED
+	uintptr_t offset=(uintptr_t)banco->baseaddr;
+#else
 	unsigned offset=(unsigned)banco->baseaddr;
+#endif
 	if (addr>255)
 		return;
 
@@ -698,7 +726,11 @@ void map_zone(unsigned addr, addrbank* banco, unsigned realstart)
 #endif
 		miprograma[addr].low_addr=low_addr;
 		miprograma[addr].high_addr=high_addr;
+#ifndef USE_CAST_UNSIGNED
+		miprograma[addr].offset=((uintptr_t)&mimemoriadummy)-low_addr;
+#else
 		miprograma[addr].offset=((unsigned)&mimemoriadummy)-low_addr;
+#endif
 		midato_read_8[addr].low_addr=low_addr;
 		midato_read_8[addr].high_addr=high_addr;
 		midato_read_8[addr].mem_handler=(void*)banco->bget;
