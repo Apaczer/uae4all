@@ -22,6 +22,8 @@
 #include "filesys.h"
 #include "autoconf.h"
 
+int mainMenu_statusbar=-1;
+
 unsigned int VIRTUAL_WIDTH=PREFS_GFX_WIDTH;
 unsigned int retrow=PREFS_GFX_WIDTH;
 unsigned int retroh=PREFS_GFX_HEIGHT;
