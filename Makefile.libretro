@@ -1,23 +1,63 @@
 NAME    = uae4all
 O       = o
 RM      = rm -f
+STATIC_LINKING ?= 0
+
 #CC     = gcc
 #CXX    = g++
-STRIP   = strip
+#STRIP  = strip
+#AR     = ar
+ifeq ($(platform), miyoo)
+ifeq (,$(findstring arm,$(CC)))
+CC     = /opt/miyoo/usr/bin/arm-linux-gcc
+endif
+ifeq (,$(findstring arm,$(CXX)))
+CXX    = /opt/miyoo/usr/bin/arm-linux-g++
+endif
+ifeq (,$(findstring arm,$(STRIP)))
+STRIP  = /opt/miyoo/usr/bin/arm-linux-strip
+endif
+ifeq (,$(findstring arm,$(AS)))
+AS  = /opt/miyoo/usr/bin/arm-linux-as
+endif
+endif
 
+$(info CC=$(CC))
+$(info CXX=$(CXX))
+$(info AS=$(AS))
+$(info STRIP=$(STRIP))
+$(info AR=$(AR))
+
+ifeq ($(STATIC_LINKING),1)
+TARGET = $(NAME)_libretro.a
+else
 TARGET = $(NAME)_libretro.so
+endif
 
 all: $(TARGET)
 
-#CYCLONE_CORE=1
-FAME_CORE=1
-FAME_CORE_C=1
+CYCLONE_CORE=1
+#FAME_CORE=1
+#FAME_CORE_C=1
 #LIB7Z=1
-
+ifeq ($(platform),)
 LDFLAGS     = -lz -lpthread
-SHARED      = -shared -Wl,--version-script=libretro/link.T 
+MORE_CFLAGS = -g -O0 -fpermissive -fPIC
+else ifeq ($(platform), miyoo)
+LDFLAGS     = -lz -lpthread
+MORE_CFLAGS = -g -O3 -fno-PIC -DFAST_COMPILER -DHAVE_KBDJOYPAD
+endif
+ifeq ($(LTO),yes)
+LDFLAGS += -flto
+endif
 
-MORE_CFLAGS = -g -O3  -I/opt/vc/include/interface/vmcs_host/linux/ -Isrc/ -I/opt/vc/include/ -I/opt/vc/include/interface/vcos/pthreads/  -Isrc/include/ -Isrc/menu -Isrc/vkbd -fomit-frame-pointer  -Wno-unused -Wno-format -DGCCCONSTFUNC="__attribute__((const))" -DUSE_UNDERSCORE -fno-exceptions -DUNALIGNED_PROFITABLE -DREGPARAM="__attribute__((regparm(3)))" -DOPTIMIZED_FLAGS -D__inline__=__inline__ -DSHM_SUPPORT_LINKS=0 -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
+ifeq ($(STATIC_LINKING),0)
+SHARED      = -shared -Wl,--version-script=libretro/link.T
+else
+MORE_CFLAGS+= -DNO_MAIN_IN_MAIN_C
+endif
+
+MORE_CFLAGS+= -Isrc/ -Isrc/include/ -Isrc/menu -Isrc/vkbd -fomit-frame-pointer -fno-threadsafe-statics -Wno-unused -Wno-format -DGCCCONSTFUNC="__attribute__((const))" -DUSE_UNDERSCORE -fno-exceptions -DUNALIGNED_PROFITABLE -DREGPARAM="__attribute__((regparm(3)))" -DOPTIMIZED_FLAGS -D__inline__=__inline__ -DSHM_SUPPORT_LINKS=0 -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
 
 MORE_CFLAGS+= -Ilibretro/include/ -Ilibretro/core/
 
@@ -35,7 +75,7 @@ MORE_CFLAGS+= -DNO_VKBD
 #MORE_CFLAGS+= -DUSE_SHORT_BLITTABLE
 #MORE_CFLAGS+= -DUSE_BLIT_MASKTABLE
 #MORE_CFLAGS+= -DUSE_RASTER_DRAW
-#MORE_CFLAGS+= -DUSE_ALL_LINES
+MORE_CFLAGS+= -DUSE_ALL_LINES
 #MORE_CFLAGS+= -DUSE_LINESTATE
 #MORE_CFLAGS+= -DUSE_DISK_UPDATE_PER_LINE
 #MORE_CFLAGS+= -DDOUBLEBUFFER
@@ -175,6 +215,9 @@ ifdef CYCLONE_CORE
 CFLAGS+=-DUSE_FAME_CORE
 CFLAGS+=-DUSE_CYCLONE_CORE
 #ASFLAGS+=-mfloat-abi=soft -mcpu=arm920t
+ifeq ($(platform),miyoo)
+ASFLAGS+=-mcpu=arm926ej-s
+endif
 OBJS += src/m68k/cyclone/cyclone.o
 OBJS += src/m68k/m68k_cmn_intrf.o
 OBJS += src/m68k/cyclone/m68k_intrf.o
@@ -194,9 +237,12 @@ endif
 CPPFLAGS  = $(CFLAGS)
 
 $(TARGET): $(OBJS) 
+ifeq ($(STATIC_LINKING), 1)
+	$(AR) rcs $@ $(OBJS)
+else
 	$(CC) $(SHARED) -o $(TARGET) $(OBJS) $(LDFLAGS)
 #	$(STRIP) $(TARGET)
-
+endif
 
 install:$(TARGET)
 	cp $(TARGET) ~/.config/retroarch/cores/
