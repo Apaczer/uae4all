@@ -41,6 +41,7 @@ PROFILE ?= 0
 ## use 7z savestate compression for *.asf files
 LIB7Z=1
 HOME_DIR=1
+#SOUND_NEW=1 # minimal audio by notaz via gp2x
 
 DEFAULT_CFLAGS = $(PKGS_CFLAGS) -DMIYOO
 LDFLAGS = $(PKGS_LIBS)
@@ -99,7 +100,9 @@ MORE_CFLAGS+= -DUSE_ZFILE
 #MORE_CFLAGS+= -DUAE4ALL_NO_USE_RESTRICT
 
 #MORE_CFLAGS+= -DNO_SOUND
+ifndef SOUND_NEW
 MORE_CFLAGS+= -DNO_THREADS
+endif
 
 #MORE_CFLAGS+= -DDEBUG_TIMESLICE
 
@@ -168,7 +171,6 @@ OBJS =	\
 	src/missing.o \
 	src/gui.o \
 	src/od-joy.o \
-	src/sound.o \
 	src/sdlgfx.o \
 	src/writelog.o \
 	src/zfile.o \
@@ -181,6 +183,13 @@ OBJS =	\
 	src/vkbd/vkbd.o \
 	src/dingoo.o \
 
+ifdef SOUND_NEW
+OBJS +=	\
+	src/sound_sdl_new.o
+else
+OBJS +=	\
+	src/sound.o
+endif
 ifdef LIB7Z
 CFLAGS+=-DUSE_LIB7Z
 OBJS+= \
