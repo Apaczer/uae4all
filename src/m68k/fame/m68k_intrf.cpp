@@ -427,11 +427,10 @@ void m68k_go (int may_quit)
             handle_active_events ();
             if (mispcflags)
                 do_specialties (0);
-
-            if (!savestate_state)
-                uae4all_reset ();
         }
 
+        if (!savestate_state)
+                uae4all_reset ();
         savestate_restore_finish ();
 
         m68k_run();
