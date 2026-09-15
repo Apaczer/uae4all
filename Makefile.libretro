@@ -36,10 +36,7 @@ endif
 
 all: $(TARGET)
 
-# if no CORE selected the UAE will be used
-#CYCLONE_CORE=1
-#FAME_CORE=1
-#FAME_CORE_C=1
+# pick correct CORE by platform (disable default core below to use UAE)
 LIB7Z=1
 ifeq ($(platform),)
 LDFLAGS     = -lz -lpthread
@@ -115,7 +112,14 @@ MORE_CFLAGS+= -DFAME_INTERRUPTS_PATCH
 #MORE_CFLAGS+= -DSAFE_MEMORY_ACCESS
 #MORE_CFLAGS+= -DERROR_WHEN_MEMORY_OVERRUN
 
-MORE_CFLAGS+= -DDEBUG_UAE4ALL # no debug for UAE core
+# Debug may not compile for UAE core so disable
+ifdef FAME_CORE
+MORE_CFLAGS+= -DDEBUG_UAE4ALL
+endif
+ifdef CYCLONE_CORE
+MORE_CFLAGS+= -DDEBUG_UAE4ALL
+endif
+
 #MORE_CFLAGS+= -DDEBUG_UAE4ALL_FFLUSH
 #MORE_CFLAGS+= -DDEBUG_M68K
 #MORE_CFLAGS+= -DDEBUG_INTERRUPTS
