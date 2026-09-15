@@ -24,7 +24,6 @@
 #include "zfile.h"
 
 unsigned prefs_chipmem_size;
-extern int mainMenu_ram;
 
 #ifdef USE_MAPPED_MEMORY
 #include <sys/mman.h>
@@ -983,7 +982,7 @@ int good_address_fd;
 
 #ifndef NATMEM_OFFSET
 
-uae_u8 *mapped_malloc (size_t s, const char *file)
+uae_u8 *mapped_malloc (size_t s, char *file)
 {
     return (uae_u8 *)xmalloc (s);
 }
@@ -1111,7 +1110,7 @@ static void add_shmmaps (uae_u32 start, addrbank *what)
     shm_start = y;
 }
 
-uae_u8 *mapped_malloc (size_t s, const char *file)
+uae_u8 *mapped_malloc (size_t s, char *file)
 {
     int id;
     void *answer;
@@ -1171,16 +1170,6 @@ static void allocate_memory (void)
 	if (chipmemory)
 	    mapped_free (chipmemory);
 	chipmemory = 0;
-
-#ifdef MIYOO
-	prefs_chipmem_size=(!mainMenu_ram ? 0x00100000 : 0x00200000);
-#ifdef DEBUG_RAM
-	if (prefs_chipmem_size==0x00100000)
-		printf ("\nRAM 1MB\n");
-	else
-		printf ("\nRAM 2MB\n");
-#endif
-#endif
 
 	allocated_chipmem = prefs_chipmem_size;
 	chipmem_mask = allocated_chipmem - 1;

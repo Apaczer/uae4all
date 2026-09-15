@@ -107,7 +107,7 @@ void uae4all_show_time(void)
 #ifdef DINGOO
 #define VIDEO_FLAGS_INIT SDL_SWSURFACE
 #else
-#define VIDEO_FLAGS_INIT SDL_HWSURFACE
+#define VIDEO_FLAGS_INIT SDL_HWSURFACE|SDL_FULLSCREEN
 #endif
 #endif
 
@@ -148,11 +148,11 @@ void flush_screen (void)
 #ifdef DEBUG_GFX
     dbgf("Function: flush_block %d %d\n", ystart, ystop);
 #endif
-#if !defined(DREAMCAST) && !defined(DINGOO)
+#ifndef DINGOO
+#ifndef DREAMCAST
     if (SDL_MUSTLOCK(prSDLScreen))
     	SDL_UnlockSurface (prSDLScreen);
 #endif
-#ifndef DINGOO
 #ifndef DOUBLEBUFFER
 #ifdef USE_RASTER_DRAW
     SDL_UpdateRect(prSDLScreen, 0, ystart, current_width, ystop-ystart+1);
@@ -182,17 +182,12 @@ void flush_screen (void)
 #if defined(DOUBLEBUFFER) || defined(DINGOO)
 	SDL_Flip(prSDLScreen);
 #endif
+#ifdef USE_RASTER_DRAW
+    }
+#endif
 #if !defined(DREAMCAST) && !defined(DINGOO)
     if (SDL_MUSTLOCK(prSDLScreen))
     	SDL_LockSurface (prSDLScreen);
-#endif
-#if defined(DOUBLEBUFFER) || defined(DINGOO)
-	gfx_mem = (char*) prSDLScreen->pixels;
-	prSDLScreenPixels = (uae_u16*) prSDLScreen->pixels;
-	reset_screen_pointers();
-#endif
-#ifdef USE_RASTER_DRAW
-    }
 #endif
     uae4all_prof_end(13);
 }
@@ -313,14 +308,15 @@ static void graphics_subinit (void)
 	}
 	else
 	{
+		prSDLScreenPixels=(uae_u16 *)prSDLScreen->pixels;
+#ifdef DEBUG_GFX 
+		dbgf("Pixel Color -> R: %d,  G: %d,  B: %d,  \n", prSDLScreen->format->Rmask, prSDLScreen->format->Gmask, prSDLScreen->format->Bmask);
+		dbgf("Bytes per Pixel: %d\n", prSDLScreen->format->BytesPerPixel);
+		dbgf("Bytes per Line: %d\n", prSDLScreen->pitch);
+#endif
 #if !defined(DREAMCAST) && !defined(DINGOO)
 		if (SDL_MUSTLOCK(prSDLScreen))
 			SDL_LockSurface(prSDLScreen);
-#endif
-		prSDLScreenPixels=(uae_u16 *)prSDLScreen->pixels;
-#ifdef DEBUG_GFX
-		dbgf("Bytes per Pixel: %d\n", prSDLScreen->format->BytesPerPixel);
-		dbgf("Bytes per Line: %d\n", prSDLScreen->pitch);
 #endif
 		memset(prSDLScreen->pixels, 0, current_width * current_height * prSDLScreen->format->BytesPerPixel);
 #if !defined(DREAMCAST) && !defined(DINGOO)
@@ -339,10 +335,6 @@ static void graphics_subinit (void)
 		SDL_ShowCursor(SDL_DISABLE);
 #endif
 		/* Initialize structure for Amiga video modes */
-#if !defined(DREAMCAST) && !defined(DINGOO)
-		if (SDL_MUSTLOCK(prSDLScreen))
-			SDL_LockSurface(prSDLScreen);
-#endif
 		gfx_mem = (char *)prSDLScreen->pixels;
 		gfx_rowbytes = prSDLScreen->pitch;
 	}
@@ -548,10 +540,6 @@ void handle_events (void)
     dbg("Function: handle_events");
 #endif
 
-#if !defined(DREAMCAST) && !defined(DINGOO)
-    if (SDL_MUSTLOCK(prSDLScreen))
-    	SDL_UnlockSurface (prSDLScreen);
-#endif
 
 #if defined(MAX_AUTOEVENTS) || defined(AUTOEVENTS)
 	{
@@ -716,14 +704,6 @@ break;
 		    rEvent.key.keysym.sym=vkbd_button3;
 	    else if ((rEvent.jbutton.button==1) && (vkbd_button4!=(SDLKey)0))
 		    rEvent.key.keysym.sym=vkbd_button4;
-	    else if ((rEvent.jbutton.button==7) && (vkbd_button5!=(SDLKey)0))
-		    rEvent.key.keysym.sym=vkbd_button5;
-	    else if ((rEvent.jbutton.button==8) && (vkbd_button6!=(SDLKey)0))
-		    rEvent.key.keysym.sym=vkbd_button6;
-	    else if ((rEvent.jbutton.button==9) && (vkbd_button7!=(SDLKey)0))
-		    rEvent.key.keysym.sym=vkbd_button7;
-	    else if ((rEvent.jbutton.button==10) && (vkbd_button8!=(SDLKey)0))
-		    rEvent.key.keysym.sym=vkbd_button8;
 	    else
 	    	break;
         case SDL_KEYDOWN:
@@ -731,43 +711,20 @@ break;
 	    dbg("Event: key down");
 #endif
 #ifndef DREAMCAST
-	    if ((rEvent.key.keysym.sym!=SDLK_F11)&&(rEvent.key.keysym.sym!=SDLK_F12)
+	    if ((rEvent.key.keysym.sym!=SDLK_F11)&&(rEvent.key.keysym.sym!=SDLK_F12)&&(rEvent.key.keysym.sym!=SDLK_PAGEUP)
 #ifdef EMULATED_JOYSTICK
-		&&(rEvent.key.keysym.sym!=SDLK_ESCAPE)&&
-		((rEvent.key.keysym.sym!=SDLK_SPACE)||((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode)))&&
-		(rEvent.key.keysym.sym!=SDLK_LCTRL)&&
-		((rEvent.key.keysym.sym!=SDLK_LALT)||((rEvent.key.keysym.sym==SDLK_LALT)&&(vkbd_button2!=(SDLKey)0)&&(!vkbd_mode)))&&
-		(rEvent.key.keysym.sym!=SDLK_RETURN)&&
-		((rEvent.key.keysym.sym!=SDLK_LSHIFT)||((rEvent.key.keysym.sym==SDLK_LSHIFT)&&(vkbd_button4!=(SDLKey)0)&&(!vkbd_mode)))&&
-		((rEvent.key.keysym.sym!=SDLK_PAGEUP)||((rEvent.key.keysym.sym==SDLK_PAGEUP)&&(vkbd_button5!=(SDLKey)0)&&(!vkbd_mode)))&&
-		((rEvent.key.keysym.sym!=SDLK_PAGEDOWN)||((rEvent.key.keysym.sym==SDLK_PAGEDOWN)&&(vkbd_button6!=(SDLKey)0)&&(!vkbd_mode)))&&
-		((rEvent.key.keysym.sym!=SDLK_RALT)||((rEvent.key.keysym.sym==SDLK_RALT)&&(vkbd_button7!=(SDLKey)0)&&(!vkbd_mode)))&&
-		((rEvent.key.keysym.sym!=SDLK_RSHIFT)||((rEvent.key.keysym.sym==SDLK_RSHIFT)&&(vkbd_button8!=(SDLKey)0)&&(!vkbd_mode)))&&
-		(rEvent.key.keysym.sym!=SDLK_TAB)&&(rEvent.key.keysym.sym!=SDLK_BACKSPACE)&&
-		(rEvent.key.keysym.sym!=SDLK_UP)&&(rEvent.key.keysym.sym!=SDLK_DOWN)&&(rEvent.key.keysym.sym!=SDLK_LEFT)&&(rEvent.key.keysym.sym!=SDLK_RIGHT)
+		&&(rEvent.key.keysym.sym!=SDLK_ESCAPE)&&((rEvent.key.keysym.sym!=SDLK_SPACE)||((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode)))&&(rEvent.key.keysym.sym!=SDLK_LCTRL)&&((rEvent.key.keysym.sym!=SDLK_LALT)||((rEvent.key.keysym.sym==SDLK_LALT)&&(vkbd_button2!=(SDLKey)0)&&(!vkbd_mode)))&&(rEvent.key.keysym.sym!=SDLK_RETURN)&&((rEvent.key.keysym.sym!=SDLK_LSHIFT)||((rEvent.key.keysym.sym==SDLK_LSHIFT)&&(vkbd_button4!=(SDLKey)0)&&(!vkbd_mode)))&&(rEvent.key.keysym.sym!=SDLK_TAB)&&(rEvent.key.keysym.sym!=SDLK_BACKSPACE)&&(rEvent.key.keysym.sym!=SDLK_UP)&&(rEvent.key.keysym.sym!=SDLK_DOWN)&&(rEvent.key.keysym.sym!=SDLK_LEFT)&&(rEvent.key.keysym.sym!=SDLK_RIGHT)
 #endif
 			    )
 	    {
 		    if ((rEvent.key.keysym.sym==SDLK_LALT)&&(vkbd_button2!=(SDLKey)0)&&(!vkbd_mode))
 			    rEvent.key.keysym.sym=vkbd_button2;
 		    else
-		    if ((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode))
-			    rEvent.key.keysym.sym=vkbd_button3;
-		    else
 		    if ((rEvent.key.keysym.sym==SDLK_LSHIFT)&&(vkbd_button4!=(SDLKey)0)&&(!vkbd_mode))
 			    rEvent.key.keysym.sym=vkbd_button4;
 		    else
-		    if ((rEvent.key.keysym.sym==SDLK_PAGEUP)&&(vkbd_button5!=(SDLKey)0)&&(!vkbd_mode))
-			    rEvent.key.keysym.sym=vkbd_button5;
-		    else
-		    if ((rEvent.key.keysym.sym==SDLK_PAGEDOWN)&&(vkbd_button6!=(SDLKey)0)&&(!vkbd_mode))
-			    rEvent.key.keysym.sym=vkbd_button6;
-		    else
-		    if ((rEvent.key.keysym.sym==SDLK_RALT)&&(vkbd_button7!=(SDLKey)0)&&(!vkbd_mode))
-			    rEvent.key.keysym.sym=vkbd_button7;
-		    else
-		    if ((rEvent.key.keysym.sym==SDLK_RSHIFT)&&(vkbd_button8!=(SDLKey)0)&&(!vkbd_mode))
-			    rEvent.key.keysym.sym=vkbd_button8;
+		    if ((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode))
+			    rEvent.key.keysym.sym=vkbd_button3;
 #else
 	    {
 #endif
@@ -790,14 +747,6 @@ break;
 		    rEvent.key.keysym.sym=vkbd_button3;
 	    else if ((rEvent.jbutton.button==1) && (vkbd_button4!=(SDLKey)0))
 		    rEvent.key.keysym.sym=vkbd_button4;
-	    else if ((rEvent.jbutton.button==7) && (vkbd_button5!=(SDLKey)0))
-		    rEvent.key.keysym.sym=vkbd_button5;
-	    else if ((rEvent.jbutton.button==8) && (vkbd_button6!=(SDLKey)0))
-		    rEvent.key.keysym.sym=vkbd_button6;
-	    else if ((rEvent.jbutton.button==9) && (vkbd_button7!=(SDLKey)0))
-		    rEvent.key.keysym.sym=vkbd_button7;
-	    else if ((rEvent.jbutton.button==10) && (vkbd_button8!=(SDLKey)0))
-		    rEvent.key.keysym.sym=vkbd_button8;
 	    else
 	    	break;
 	case SDL_KEYUP:
@@ -805,43 +754,20 @@ break;
 	    dbg("Event: key up");
 #endif
 #ifndef DREAMCAST
-	    if ((rEvent.key.keysym.sym!=SDLK_F11)&&(rEvent.key.keysym.sym!=SDLK_F12)
+	    if ((rEvent.key.keysym.sym!=SDLK_F11)&&(rEvent.key.keysym.sym!=SDLK_F12)&&(rEvent.key.keysym.sym!=SDLK_PAGEUP)
 #ifdef EMULATED_JOYSTICK
-		&&(rEvent.key.keysym.sym!=SDLK_ESCAPE)&&
-		((rEvent.key.keysym.sym!=SDLK_SPACE)||((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode)))&&
-		(rEvent.key.keysym.sym!=SDLK_LCTRL)&&
-		((rEvent.key.keysym.sym!=SDLK_LALT)||((rEvent.key.keysym.sym==SDLK_LALT)&&(vkbd_button2!=(SDLKey)0)&&(!vkbd_mode)))&&
-		(rEvent.key.keysym.sym!=SDLK_RETURN)&&
-		((rEvent.key.keysym.sym!=SDLK_LSHIFT)||((rEvent.key.keysym.sym==SDLK_LSHIFT)&&(vkbd_button4!=(SDLKey)0)&&(!vkbd_mode)))&&
-		((rEvent.key.keysym.sym!=SDLK_PAGEUP)||((rEvent.key.keysym.sym==SDLK_PAGEUP)&&(vkbd_button5!=(SDLKey)0)&&(!vkbd_mode)))&&
-		((rEvent.key.keysym.sym!=SDLK_PAGEDOWN)||((rEvent.key.keysym.sym==SDLK_PAGEDOWN)&&(vkbd_button6!=(SDLKey)0)&&(!vkbd_mode)))&&
-		((rEvent.key.keysym.sym!=SDLK_RALT)||((rEvent.key.keysym.sym==SDLK_RALT)&&(vkbd_button7!=(SDLKey)0)&&(!vkbd_mode)))&&
-		((rEvent.key.keysym.sym!=SDLK_RSHIFT)||((rEvent.key.keysym.sym==SDLK_RSHIFT)&&(vkbd_button8!=(SDLKey)0)&&(!vkbd_mode)))&&
-		(rEvent.key.keysym.sym!=SDLK_TAB)&&(rEvent.key.keysym.sym!=SDLK_BACKSPACE)&&
-		(rEvent.key.keysym.sym!=SDLK_UP)&&(rEvent.key.keysym.sym!=SDLK_DOWN)&&(rEvent.key.keysym.sym!=SDLK_LEFT)&&(rEvent.key.keysym.sym!=SDLK_RIGHT)
+		&&(rEvent.key.keysym.sym!=SDLK_ESCAPE)&&((rEvent.key.keysym.sym!=SDLK_SPACE)||((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode)))&&(rEvent.key.keysym.sym!=SDLK_LCTRL)&&((rEvent.key.keysym.sym!=SDLK_LALT)||((rEvent.key.keysym.sym==SDLK_LALT)&&(vkbd_button2!=(SDLKey)0)&&(!vkbd_mode)))&&(rEvent.key.keysym.sym!=SDLK_RETURN)&&((rEvent.key.keysym.sym!=SDLK_LSHIFT)||((rEvent.key.keysym.sym==SDLK_LSHIFT)&&(vkbd_button4!=(SDLKey)0)&&(!vkbd_mode)))&&(rEvent.key.keysym.sym!=SDLK_TAB)&&(rEvent.key.keysym.sym!=SDLK_BACKSPACE)&&(rEvent.key.keysym.sym!=SDLK_UP)&&(rEvent.key.keysym.sym!=SDLK_DOWN)&&(rEvent.key.keysym.sym!=SDLK_LEFT)&&(rEvent.key.keysym.sym!=SDLK_RIGHT)
 #endif
 			    )
 	    {
 		    if ((rEvent.key.keysym.sym==SDLK_LALT)&&(vkbd_button2!=(SDLKey)0)&&(!vkbd_mode))
 			    rEvent.key.keysym.sym=vkbd_button2;
 		    else
-		    if ((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode))
-			    rEvent.key.keysym.sym=vkbd_button3;
-		    else
 		    if ((rEvent.key.keysym.sym==SDLK_LSHIFT)&&(vkbd_button4!=(SDLKey)0)&&(!vkbd_mode))
 			    rEvent.key.keysym.sym=vkbd_button4;
 		    else
-		    if ((rEvent.key.keysym.sym==SDLK_PAGEUP)&&(vkbd_button5!=(SDLKey)0)&&(!vkbd_mode))
-			    rEvent.key.keysym.sym=vkbd_button5;
-		    else
-		    if ((rEvent.key.keysym.sym==SDLK_PAGEDOWN)&&(vkbd_button6!=(SDLKey)0)&&(!vkbd_mode))
-			    rEvent.key.keysym.sym=vkbd_button6;
-		    else
-		    if ((rEvent.key.keysym.sym==SDLK_RALT)&&(vkbd_button7!=(SDLKey)0)&&(!vkbd_mode))
-			    rEvent.key.keysym.sym=vkbd_button7;
-		    else
-		    if ((rEvent.key.keysym.sym==SDLK_RSHIFT)&&(vkbd_button8!=(SDLKey)0)&&(!vkbd_mode))
-			    rEvent.key.keysym.sym=vkbd_button8;
+		    if ((rEvent.key.keysym.sym==SDLK_SPACE)&&(vkbd_button3!=(SDLKey)0)&&(!vkbd_mode))
+			    rEvent.key.keysym.sym=vkbd_button3;
 #else
 	    {
 #endif
@@ -926,10 +852,6 @@ break;
     }
 #endif
 
-#if !defined(DREAMCAST) && !defined(DINGOO)
-    if (SDL_MUSTLOCK(prSDLScreen))
-    	SDL_LockSurface (prSDLScreen);
-#endif
 
     /* Handle UAE reset */
 /*
@@ -959,6 +881,29 @@ int needmousehack (void)
 {
     return 1;
 }
+
+
+
+#if !defined(DREAMCAST) && !defined(DINGOO)
+int lockscr (void)
+{
+#ifdef DEBUG_GFX
+    dbg("Function: lockscr");
+#endif
+    if (SDL_MUSTLOCK(prSDLScreen))
+	SDL_LockSurface(prSDLScreen);
+    return 1;
+}
+
+void unlockscr (void)
+{
+#ifdef DEBUG_GFX
+    dbg("Function: unlockscr");
+#endif
+    if (SDL_MUSTLOCK(prSDLScreen))
+    	SDL_UnlockSurface(prSDLScreen);
+}
+#endif
 
 void gui_purge_events(void)
 {

@@ -49,16 +49,11 @@ KOS_INIT_ROMDISK(romdisk);
 #ifdef DREAMCAST
 #include<SDL_dreamcast.h>
 #endif
-#ifdef HOME_DIR
-#include "homedir.h"
-#endif
 long int version = 256*65536L*UAEMAJOR + 65536L*UAEMINOR + UAESUBREV;
 
 int no_gui = 0;
 int joystickpresent = 0;
 int cloanto_rom = 0;
-
-extern int mainMenu_ram;
 
 struct gui_info gui_data;
 
@@ -77,7 +72,7 @@ char optionsfile[256];
 
 /* Slightly stupid place for this... */
 /* ncurses.c might use quite a few of those. */
-const char *colormodes[] = { "256 colors", "32768 colors", "65536 colors",
+char *colormodes[] = { "256 colors", "32768 colors", "65536 colors",
     "256 colors dithered", "16 colors dithered", "16 million colors",
     "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
     "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
@@ -96,6 +91,7 @@ void discard_prefs ()
 {
 }
 
+extern char uae4all_image_file[128];
 void default_prefs ()
 {
 #ifdef NO_SOUND
@@ -104,47 +100,23 @@ void default_prefs ()
     produce_sound = 2;
 #endif
 
-#if defined(HOME_DIR)
-   get_config_dir();
-#endif
+    prefs_gfx_framerate = -1;
 
-    prefs_gfx_framerate = 2;
 
-#if defined(HOME_DIR)
-    if(config_dir)
-    {
-	strcpy (prefs_df[0], config_dir);
-	strcat (prefs_df[0], "/df0.adf");
-	strcpy (prefs_df[1], config_dir);
-	strcat (prefs_df[1], "/df1.adf");
-    }
-    else
-    {
-	strcpy (prefs_df[0], ROM_PATH_PREFIX "df0.adf");
-	strcpy (prefs_df[1], ROM_PATH_PREFIX "df1.adf");
-    }
-#else
-    strcpy (prefs_df[0], ROM_PATH_PREFIX "df0.adf");
+    strcpy (prefs_df[0], "df0.adf");
     strcpy (prefs_df[1], ROM_PATH_PREFIX "df1.adf");
-#endif
+    real_changed_df[0]=1;
+    strcpy (uae4all_image_file, "df0.adf");
 
 #ifdef DREAMCAST
     strcpy (romfile, ROM_PATH_PREFIX "kick.rom");
     strcpy (romfile_sd, "/sd/uae4all/" "kick.rom");
-#elif defined(HOME_DIR)
-    if(config_dir)
-    {
-	strcpy (romfile, config_dir);
-	strcat (romfile, "/kick.rom");
-    }
-    else
-    {
-	strcpy (romfile, "kick.rom");
-    }
 #else
 //    strcpy (romfile, "/cdrom/kick.rom");
     strcpy (romfile, "kick.rom");
 #endif
+
+    prefs_chipmem_size=0x00100000;
 }
 
 int quit_program = 0;
@@ -208,13 +180,6 @@ void do_leave_program (void)
     SDL_Quit ();
 #endif
     memory_cleanup ();
-
-#if defined(HOME_DIR)
-    if(config_dir)
-    {
-	free(config_dir);
-    }
-#endif
 }
 
 #if defined(DREAMCAST) && !defined(DEBUG_UAE4ALL)
@@ -286,10 +251,8 @@ typedef struct _cmdline_opt
 	void *opt;
 } cmdline_opt;
 
-extern int  mainMenu_throttle, mainMenu_frameskip, mainMenu_sound, mainMenu_case, mainMenu_autosave, mainMenu_vpos;
-#ifdef __LIBRETRO__
+extern int  mainMenu_throttle, mainMenu_frameskip, mainMenu_sound, mainMenu_case, mainMenu_autosave, mainMenu_vpos  ;
 extern unsigned int sound_rate;
-#endif
 
 extern char uae4all_image_file[128];
 extern char uae4all_image_file2[128];
@@ -299,9 +262,7 @@ static cmdline_opt cmdl_opts[] =
 //	{ "-statusln",        0, &mainMenu_showStatus },
 //	{ "-mousemultiplier", 0, &mainMenu_mouseMultiplier },
 	{ "-sound",           0, &mainMenu_sound },
-#ifdef __LIBRETRO__
 	{ "-soundrate",       0, &sound_rate },
-#endif
 	{ "-autosave",        0, &mainMenu_autosave },
 	{ "-systemclock",     0, &mainMenu_throttle },
 //	{ "-syncthreshold",   0, &timeslice_mode },
@@ -375,7 +336,6 @@ void real_main (int argc, char **argv)
     if (! graphics_setup ()) {
 	exit (1);
     }
-
     rtarea_init ();
 
     machdep_init ();
@@ -385,30 +345,16 @@ void real_main (int argc, char **argv)
 	produce_sound = 0;
     }
     init_joystick ();
-
-    // Send argv if romfile is used as parameter
-	int err = gui_init (argc, argv);
-	if (err == -1) {
-	    write_log ("Failed to initialize the GUI\n");
-	} else if (err == -2) {
-	    exit (0);
-	}
+    int err = gui_init ();
+    if (err == -1) {
+        write_log ("Failed to initialize the GUI\n");
+    } else if (err == -2) {
+        exit (0);
+    }
     if (sound_available && produce_sound > 1 && ! init_audio ()) {
 	write_log ("Sound driver unavailable: Sound output disabled\n");
 	produce_sound = 0;
     }
-
-#ifdef MIYOO
-    prefs_chipmem_size=(!mainMenu_ram ? 0x00100000 : 0x00200000);
-#ifdef DEBUG_RAM
-	if (prefs_chipmem_size==0x00100000)
-		printf ("\nRAM 1MB\n");
-	else
-		printf ("\nRAM 2MB\n");
-#endif
-#else
-    prefs_chipmem_size=0x00100000;
-#endif
 
     /* Install resident module to get 8MB chipmem, if requested */
     rtarea_setup ();
@@ -448,7 +394,6 @@ int main (int argc, char **argv)
 #ifdef DEBUG_FILE
     DEBUG_STR_FILE=fopen(DEBUG_FILE,"wt");
 #endif
-
     real_main (argc, argv);
     return 0;
 }

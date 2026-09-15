@@ -12,10 +12,6 @@ SDLKey vkbd_key=(SDLKey)0;
 SDLKey vkbd_button2=(SDLKey)0;
 SDLKey vkbd_button3=(SDLKey)0;
 SDLKey vkbd_button4=(SDLKey)0;
-SDLKey vkbd_button5=(SDLKey)0;
-SDLKey vkbd_button6=(SDLKey)0;
-SDLKey vkbd_button7=(SDLKey)0;
-SDLKey vkbd_button8=(SDLKey)0;
 int vkbd_keysave=-1234567;
 
 #ifdef NO_VKBD
@@ -24,6 +20,7 @@ int vkbd_init(void) { return 0; }
 void vkbd_init_button2(void) { }
 void vkbd_quit(void) { }
 SDLKey vkbd_process(void) { return (SDLKey)0; }
+void vkbd_mouse (void) { }
 
 #else
 
@@ -151,10 +148,6 @@ void vkbd_init_button2(void)
 	vkbd_button2=(SDLKey)0;
 	vkbd_button3=(SDLKey)0;
 	vkbd_button4=(SDLKey)0;
-	vkbd_button5=(SDLKey)0;
-	vkbd_button6=(SDLKey)0;
-	vkbd_button7=(SDLKey)0;
-	vkbd_button8=(SDLKey)0;	
 }
 
 
@@ -197,10 +190,6 @@ int vkbd_init(void)
 	vkbd_button2=(SDLKey)0;
 	vkbd_button3=(SDLKey)0;
 	vkbd_button4=(SDLKey)0;
-	vkbd_button5=(SDLKey)0;
-	vkbd_button6=(SDLKey)0;
-	vkbd_button7=(SDLKey)0;
-	vkbd_button8=(SDLKey)0;	
 	vkbd_keysave=-1234567;
 	return 0;
 }
@@ -218,22 +207,26 @@ void vkbd_quit(void)
 
 void vkbd_redraw(void)
 {
+#ifndef RASPBERRY
 	SDL_Rect r;
 	r.x=VKBD_X;
 	r.y=prSDLScreen->h-40;
 	r.w=ksur->w;
 	r.h=ksur->h;
 	SDL_BlitSurface(ksur,NULL,prSDLScreen,&r);
+#endif
 }
 
 void vkbd_mouse(void)
 {
+#ifndef RASPBERRY
 	SDL_Rect r;
 	r.x=0;
 	r.y=prSDLScreen->h-24;
 	r.w=kmou->w;
 	r.h=kmou->h;
 	SDL_BlitSurface(kmou,NULL,prSDLScreen,&r);
+#endif
 }
 
 SDLKey vkbd_process(void)
@@ -241,6 +234,7 @@ SDLKey vkbd_process(void)
 	static Uint32 last_time=0;
 	Uint32 now=SDL_GetTicks();
 	SDL_Rect r;
+#ifndef RASPBERRY
 	int canmove=(now-last_time>MIN_VKBD_TIME);
 #ifndef VKBD_ALWAYS
 	if (vkbd_move) 
@@ -272,35 +266,6 @@ SDLKey vkbd_process(void)
 		vkbd_button4=vkbd_rect[vkbd_actual].key;
 		return (SDLKey)0;
 	}
-	else
-	if (vkbd_move&VKBD_BUTTON5)
-	{
-		vkbd_move=0;
-		vkbd_button5=vkbd_rect[vkbd_actual].key;
-		return (SDLKey)0;
-	}
-	else
-	if (vkbd_move&VKBD_BUTTON6)
-	{
-		vkbd_move=0;
-		vkbd_button6=vkbd_rect[vkbd_actual].key;
-		return (SDLKey)0;
-	}
-	else
-	if (vkbd_move&VKBD_BUTTON7)
-	{
-		vkbd_move=0;
-		vkbd_button7=vkbd_rect[vkbd_actual].key;
-		return (SDLKey)0;
-	}
-	else
-	if (vkbd_move&VKBD_BUTTON8)
-	{
-		vkbd_move=0;
-		vkbd_button8=vkbd_rect[vkbd_actual].key;
-		return (SDLKey)0;
-	}
-	else
 	if (canmove)
 	{
 		last_time=now;
@@ -332,6 +297,7 @@ SDLKey vkbd_process(void)
 		SDL_BlitSurface(vkey[vkbd_actual],NULL,prSDLScreen,&r);
 #ifndef VKBD_ALWAYS
 	}
+#endif
 #endif
 	return (SDLKey)0;
 }
