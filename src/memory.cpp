@@ -890,63 +890,19 @@ static int read_kickstart (FILE *f, uae_u8 *mem, int size, int dochecksum, int *
 
 static int load_extendedkickstart (void)
 {
-  FILE *f;
-  int size;
-
-  if (strlen (extfile) == 0)
-	  return 0;
-  f = fopen (extfile, "rb");
-  if (!f) 
-  {
-	  dbgf ("No extended Kickstart ROM found.\n");
-	  return 0;
-  }
-
-  fseek (f, 0, SEEK_END);
-  size = ftell (f);
-  if (size > 300000)
-	  extendedkickmem_size = 524288;
-  else
-	  extendedkickmem_size = 262144;
-  fseek (f, 0, SEEK_SET);
-
-  switch (extromtype ()) 
-  {
-    case EXTENDED_ROM_CDTV:
-	    extendedkickmemory = (uae_u8 *) mapped_malloc (extendedkickmem_size, "rom_f0");
-	    extendedkickmem_bank.baseaddr = (uae_u8 *) extendedkickmemory;
-	    break;
-    case EXTENDED_ROM_CD32:
-	    extendedkickmemory = (uae_u8 *) mapped_malloc (extendedkickmem_size, "rom_e0");
-	    extendedkickmem_bank.baseaddr = (uae_u8 *) extendedkickmemory;
-	    break;
-  }
-  
-  //read_kickstart (f, extendedkickmemory, 524288, 0, 0);
-  int i;
-  i = fread (extendedkickmemory, 1, 524288, f);
-  if (i != 8192 && i != 65536 && i != 131072 && i != 262144 && i != 524288 && i != 524288 * 2 && i != 524288 * 4) 
-  {
-	  dbgf ("Error while reading Kickstart ROM file.\n");
-	  fclose (f);
-	  return 0;
-  }
-  fclose (f);
-  dbgf("Extended ROM loaded: %s\n", extfile);
-  swab_memory(extendedkickmemory, extendedkickmem_size);
-  
-  return 1;
+	return 0;
 }
 
-void swab_memory(uae_u8 *apMemory, uae_u32 aSize)
+static void swab_kickstart(void)
 {
 #ifdef USE_FAME_CORE
-	uae_u32 i;
-	for(i=0; i<aSize; i+=2)
+	unsigned i;
+	unsigned char *km=kickmemory;
+	for(i=0;i<kickmem_size;i+=2)
 	{
-		unsigned char b1=apMemory[i];
-		apMemory[i]=apMemory[i+1];
-		apMemory[i+1]=b1;
+		unsigned char b1=km[i];
+		km[i]=km[i+1];
+		km[i+1]=b1;
 
 	}
 #endif
@@ -959,6 +915,7 @@ static int load_kickstart (void)
     if (!f)
     	f = uae4all_rom_fopen(romfile_sd, "rb");
 #endif
+
     if (f == NULL) {
 #if defined(AMIGA)||defined(__POS__)
 #define USE_UAE_ERSATZ "USE_UAE_ERSATZ"
@@ -1249,7 +1206,7 @@ static void reload_kickstart(void)
 	init_ersatz_rom (kickmemory);
 	ersatzkickfile = 1;
     }
-    swab_memory(kickmemory, kickmem_size);
+    swab_kickstart();
     kickmem_checksum=get_kickmem_checksum();
 }
 
