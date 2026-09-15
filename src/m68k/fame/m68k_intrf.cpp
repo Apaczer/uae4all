@@ -427,7 +427,7 @@ void m68k_go (int may_quit)
             handle_active_events ();
             if (mispcflags)
                 do_specialties (0);
-
+    //  } moved below, as it hangs in LIBRETRO implementation
             if (!savestate_state)
                 uae4all_reset ();
         }
