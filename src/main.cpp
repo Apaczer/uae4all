@@ -368,7 +368,7 @@ void real_main (int argc, char **argv)
 
     default_prefs ();
 
-    parse_cmdline(argc, argv);
+    //parse_cmdline(argc, argv);
 #ifdef __LIBRETRO__
     update_prefs_retrocfg();
 #endif

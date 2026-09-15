@@ -290,6 +290,8 @@ extern char *gfx_mem;
     {
 	emulating=0;
 	#if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
+	#ifndef __LIBRETRO__
+		// Non-libretro: parse disk images from positional argv (legacy path)
 		uae4all_image_file[0]=0;
 		uae4all_image_file2[0]=0;
 		// Use parameters as rom files
@@ -299,6 +301,10 @@ extern char *gfx_mem;
 			if (argc == 3)
 				strcpy(uae4all_image_file2,argv[2]);
 		}
+	#endif
+		// Under __LIBRETRO__, parse_cmdline() in real_main() already populated
+		// uae4all_image_file/uae4all_image_file2 via -df0/-df1 options before
+		// gui_init() is called, so we must not clear/overwrite them here.
 		printf("Disk 0=%s\n",uae4all_image_file);fflush(stdout);
 		printf("Disk 1=%s\n",uae4all_image_file2);fflush(stdout);
 	#else
