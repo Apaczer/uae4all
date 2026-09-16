@@ -1,92 +1,236 @@
-## UAE4ALL
-UAE4All is a "Lite" Amiga Emulator. It is based on E-UAE core and it can utilize FAME for Motorola 68000 microprocessor emulation. It emulates Commodore Amiga 500 hardware with 1 MB Chip RAM, OCS and up to 4 floppy drive, utilizes Cyclone emulator of Motorola 68000 microprocessor for ARM hardware. It emulates most Commodore Amiga 500 hardware.
+# UAE4ALL
 
-## UAE4ALL for MiyooCFW
-Revamped version of UAE4ALL for MiyooCFW, supported devices: Bittboy, PocketGo, Powkiddy V90 / Q90 / Q20 etc.
-This build is based of a port to _GCW0_ made by zear & Nebuleon (with smurline and goldmojo changes for other platforms). 
+UAE4All is an optimized "Lite" Commodore Amiga 500 emulator based on the E-UAE core. It emulates Commodore Amiga 500 hardware with OCS (Original Chip Set), 512 KB / 1 MB / 2 MB Chip RAM, and up to 4 floppy drives.
 
-Stock emulator for 1.3.3 MiyooCFW was based (possibly) of upstream by zear (https://github.com/zear/uae4all). Initial (stock) port made by @jamesofarrell, compiled with FAME core (no src available).
+This repository provides both a **standalone** emulator build (optimized for MiyooCFW handhelds and Linux) and a **Libretro core** (`uae4all_libretro.so`) for RetroArch / Libretro frontends. Remember to provide `uae4all_libretro.info` file in RetroArch **`core_info`** directory for core to be detactable.
 
-This revision replaces FAME m68k emulation library with UAE core. Major advantages would be wider game compatibility, however some games may produce fps drawback due to UAE being less optimized.
+Emulation can utilize multiple Motorola 68000 CPU cores:
+- **UAE core**: Full C-based core with the highest game compatibility (default for standalone release).
+- **Cyclone**: Highly optimized ARM assembly core for maximum performance on ARM architectures.
+- **FAME / FAME-C**: Fast M68k emulation library for x86 and ARM platforms.
 
-### Changelog:
+---
+
+## Flavors
+
+### Standalone (MiyooCFW & Linux)
+Revamped version of UAE4ALL for MiyooCFW supported devices (Bittboy, PocketGo, Powkiddy V90 / Q90 / Q20, etc.) and native Linux.
+- Based on the GCW0 port by zear & Nebuleon (with contributions from smurline and goldmojo for other platforms).
+- Upstream stock emulator for MiyooCFW 1.3.3 was based on [zear's repository](https://github.com/zear/uae4all), originally ported by @jamesofarrell with FAME core (see "james_zear" branch).
+- Current releases default to the UAE core for wider game compatibility, while still supporting Cyclone and FAME cores.
+
+### Libretro Core (`uae4all_libretro`)
+Downstream implementation based on [Chips-fr/uae4all-rpi](https://github.com/Chips-fr/uae4all-rpi), adapted into this codebase to produce the `uae4all_libretro.so` core for RetroArch and other Libretro frontends.
+
+---
+
+## Changelog (Standalone / MiyooCFW)
+
 **UAE4ALL rev. 1.2**
-- added extra "2MB RAM" option in menu (increased memory to enable extra features in particural games)
-- added virtual buttons mapping to L2/R2 and L3/R3 (more keyboard bindings at your will)
-- enabled Music in menu (via SDL_mixer, probably no in-game performance impact)
-
+- Added extra "2MB RAM" option in menu (increased memory to enable extra features in particular games).
+- Added virtual button mapping to L2/R2 and L3/R3 (more keyboard bindings at your will).
+- Enabled music in menu (via `SDL_mixer`, negligible in-game performance impact).
 
 **UAE4ALL rev. 1.1a**
-- added small LOG warning about missing `kick.rom` file when not provided in `/mnt/.uae4all` dir
+- Added log warning about missing `kick.rom` file when not found in `/mnt/.uae4all` directory.
 
 **UAE4ALL rev. 1.1**
-- the "Status bar" option is now visible in main menu and uae4all.cfg file ( ``STATUS_BAR 0`` or ``-1``)
-- added hotkeys to increase/decrease "Throttle" (SELECT+X/Y)
+- "Status bar" option is now configurable in the main menu and `uae4all.cfg` (`STATUS_BAR 0` or `-1`).
+- Added hotkeys to increase/decrease throttle (`SELECT` + `X` / `Y`).
 
 **UAE4ALL rev. 1.0**
-- load DF0 as first arg. parameter (you can load ROM file directly from your console's frontend)
-- show/hide status bar option (editable through *.cfg or in emu's GUI)
-- disabled splash screen by default (faster init load- show/hide status bar option (editable through *.cfg or in emu's GUI)
-- disabled splash screen by default (faster init load speed)
-- semi-darkmode for all notifications due to above commit (unintentional, but I like it!)
-- fixed A/B button mapping for V90/Q90 while in menu screen (to be cohesive with gmenu2x/SM).
-- frame throttling fine tuning now works on "auto" frameskip mode
-- lib7z savestate compression method (will not work with jamesofarrell's stock version)
-- compatibility increase (revert from FAME m68k library to UAE core, may introduce slight performance drawback) speed)
+- Load DF0 as first argument parameter (allows loading ADF/ROM directly from console frontend).
+- Show/hide status bar option (editable through `*.cfg` or emu GUI).
+- Disabled splash screen by default (faster initial load speed).
+- Semi-darkmode for all notifications.
+- Fixed A/B button mapping for V90/Q90 in menu screen (cohesive with Gmenu2X / SimpleMenu).
+- Frame throttling fine tuning now works in "auto" frameskip mode.
+- Added lib7z savestate compression method.
+- Compatibility increase: switched default m68k emulation to UAE core.
 
-## Compiling instructions
-1. Set up your environment with current MiyooCFW toolchain (preferably in Debian 9 distro)
-2. Copy this repo & compile
-- binary:
-``` 
+---
+
+## BIOS / Kickstart ROM Requirements
+
+The emulator requires an Amiga 500 Kickstart 1.3 BIOS ROM to run games.
+
+### Standalone
+Place your Kickstart 1.3 ROM named `kick.rom` into:
+- `$HOME/.uae4all/kick.rom` (on console), or
+- the local working directory alongside the executable.
+
+### Libretro
+Place the Kickstart ROM in the RetroArch **`system`** directory using the exact filename below:
+
+| System | Version | Filename | Size | MD5 |
+|---|---|---|---|---|
+| Amiga 500 | Kickstart v1.3 rev 34.005 | **`kick34005.A500`** | 262,144 bytes | `82a21c1890cae844b3df741f2762d48d` |
+
+---
+
+## Compiling Instructions
+
+### 1. Build Environment Setup
+
+#### Cross-compiling with Docker (MiyooCFW)
+You can use the official MiyooCFW toolchain Docker container:
+```bash
 git clone https://github.com/Apaczer/uae4all
 cd uae4all
-make clean
-make -j$(nproc)
-```
-- OR distribution IPK package:
-```
-make -j$(nproc) gm2xpkg-ipk
+docker run --volume ./:/src/ -it miyoocfw/toolchain-shared-uclibc:latest
+cd /src
 ```
 
-NOTE: Use `LINUX="YES"` for native unix build
+Alternatively, set up a native Debian 9 toolchain environment for MiyooCFW.
 
-## PGO instructions :
-All builds (from release section) have Profile-Guided Optimization applied, which gives approx 5-10% performance boost.
-- set ``PROFILE = YES`` in Makefile
-- compile
-- run the emulator for a few minutes on your device 
-- dump the *.gcda files dropped in ``/mnt/profile`` and copy them back into your ``/src`` folder in a repo
-- set ``PROFILE = APPLY``
-- compile & enjoy optimized build!
+---
 
-While gathering profiling data on target platform, use the app how normally you would and look for parts that might introduce perf. challenge. Possibly try to run emulator in one take and exit normally through GUI's menu to correctly collect information.
+### 2. Standalone Build (`Makefile`)
 
-## Compatibility list
-There are some drawbacks when FAME is not used:
-- _Zool II_ - less optimized
-- _Jim Power in Mutant Planet_ - less optimized
-- _Xenon 2: Megablast_ - crashes after sprite collision with bomb
+- **Standalone binary**:
+  ```bash
+  make clean
+  make -j$(nproc)
+  ```
 
-Below titles will play better on UAE core comparable to FAME:
-- _Superfrog_ - no video jittery on "auto" frameskip
-- _Alien Breed_ - no video jittery on "auto" frameskip
-- _James Pond_ - boot ups and doesn't crash (CR PDX by TIC)
-- _The Great Giana Sisters_ - boot ups and doesn't crash
-- _Nicky II_ - boot ups and doesn't crash
-- _The Addams Family Mansion Mayhem_ - no sprite freezes during gameplay
-- _Moonstone: A Hard Days Knight_ - passes loading screen when disk B is being read on DF1 drive
+- **Distribution IPK package** (for Gmenu2X / MiyooCFW):
+  ```bash
+  make -j$(nproc) gm2xpkg-ipk
+  ```
 
-UAE4ALL emulation related issues:
-- _James Pond_ - player's sprite can pass through walls
-- _Moonstone: A Hard Days Knight_ - will play only with first (DF0) and second (DF1) disk mounted simultaneously
+- **Native Linux build**:
+  ```bash
+  make -j$(nproc) LINUX="YES"
+  ```
+
+---
+
+### 3. Libretro Core Build (`Makefile.libretro`)
+
+- **Cross-compile core for MiyooCFW**:
+  ```bash
+  make -j$(nproc) -f Makefile.libretro platform=miyoo
+  ```
+
+- **Native build**:
+  ```bash
+  make -j$(nproc) -f Makefile.libretro
+  ```
+
+---
+
+### 4. M68k CPU Core Selection
+
+Both makefiles allow selecting the desired M68k CPU core by passing flags:
+
+| Flag | Description |
+|---|---|
+| `UAE_CORE=1` | UAE C-based core (highest compatibility, default for standalone) |
+| `CYCLONE_CORE=1` | Cyclone ARM assembly core (fastest on ARM, default for Miyoo Libretro) |
+| `FAME_CORE=1` | FAME M68k emulation library (x86 assembly) |
+| `FAME_CORE=1 FAME_CORE_C=1` | FAME C implementation (default for native Libretro) |
+
+Example:
+```bash
+make -j$(nproc) UAE_CORE=1
+# or for libretro:
+make -j$(nproc) -f Makefile.libretro platform=miyoo CYCLONE_CORE=1
+```
+
+---
+
+## Profile-Guided Optimization (PGO)
+
+All release builds for standalone have Profile-Guided Optimization applied for an approximate 5–10% performance boost:
+
+1. Set `PROFILE = YES` in `Makefile`.
+2. Compile the binary.
+3. Run the emulator on the target device for a few minutes with representative gameplay (exit normally through the GUI menu to write profiling data).
+4. Copy the generated `*.gcda` files from `/mnt/profile` back into the `/src` directory in the repository.
+5. Set `PROFILE = APPLY` in `Makefile`.
+6. Recompile for the final optimized build.
+
+---
+
+## Controls
+
+### Standalone (MiyooCFW)
+
+- B: Joystick fire button
+- Y: Mouse left button
+- X: Mouse right button
+- L1: Switches between joystick and mouse control (when using mouse press R to change the mouse speed)
+- R1: Virtual keyboard, use the B button to press a key (A/X/Y/L2/R2/L3/R3 can be used to map a key to, return to the main menu to reset keymaps).
+- RESET: Brings up the UAE4all menu
+- SELECT + R1: Quick load state.
+- SELECT + L1: Quick save state.
+- START: SuperThrottle on/off
+- SELECT + Y: increase Throttle (only under v20220507 release or later)
+- SELECT + X: decrease Throttle (only under v20220507 release or later)
+
+### Libretro Core (RetroPad)
+
+| RetroPad Button | Action |
+|---|---|
+| **D-Pad** | Joystick directions / Mouse movement (in mouse mode) |
+| **B** | Fire button 1 / Red |
+| **A** | Fire button 2 / Blue |
+| **L2** | Left mouse button |
+| **R2** | Right mouse button |
+| **L** | Switch to previous floppy disk (DF0:) |
+| **R** | Switch to next floppy disk (DF0:) |
+| **Select** | Toggle virtual keyboard |
+| **Start** | Toggle mouse emulation |
+
+- **Mouse Emulation**: Pressing `Start` toggles mouse mode, where the D-Pad and Fire buttons control mouse pointer and buttons.
+- **Dual Joystick Support**: Automatically switches between mouse and second joystick when mouse or 2nd joystick inputs are triggered.
+- **Multi-Disk Switching**: `L` and `R` buttons switch the inserted disk on `DF0:` for multi-disk games. Disks should follow the standard naming scheme with `(Disk X of Y)` (e.g. `Game (Disk 1 of 2).adf`).
+
+---
+
+## Compatibility List
+
+Differences observed between UAE core and FAME core:
+
+**Titles with better performance on FAME:**
+- *Zool II* – more optimized / higher framerate.
+- *Jim Power in Mutant Planet* – more optimized / higher framerate.
+- *Xenon 2: Megablast* – crashes after sprite collision with bomb on UAE core.
+
+**Titles running better on UAE core (compared to FAME):**
+- *Superfrog* – smooth video with "auto" frameskip (no video jitter).
+- *Alien Breed* – smooth video with "auto" frameskip (no video jitter).
+- *James Pond* – boots and runs without crashing (CR PDX by TIC).
+- *The Great Giana Sisters* – boots and runs without crashing.
+- *Nicky II* – boots and runs without crashing.
+- *The Addams Family Mansion Mayhem* – no sprite freezes during gameplay.
+- *Moonstone: A Hard Days Knight* – passes loading screen when disk B is read in DF1.
+
+**General UAE4ALL emulation known quirks:**
+- *James Pond* – player sprite can pass through walls.
+- *Moonstone: A Hard Days Knight* – requires mounting disk 1 (DF0) and disk 2 (DF1) simultaneously.
+
+---
 
 ## FAQ
-Q) _What's the difference between stock UAE4ALL (from 1.3.3 MiyooCFW)?_  
-A: This revision is more compatible and have additional user-friendly features described in changelog. The previous src was also unavailable, so this port is a chance for other people to work of it and modify this emulator to their needs. 
 
-Q) _How to set it up in console?_  
-A: Place binary file in _/mnt/emus/uae4all/_ and make new link to it if you don't have one already. You will also need to have there _/data_ folder with necessary [assets](https://github.com/Apaczer/uae4all/tree/master/data).
+**Q: What is the difference between this version and stock UAE4ALL (MiyooCFW 1.3.3)?**  
+A: This revision provides higher compatibility (UAE core option), user-friendly features (command-line direct ADF loading, throttle hotkeys, status bar toggle, 2MB RAM option, virtual buttons), bug fixes, and lib7z savestates. The source code is also maintained and open for community contributions.
 
-Q) _Does this emu need any BIOS file?_  
-A: Yes, the emulator will recognize it by placing kick.rom (rename your kickstarter BIOS to match) in _/mnt/.uae4all/_ location
+**Q: How do I set up the standalone emulator?**  
+A: Use `./uae4all` by adding exec permission and copy the [`./data/`](https://github.com/Apaczer/uae4all/tree/master/data) folder alongside it. Place your Kickstart ROM at `$HOME/.uae4all/kick.rom`.
+
+**Q: How do I set up the Libretro core in RetroArch?**  
+A: Copy `uae4all_libretro.so` to your RetroArch cores folder and place `kick34005.A500` into your RetroArch `system/` directory.
+
+---
+
+## Credits & Upstream
+
+- UAE & E-UAE authors for base Amiga emulation.
+- Chui & fox68k for the original UAE4ALL.
+- zear & Nebuleon for the GCW0 port.
+- smurline & goldmojo for additional platform changes.
+- @jamesofarrell for the initial MiyooCFW port.
+- [Chips-fr](https://github.com/Chips-fr/uae4all-rpi) for the Libretro port.
+- [Apaczer](https://github.com/Apaczer/uae4all) for MiyooCFW improvements, standalone updates, and Libretro integration.
