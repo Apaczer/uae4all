@@ -289,15 +289,19 @@ extern char *gfx_mem;
     if (prSDLScreen!=NULL)
     {
 	emulating=0;
-	#if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
-		uae4all_image_file[0]=0;
-		uae4all_image_file2[0]=0;
-		// Use parameters as rom files
-		if (argc == 2 || argc == 3)
+	#if !defined(DEBUG_UAE4ALL) && \
+	!defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
+		// parse_cmdline() in real_main() runs before gui_init() and populates
+		// uae4all_image_file/uae4all_image_file2 when -df0/-df1 options are given.
+		// Only fall back to the legacy positional argv path if they are still empty.
+		if (uae4all_image_file[0] == 0)
 		{
-			strcpy(uae4all_image_file,argv[1]);
-			if (argc == 3)
-				strcpy(uae4all_image_file2,argv[2]);
+			if (argc == 2 || argc == 3)
+			{
+				strcpy(uae4all_image_file,argv[1]);
+				if (argc == 3)
+					strcpy(uae4all_image_file2,argv[2]);
+			}
 		}
 		printf("Disk 0=%s\n",uae4all_image_file);fflush(stdout);
 		printf("Disk 1=%s\n",uae4all_image_file2);fflush(stdout);
