@@ -37,7 +37,7 @@ all: $(PROG)
 # Possible values : 0, YES, APPLY
 PROFILE ?= 0
 
-## either CYCLONE or FAME (x86) or FAME/FAME_C or UAE
+## either CYCLONE (arm) or FAME (x86) or FAME/FAME_C or UAE core (default)
 #CYCLONE_CORE=1
 #FAME_CORE=1
 #FAME_CORE_C=1

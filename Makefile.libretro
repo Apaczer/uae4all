@@ -41,13 +41,21 @@ LIB7Z=1
 ifeq ($(platform),)
 LDFLAGS     = -lz -lpthread
 MORE_CFLAGS = -g -O0 -fPIC
+ifndef UAE_CORE
+ifndef CYCLONE_CORE # only applicable to arm
 FAME_CORE=1
 FAME_CORE_C=1
+endif
+endif
 else ifeq ($(platform), miyoo)
 LDFLAGS     = -lz -lpthread
 MORE_CFLAGS = -g -O3 -fno-PIC -DFAST_COMPILER -DHAVE_KBDJOYPAD
 MORE_CFLAGS+= -DUSE_CAST_UNSIGNED
+ifndef UAE_CORE
+ifndef FAME_CORE
 CYCLONE_CORE=1
+endif
+endif
 endif
 ifeq ($(LTO),yes)
 LDFLAGS += -flto
