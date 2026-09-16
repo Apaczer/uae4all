@@ -112,13 +112,9 @@ MORE_CFLAGS+= -DFAME_INTERRUPTS_PATCH
 #MORE_CFLAGS+= -DSAFE_MEMORY_ACCESS
 #MORE_CFLAGS+= -DERROR_WHEN_MEMORY_OVERRUN
 
-# Debug may not compile for UAE core so disable
-ifdef FAME_CORE
-MORE_CFLAGS+= -DDEBUG_UAE4ALL
-endif
-ifdef CYCLONE_CORE
-MORE_CFLAGS+= -DDEBUG_UAE4ALL
-endif
+# Debug may not compile for UAE core so disable, 
+# also it brakes argc parsing see gui_init()
+#MORE_CFLAGS+= -DDEBUG_UAE4ALL
 
 #MORE_CFLAGS+= -DDEBUG_UAE4ALL_FFLUSH
 #MORE_CFLAGS+= -DDEBUG_M68K
