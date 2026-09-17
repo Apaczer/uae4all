@@ -36,8 +36,10 @@ endif
 
 all: $(TARGET)
 
+## remove unneeded dep for libretro
+#LIB7Z=1
+
 # pick correct CORE by platform (disable default core below to use UAE)
-LIB7Z=1
 ifeq ($(platform),)
 LDFLAGS     = -lz -lpthread
 MORE_CFLAGS = -g -O0 -fPIC
