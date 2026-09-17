@@ -44,7 +44,7 @@ PROFILE ?= 0
 ## use 7z savestate compression for *.asf files
 LIB7Z=1
 HOME_DIR=1
-#SOUND_NEW=1 # minimal audio by notaz via gp2x
+#SOUND_NEW=1 # minimal audio by notaz via gp2x (experimental)
 
 DEFAULT_CFLAGS = $(PKGS_CFLAGS) -DMIYOO
 LDFLAGS = $(PKGS_LIBS)
@@ -98,7 +98,9 @@ MORE_CFLAGS+= -DUSE_BLIT_MASKTABLE
 #MORE_CFLAGS+= -DUSE_LINESTATE
 #MORE_CFLAGS+= -DUSE_DISK_UPDATE_PER_LINE
 #MORE_CFLAGS+= -DDOUBLEBUFFER
+ifndef SOUND_NEW # crashes on menu load
 MORE_CFLAGS+= -DMENU_MUSIC
+endif
 #MORE_CFLAGS+= -DUSE_AUTOCONFIG
 #MORE_CFLAGS+= -DUAE_CONSOLE
 
