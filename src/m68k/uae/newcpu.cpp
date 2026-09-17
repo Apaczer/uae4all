@@ -1206,7 +1206,9 @@ static int do_specialties (int cycles)
 	set_special (SPCFLAG_DOINT);
     }
     if (uae_regs.spcflags & SPCFLAG_BRK ) {
-printf("BRK state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_getpc());fflush(stdout);
+#ifdef DEBUG_SAVESTATE
+	printf("BRK state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_getpc());fflush(stdout);
+#endif
 	unset_special (SPCFLAG_BRK);
 	return 1;
     }
@@ -1299,13 +1301,17 @@ void m68k_go (int may_quit)
     quit_program = 2;
 #endif
     for (;;) {
-printf("m68k_go state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_getpc());fflush(stdout);
+#ifdef DEBUG_SAVESTATE
+	printf("m68k_go state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_getpc());fflush(stdout);
+#endif
 	if (quit_program > 0) {
 	    if (quit_program == 1)
 		break;
 	    quit_program = 0;
 	    if (savestate_state == STATE_RESTORE) {
-puts("Restaurando");fflush(stdout);
+#ifdef DEBUG_SAVESTATE
+			puts("Restaurando");fflush(stdout);
+#endif
 		    restore_state (savestate_filename);
 	    }
 	    m68k_reset ();
