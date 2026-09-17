@@ -51,9 +51,10 @@ endif
 endif
 else ifeq ($(platform), miyoo)
 LDFLAGS     = -lz -lpthread
-MORE_CFLAGS = -g -O3 -fno-PIC -DFAST_COMPILER -DHAVE_KBDJOYPAD
+MORE_CFLAGS = -g -O3 -fno-PIC -DHAVE_KBDJOYPAD
 MORE_CFLAGS+= -DUSE_CAST_UNSIGNED
 ifndef UAE_CORE
+MORE_CFLAGS+= -DFAST_COMPILER
 ifndef FAME_CORE
 CYCLONE_CORE=1
 endif
