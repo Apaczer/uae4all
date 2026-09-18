@@ -44,7 +44,7 @@ int run_mainMenu()
     return 0;
 }
 
-void _text_draw_window_bar(SDL_Surface *sf, int x, int y, int w, int h, int per, int max, char *title)
+void _text_draw_window_bar(SDL_Surface *sf, int x, int y, int w, int h, int per, int max, const char *title)
 {
 }
 
