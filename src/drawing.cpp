@@ -1978,7 +1978,9 @@ static _INLINE_ void draw_status_line (int line)
     y = line - (GFXVIDINFO_HEIGHT - (!mainMenu_statusbar ? 0 : TD_TOTAL_HEIGHT));
     xlinebuffer = row_map[line];
 
+#ifndef USE_ALL_LINES
     uae4all_memclr(xlinebuffer, GFXVIDINFO_WIDTH * GFXVIDINFO_PIXBYTES);
+#endif
 
     x+=100 - (TD_WIDTH*(NUM_DRIVES-1));
     for (led = 0; led < (NUM_DRIVES+1); led++) {
@@ -2039,7 +2041,7 @@ static _INLINE_ void finish_drawing_frame (void)
 
 	i1 = i + min_ypos_for_screen;
 	where = amiga2aspect_line_map[i1];
-#if defined(USE_ALL_LINES) || !defined(USE_LINESTATE)
+#ifndef USE_ALL_LINES
 	if (where >= GFXVIDINFO_HEIGHT - (!mainMenu_statusbar ? 0 : TD_TOTAL_HEIGHT))
 	    break;
 #endif
@@ -2047,6 +2049,8 @@ static _INLINE_ void finish_drawing_frame (void)
 	    continue;
 	pfield_draw_line (line, where, amiga2aspect_line_map[i1 + 1]);
     }
+// DEACTIVATE FOR DEBUG
+#ifndef USE_ALL_LINES
 #ifdef USE_RASTER_DRAW
     if (   (frame_redraw_necessary) ||
 #else
@@ -2080,6 +2084,8 @@ static _INLINE_ void finish_drawing_frame (void)
 		do_flush_line (line);
     	}
     }
+#endif // USE_ALL_LINES
+
 #ifdef USE_RASTER_DRAW
     drawfinished=1;
     do_flush_screen (first_drawn_line, last_drawn_line);
@@ -2133,8 +2139,13 @@ void vsync_handle_redraw (int long_frame, int lof_changed)
 	    set_inhibit_frame (IHF_QUIT_PROGRAM);
 	    set_special (SPCFLAG_BRK);
 #ifdef USE_FAME_CORE
+#ifdef USE_CYCLONE_CORE
+            m68k_release_timeslice();
+#else
             m68k_stop_emulating();
 #endif
+#endif
+
 	    return;
 	}
 

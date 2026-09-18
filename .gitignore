@@ -3,5 +3,6 @@
 *.opk
 *.ipk
 *.zip
+*.so
 uae4all
 uae4all/*

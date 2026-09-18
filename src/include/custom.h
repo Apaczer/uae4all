@@ -145,3 +145,5 @@ extern int bpl_off[8];
 #define GET_PLANES(x) ((((x) >> 12) & 7) | (((x) & 0x10) >> 1))
 
 #endif
+
+extern unsigned int beamcon0, new_beamcon0;

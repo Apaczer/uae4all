@@ -21,6 +21,7 @@ extern int changed_produce_sound;
 extern char prefs_df[NUM_DRIVES][128];
 extern char changed_df[NUM_DRIVES][128];
 extern int real_changed_df[NUM_DRIVES];
+extern char extfile[64];
 extern char romfile[64];
 #ifdef DREAMCAST
 extern char romfile_sd[32];

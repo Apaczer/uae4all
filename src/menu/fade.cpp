@@ -3,6 +3,7 @@
 
 void fade16(SDL_Surface *screen, unsigned short n)
 {
+#ifndef __LIBRETRO__
 	int i,total=screen->w*screen->h;
 	SDL_LockSurface(screen);
 	unsigned short rs=screen->format->Rshift;
@@ -38,4 +39,5 @@ void fade16(SDL_Surface *screen, unsigned short n)
 		buff[i]=(((r<<rs)&rm) | ((g<<gs)&gm) | ((b<<bs)&bm));
 	}
 	SDL_UnlockSurface(screen);
+#endif //__LIBRETRO__
 }

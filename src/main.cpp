@@ -279,6 +279,82 @@ void leave_program (void)
     do_leave_program ();
 }
 
+typedef struct _cmdline_opt
+{
+	char *optname;
+	int len;
+	void *opt;
+} cmdline_opt;
+
+extern int  mainMenu_throttle, mainMenu_frameskip, mainMenu_sound, mainMenu_case, mainMenu_autosave, mainMenu_vpos;
+#ifdef __LIBRETRO__
+extern unsigned int sound_rate;
+#endif
+
+extern char uae4all_image_file[128];
+extern char uae4all_image_file2[128];
+
+static cmdline_opt cmdl_opts[] =
+{
+//	{ "-statusln",        0, &mainMenu_showStatus },
+//	{ "-mousemultiplier", 0, &mainMenu_mouseMultiplier },
+	{ "-sound",           0, &mainMenu_sound },
+#ifdef __LIBRETRO__
+	{ "-soundrate",       0, &sound_rate },
+#endif
+	{ "-autosave",        0, &mainMenu_autosave },
+	{ "-systemclock",     0, &mainMenu_throttle },
+//	{ "-syncthreshold",   0, &timeslice_mode },
+	{ "-frameskip",       0, &mainMenu_frameskip },
+//	{ "-skipintro",       0, &skipintro },
+#ifdef ANDROIDSDL
+	{ "-onscreen",       0, &mainMenu_onScreen },
+#endif
+//	{ "-ntsc",            0, &mainMenu_ntsc },
+//	{ "-joyconf",            0, &mainMenu_joyConf },
+//	{ "-use1mbchip",            0, &mainMenu_chipMemory },
+//	{ "-autofire",            0, &mainMenu_autofire },
+//	{ "-drives",            0, &mainMenu_drives },
+//	{ "-script",            0, &mainMenu_enableScripts},
+//	{ "-screenshot",            0, &mainMenu_enableScreenshots},
+	{ "-kick",            sizeof(romfile), romfile },
+	{ "-df0",             sizeof(uae4all_image_file), uae4all_image_file },
+	{ "-df1",             sizeof(uae4all_image_file2), uae4all_image_file2 },
+//	{ "-df2",             sizeof(uae4all_image_file2), uae4all_image_file2 },
+//	{ "-df3",             sizeof(uae4all_image_file2), uae4all_image_file3 },
+};
+
+void parse_cmdline(int argc, char **argv)
+{
+	int arg, i, found;
+	printf("Parsing %i parameters.\n",argc);
+
+	for (arg = 1; arg < argc-1; arg++)
+	{
+		for (i = found = 0; i < sizeof(cmdl_opts) / sizeof(cmdl_opts[0]); i++)
+		{
+			if (strcmp(argv[arg], cmdl_opts[i].optname) == 0)
+			{
+				arg++;
+				if (cmdl_opts[i].len == 0)
+					*(int *)(cmdl_opts[i].opt) = atoi(argv[arg]);
+				else
+				{
+					strncpy((char *)cmdl_opts[i].opt, argv[arg], cmdl_opts[i].len);
+					((char *)cmdl_opts[i].opt)[cmdl_opts[i].len-1] = 0;
+				}
+				found = 1;
+				break;
+			}
+		}
+		if (!found) printf("skipping unknown option: \"%s\"\n", argv[arg]);
+	}
+}
+
+#ifdef __LIBRETRO__
+extern void update_prefs_retrocfg(void);
+#endif
+
 void real_main (int argc, char **argv)
 {
 #ifdef USE_SDL
@@ -291,7 +367,11 @@ void real_main (int argc, char **argv)
 #endif
 
     default_prefs ();
-    
+
+    parse_cmdline(argc, argv);
+#ifdef __LIBRETRO__
+    update_prefs_retrocfg();
+#endif
     if (! graphics_setup ()) {
 	exit (1);
     }
@@ -347,9 +427,11 @@ void real_main (int argc, char **argv)
     gui_update ();
 
 //    dingoo_set_clock(430);
+#ifndef __LIBRETRO__
     if (graphics_init ())
 		start_program ();
     leave_program ();
+#endif
 }
 
 #ifndef NO_MAIN_IN_MAIN_C

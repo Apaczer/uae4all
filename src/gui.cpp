@@ -69,9 +69,13 @@ char *show_message_str=(char *)&_show_message_str[0];
 extern SDL_Surface *prSDLScreen;
 extern struct uae_prefs changed_prefs;
 extern struct uae_prefs currprefs;
+#ifndef __LIBRETRO__
 extern SDL_Joystick *uae4all_joy0, *uae4all_joy1;
+#endif
 
+#ifndef NO_VKBD
 extern int keycode2amiga(SDL_keysym *prKeySym);
+#endif
 extern int uae4all_keystate[];
 
 int emulated_mouse_speed=4;
@@ -259,6 +263,15 @@ static void getChanges(void)
 
 int gui_init (int argc, char **argv)
 {
+#if defined(__LIBRETRO__)
+extern int retrow, retroh;
+extern char *gfx_mem;
+    prSDLScreen = (SDL_Surface*)malloc( sizeof(*prSDLScreen) );
+    prSDLScreen->w = retrow;
+    prSDLScreen->h = retroh;
+    prSDLScreen->pitch = retrow*2;
+    prSDLScreen->pixels =(unsigned char*)gfx_mem;
+#else
 //Se ejecuta justo despues del MAIN
     if (prSDLScreen==NULL)
 	// prSDLScreen=SDL_SetVideoMode(320,240,16,VIDEO_FLAGS);
@@ -272,18 +285,23 @@ int gui_init (int argc, char **argv)
     SDL_ShowCursor(SDL_DISABLE);
     SDL_JoystickEventState(SDL_ENABLE);
     SDL_JoystickOpen(0);
+#endif
     if (prSDLScreen!=NULL)
     {
 	emulating=0;
-	#if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
-		uae4all_image_file[0]=0;
-		uae4all_image_file2[0]=0;
-		// Use parameters as rom files
-		if (argc == 2 || argc == 3)
+	#if !defined(DEBUG_UAE4ALL) && \
+	!defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
+		// parse_cmdline() in real_main() runs before gui_init() and populates
+		// uae4all_image_file/uae4all_image_file2 when -df0/-df1 options are given.
+		// Only fall back to the legacy positional argv path if they are still empty.
+		if (uae4all_image_file[0] == 0)
 		{
-			strcpy(uae4all_image_file,argv[1]);
-			if (argc == 3)
-				strcpy(uae4all_image_file2,argv[2]);
+			if (argc == 2 || argc == 3)
+			{
+				strcpy(uae4all_image_file,argv[1]);
+				if (argc == 3)
+					strcpy(uae4all_image_file2,argv[2]);
+			}
 		}
 		printf("Disk 0=%s\n",uae4all_image_file);fflush(stdout);
 		printf("Disk 1=%s\n",uae4all_image_file2);fflush(stdout);
@@ -573,8 +591,8 @@ static void leftSuperThrottle(void)
 static void inc_throttle(int sgn)
 {
 	char n[40];
-	static Uint32 last=0;
-	Uint32 now=SDL_GetTicks();
+	static uint32_t last=0;
+	uint32_t now=SDL_GetTicks();
 	if (now-last<555)
 		return;
 	last=now;
@@ -599,6 +617,7 @@ static int in_goMenu=0;
 
 void gui_handle_events (void)
 {
+#ifndef __LIBRETRO__
 #ifndef DREAMCAST
 	int i;
 	Uint8 *keystate = SDL_GetKeyState(NULL);
@@ -948,6 +967,7 @@ void gui_handle_events (void)
 		else
 			goingVkbd=0;
 #endif
+#ifndef NO_VKBD
 	if (vkbd_key)
 	{
 		if (vkbd_keysave==-1234567)
@@ -975,6 +995,8 @@ void gui_handle_events (void)
 			}
 			vkbd_keysave=-1234567;
 		}
+#endif
+#endif // __LIBRETRO__
 }
 
 void gui_changesettings (void)

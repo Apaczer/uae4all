@@ -1206,7 +1206,9 @@ static int do_specialties (int cycles)
 	set_special (SPCFLAG_DOINT);
     }
     if (uae_regs.spcflags & SPCFLAG_BRK ) {
-printf("BRK state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_getpc());fflush(stdout);
+#ifdef DEBUG_SAVESTATE
+	printf("BRK state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_getpc());fflush(stdout);
+#endif
 	unset_special (SPCFLAG_BRK);
 	return 1;
     }
@@ -1215,10 +1217,16 @@ printf("BRK state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_getp
 
 static double cycles_factor;
 
+#ifdef __LIBRETRO__
+extern int libretro_frame_end;
+#endif
 
 /* Same thing, but don't use prefetch to get opcode.  */
 static void m68k_run (void)
 {
+#ifdef __LIBRETRO__
+    libretro_frame_end = 0;
+#endif
     for (;;) {
 	int cycles;
 	uae_u32 opcode = get_iword (0);
@@ -1268,6 +1276,11 @@ SET_VFLG(0);
 		return;
 	}
 	uae4all_prof_end(1);
+
+#ifdef __LIBRETRO__
+	if (libretro_frame_end)
+	    return;
+#endif
     }
 }
 
@@ -1284,14 +1297,21 @@ void m68k_go (int may_quit)
     update_68k_cycles ();
 
     in_m68k_go++;
+#ifndef __LIBRETRO__
+    quit_program = 2;
+#endif
     for (;;) {
-printf("m68k_go state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_getpc());fflush(stdout);
+#ifdef DEBUG_SAVESTATE
+	printf("m68k_go state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_getpc());fflush(stdout);
+#endif
 	if (quit_program > 0) {
 	    if (quit_program == 1)
 		break;
 	    quit_program = 0;
 	    if (savestate_state == STATE_RESTORE) {
-puts("Restaurando");fflush(stdout);
+#ifdef DEBUG_SAVESTATE
+			puts("Restaurando");fflush(stdout);
+#endif
 		    restore_state (savestate_filename);
 	    }
 	    m68k_reset ();
@@ -1304,6 +1324,10 @@ puts("Restaurando");fflush(stdout);
 		do_specialties (0);
 	}
 	m68k_run();
+#ifdef __LIBRETRO__
+	if (libretro_frame_end)
+	    break;
+#endif
     }
     in_m68k_go--;
 #ifdef DEBUG_UAE4ALL

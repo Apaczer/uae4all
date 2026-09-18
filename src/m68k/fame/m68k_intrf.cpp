@@ -123,7 +123,11 @@ M68K_DATA midato_read_8[257];
 M68K_DATA midato_read_16[257];
 M68K_DATA midato_write_8[257];
 M68K_DATA midato_write_16[257];
+#ifndef USE_CAST_UNSIGNED
+static uintptr_t micontexto_fpa[256];
+#else
 static unsigned micontexto_fpa[256];
+#endif
 
 unsigned mispcflags=0;
 
@@ -258,11 +262,18 @@ static void uae4all_reset(void)
 #endif
 }
 
+#ifdef __LIBRETRO__
+extern int libretro_frame_end;
+#endif
+
 static void m68k_run (void)
 {
 	unsigned cycles, cycles_actual=M68KCONTEXT.cycles_counter;
 #ifdef DEBUG_M68K
 	dbg("m68k_run");
+#endif
+#ifdef __LIBRETRO__
+	libretro_frame_end = 0;
 #endif
 	for (;;) {
 #ifdef DEBUG_M68K
@@ -361,6 +372,12 @@ static void m68k_run (void)
 		cycles_actual=M68KCONTEXT.cycles_counter;
 #endif
                 uae4all_prof_end(1);
+
+#ifdef __LIBRETRO__
+		if (libretro_frame_end)
+			return;
+#endif
+
 	}
 }
 
@@ -378,7 +395,9 @@ void m68k_go (int may_quit)
 
     in_m68k_go++;
 #endif
+#ifndef __LIBRETRO__
     quit_program = 2;
+#endif
     for (;;) {
 #ifdef DEBUG_SAVESTATE
 	printf("m68k_go state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_getpc());fflush(stdout);
@@ -408,18 +427,24 @@ void m68k_go (int may_quit)
             handle_active_events ();
             if (mispcflags)
                 do_specialties (0);
+    //  } moved below, as it hangs in LIBRETRO implementation
+            if (!savestate_state)
+                uae4all_reset ();
         }
 
-	if (!savestate_state)
-		uae4all_reset ();
-	savestate_restore_finish ();
+        savestate_restore_finish ();
+
         m68k_run();
+#ifdef __LIBRETRO__
+        if (libretro_frame_end)
+                break;
+#endif
     }
 #if !defined(DREAMCAST) || defined(DEBUG_UAE4ALL)
     in_m68k_go--;
 #endif
 #ifdef DEBUG_UAE4ALL
-    puts("BYE?");
+    //puts("BYE?");
 #endif
 }
 
@@ -560,11 +585,19 @@ void init_memmaps(addrbank* banco)
 
 	memset(&micontexto,0,sizeof(M68K_CONTEXT));
 
+#ifndef USE_CAST_UNSIGNED
+	memset(&micontexto_fpa,0,sizeof(uintptr_t)*256);
+
+	micontexto_fpa[0x04]=(uintptr_t)&uae_chk_handler;
+//	micontexto_fpa[0x10]=(uintptr_t)&uae_chk_handler; // FAME BUG !!!
+	micontexto.icust_handler = micontexto_fpa;
+#else
 	memset(&micontexto_fpa,0,sizeof(unsigned)*256);
 
 	micontexto_fpa[0x04]=(unsigned)&uae_chk_handler;
 //	micontexto_fpa[0x10]=(unsigned)&uae_chk_handler; // FAME BUG !!!
 	micontexto.icust_handler = (unsigned int*)&micontexto_fpa;
+#endif
 
 	micontexto.fetch=(M68K_PROGRAM *)&miprograma;
 	micontexto.read_byte=(M68K_DATA *)&midato_read_8;
@@ -589,7 +622,11 @@ void init_memmaps(addrbank* banco)
 	
 	for(i=0;i<256;i++)
 	{
+#ifndef USE_CAST_UNSIGNED
+		uintptr_t offset=(uintptr_t)banco->baseaddr;
+#else
 		unsigned offset=(unsigned)banco->baseaddr;
+#endif
 		unsigned low_addr=(i<<16);
 		unsigned high_addr=((i+1)<<16)-1;
 		void *data=NULL;
@@ -610,7 +647,11 @@ void init_memmaps(addrbank* banco)
 
 		miprograma[i].low_addr=low_addr;
 		miprograma[i].high_addr=high_addr;
+#ifndef USE_CAST_UNSIGNED
+		miprograma[i].offset=((uintptr_t)&mimemoriadummy)-low_addr;
+#else
 		miprograma[i].offset=((unsigned)&mimemoriadummy)-low_addr;
+#endif
 		midato_read_8[i].low_addr=low_addr;
 		midato_read_8[i].high_addr=high_addr;
 		midato_read_8[i].mem_handler=mem_handler_r8;
@@ -630,7 +671,11 @@ void init_memmaps(addrbank* banco)
 	}
 	miprograma[256].low_addr=(unsigned)-1;
 	miprograma[256].high_addr=(unsigned)-1;
+#ifndef USE_CAST_UNSIGNED
+	miprograma[256].offset=0;
+#else
 	miprograma[256].offset=(unsigned)NULL;
+#endif
 	midato_read_8[256].low_addr=(unsigned)-1;
 	midato_read_8[256].high_addr=(unsigned)-1;
 	midato_read_8[256].mem_handler=NULL;
@@ -653,7 +698,11 @@ void init_memmaps(addrbank* banco)
 
 void map_zone(unsigned addr, addrbank* banco, unsigned realstart)
 {
+#ifndef USE_CAST_UNSIGNED
+	uintptr_t offset=(uintptr_t)banco->baseaddr;
+#else
 	unsigned offset=(unsigned)banco->baseaddr;
+#endif
 	if (addr>255)
 		return;
 
@@ -698,7 +747,11 @@ void map_zone(unsigned addr, addrbank* banco, unsigned realstart)
 #endif
 		miprograma[addr].low_addr=low_addr;
 		miprograma[addr].high_addr=high_addr;
+#ifndef USE_CAST_UNSIGNED
+		miprograma[addr].offset=((uintptr_t)&mimemoriadummy)-low_addr;
+#else
 		miprograma[addr].offset=((unsigned)&mimemoriadummy)-low_addr;
+#endif
 		midato_read_8[addr].low_addr=low_addr;
 		midato_read_8[addr].high_addr=high_addr;
 		midato_read_8[addr].mem_handler=(void*)banco->bget;

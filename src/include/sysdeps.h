@@ -437,7 +437,11 @@ extern int console_get (char *, int);
  * is too high, you will run out of memory while compiling.
  * Best to leave this as it is.
  */
+#ifdef FAST_COMPILER
+#define CPU_EMU_SIZE 5
+#else
 #define CPU_EMU_SIZE 0
+#endif
 
 #undef REGPARAM
 #define REGPARAM
