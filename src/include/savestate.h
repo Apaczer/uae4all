@@ -85,6 +85,7 @@ extern uae_u8 *save_rom (int, int *);
 #ifdef __LIBRETRO__
 extern FILE *save_state (const char *description, size_t size);
 void restore_state (void);
+extern void retro_restore_state (void);
 #else
 extern void save_state (const char *filename, const char *description);
 extern void restore_state (const char *filename);

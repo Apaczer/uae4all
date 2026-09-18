@@ -402,6 +402,22 @@ void m68k_go (int may_quit)
 #endif
 }
 
+#ifdef __LIBRETRO__
+void retro_restore_state (void)
+{
+    if (savestate_state == STATE_RESTORE)
+        restore_state ();
+    reset_all_systems ();
+    customreset ();
+    check_prefs_changed_cpu ();
+    sound_default_evtime ();
+    savestate_restore_finish ();
+    handle_active_events ();
+    if (mispcflags)
+        do_specialties (0);
+}
+#endif
+
 void check_prefs_changed_cpu (void)
 {
 	int i;

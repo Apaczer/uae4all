@@ -2116,17 +2116,19 @@ void vsync_handle_redraw (int long_frame, int lof_changed)
 	 * done at other times.
 	 */
 
+#ifndef __LIBRETRO__
 	if (savestate_state == STATE_DOSAVE)
 	{
 		custom_prepare_savestate ();
 		savestate_state = STATE_SAVE;
 		pause_sound();
-		save_state (savestate_filename, NULL);
+		save_state (savestate_filename, "Description!");
 		resume_sound();
     		gui_set_message("Saved", 50);
 		savestate_state = 0;
 	}
 	else
+#endif
 		if (savestate_state == STATE_DORESTORE)
 		{
 			pause_sound();

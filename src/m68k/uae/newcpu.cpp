@@ -1339,6 +1339,26 @@ void m68k_go (int may_quit)
 #endif
 }
 
+#ifdef __LIBRETRO__
+void retro_restore_state (void)
+{
+    if (savestate_state == STATE_RESTORE) {
+#ifdef DEBUG_SAVESTATE
+        puts("Restaurando");fflush(stdout);
+#endif
+        restore_state ();
+    }
+    m68k_reset ();
+    reset_all_systems ();
+    customreset ();
+    check_prefs_changed_cpu ();
+    savestate_restore_finish ();
+    handle_active_events ();
+    if (uae_regs.spcflags)
+        do_specialties (0);
+}
+#endif
+
 void check_prefs_changed_cpu (void)
 {
 	int i;

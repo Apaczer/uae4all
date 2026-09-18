@@ -507,7 +507,6 @@ void retro_init(void)
    static uint64_t quirks = RETRO_SERIALIZATION_QUIRK_INCOMPLETE;
    environ_cb(RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS, &quirks);
 
-#if 1
    // > Ensure save state de-serialization file
    //   is closed/NULL
    //   (redundant safety check, possibly required
@@ -517,7 +516,6 @@ void retro_init(void)
       zfile_fclose(retro_deserialize_file);
       retro_deserialize_file = NULL;
    }
-#endif
 
    struct retro_input_descriptor inputDescriptors[] = {
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "A" },
@@ -635,36 +633,8 @@ void retro_run(void)
    {
       if (Deffered == 1)
       {
-#if 1
-         // Save states
-         // > Ensure that save state file path is empty,
-         //   since we use memory based save states
-         savestate_filename[0] = '\0';
-         // > Get save state size
-         //   Here we use initial size + 5%
-         //   Should be sufficient in all cases
-         // NOTE: It would be better to calculate the
-         // state size based on current config parameters,
-         // but while
-         //   - currprefs.chipmem_size
-         //   - currprefs.bogomem_size
-         //   - currprefs.fastmem_size
-         // account for *most* of the size, there are
-         // simply too many other factors to rely on this
-         // alone (i.e. mem size + 5% is fine in most cases,
-         // but if the user supplies a custom uae config file
-         // then this is not adequate at all). Untangling the
-         // full set of values that are recorded is beyond
-         // my patience...
-         FILE *state_file = save_state("libretro", 0);
-
-         if (state_file)
-         {
-            save_state_file_size  = (size_t)zfile_size(state_file);
-            save_state_file_size += (size_t)(((float)save_state_file_size * 0.05f) + 0.5f);
-            zfile_fclose(state_file);
-         }
-#endif
+         if (save_state_file_size == 0)
+            retro_serialize_size();
          Deffered = 2;
       }
 
@@ -737,18 +707,34 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info, 
 
 size_t retro_serialize_size(void)
 {
-#if 1
+   if (save_state_file_size == 0)
+   {
+      savestate_filename[0] = '\0';
+      if (quit_program > 0)
+      {
+         quit_program = 0;
+         m68k_reset ();
+         reset_all_systems ();
+         customreset ();
+      }
+      FILE *state_file = save_state("libretro", 0);
+      if (state_file)
+      {
+         save_state_file_size  = (size_t)zfile_size(state_file);
+         save_state_file_size += (size_t)(((float)save_state_file_size * 0.05f) + 0.5f);
+         zfile_fclose(state_file);
+      }
+   }
    return save_state_file_size;
-#else
-   return 0;
-#endif
 }
 
 bool retro_serialize(void *data_, size_t size)
 {
-#if 1
    if (savestate_state || !data_)
       return false;
+
+   if (save_state_file_size == 0)
+      retro_serialize_size();
 
    FILE *state_file = save_state("libretro", save_state_file_size);
    bool success = false;
@@ -772,38 +758,14 @@ bool retro_serialize(void *data_, size_t size)
    }
 
    return success;
-#else
-   return false;
-#endif
 }
 
 bool retro_unserialize(const void *data_, size_t size)
 {
-#if 1
-   // TODO: When attempting to use runahead, CD32
-   // and WHDLoad content will hang on boot. It seems
-   // we cannot restore a state until the system has
-   // passed some level of initialisation - but the
-   // point at which a restore becomes 'safe' is
-   // unknown (for CD32 content, for example, we have
-   // to wait ~300 frames before runahead can be enabled)
    bool success = false;
 
-   // Cannot restore state while any 'savestate'
-   // operation is underway
-   // > Actual restore is deferred until m68k_go(),
-   //   so we have to use a shared shared state file
-   //   object - this cannot be modified until the
-   //   restore is complete
-   // > Note that this condition should never be
-   //   true - if a save state operation is underway
-   //   at this point then we are dealing with an
-   //   unknown error
-   if (!savestate_state)
+   if (!savestate_state && data_ && size > 0)
    {
-      // Savestates also save CPU prefs, therefore refresh core options, but skip it for now
-      //request_check_prefs_timer = 4;
-
       if (retro_deserialize_file)
       {
          zfile_fclose(retro_deserialize_file);
@@ -819,35 +781,23 @@ bool retro_unserialize(const void *data_, size_t size)
          if (len == size)
          {
             zfile_fseek(retro_deserialize_file, 0, SEEK_SET);
-            savestate_state = STATE_DORESTORE;
+            savestate_state = STATE_RESTORE;
 
-            // For correct operation of the frontend,
-            // the save state restore must be completed
-            // by the time this function returns. The active
-            // CPU loop processes STATE_DORESTORE on the next
-            // emulated frame and returns at its normal frame boundary.
-            m68k_go(1);
-            success = savestate_state == 0;
+            retro_restore_state();
 
-            if (!success && retro_deserialize_file)
-            {
-               zfile_fclose(retro_deserialize_file);
-               retro_deserialize_file = NULL;
-               savestate_state = 0;
-            }
+            success = (savestate_state == 0);
          }
-         else
+
+         if (retro_deserialize_file)
          {
             zfile_fclose(retro_deserialize_file);
             retro_deserialize_file = NULL;
          }
+         savestate_state = 0;
       }
    }
 
    return success;
-#else
-   return false;
-#endif
 }
 
 void *retro_get_memory_data(unsigned id)

@@ -669,7 +669,11 @@ custom_prepare_savestate ();
     puts("--> save CRAM");fflush(stdout);
 #endif
     dst = save_cram (&len);
+#ifdef __LIBRETRO__
+    save_chunk (f, dst, len, "CRAM");
+#else
     save_chunk_compressed (f, dst, len, "CRAM");
+#endif
 #ifdef DEBUG_SAVESTATE
     puts("--> save BRAM");fflush(stdout);
 #endif
