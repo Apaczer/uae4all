@@ -411,7 +411,11 @@ void m68k_go (int may_quit)
 #ifdef DEBUG_SAVESTATE
 		    puts("Restaurando");fflush(stdout);
 #endif
+#ifdef __LIBRETRO__
+		    restore_state ();
+#else
 		    restore_state (savestate_filename);
+#endif
 		    mispcflags = 0;
 //		    _m68k_setpc(M68KCONTEXT.pc);
 	    }
@@ -447,6 +451,21 @@ void m68k_go (int may_quit)
     //puts("BYE?");
 #endif
 }
+
+#ifdef __LIBRETRO__
+void retro_restore_state (void)
+{
+    if (savestate_state == STATE_RESTORE) {
+        restore_state ();
+    }
+    reset_all_systems ();
+    customreset ();
+    handle_active_events ();
+    if (mispcflags)
+        do_specialties (0);
+    savestate_restore_finish ();
+}
+#endif
 
 void init_m68k (void)
 {
