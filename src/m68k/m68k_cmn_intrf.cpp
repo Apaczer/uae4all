@@ -371,11 +371,18 @@ void m68k_go (int may_quit)
             if (quit_program == 1)
                 break;
             quit_program = 0;
+#ifdef __LIBRETRO__
+            if (savestate_state == STATE_RESTORE)
+                restore_state ();
+#endif
             reset_all_systems ();
             customreset ();
 	    check_prefs_changed_cpu ();
 	    sound_default_evtime ();
             /* We may have been restoring state, but we're done now.  */
+#ifdef __LIBRETRO__
+            savestate_restore_finish ();
+#endif
             handle_active_events ();
             if (mispcflags)
                 do_specialties (0);
@@ -394,6 +401,22 @@ void m68k_go (int may_quit)
     //puts("BYE?");
 #endif
 }
+
+#ifdef __LIBRETRO__
+void retro_restore_state (void)
+{
+    if (savestate_state == STATE_RESTORE)
+        restore_state ();
+    reset_all_systems ();
+    customreset ();
+    check_prefs_changed_cpu ();
+    sound_default_evtime ();
+    savestate_restore_finish ();
+    handle_active_events ();
+    if (mispcflags)
+        do_specialties (0);
+}
+#endif
 
 void check_prefs_changed_cpu (void)
 {

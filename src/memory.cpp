@@ -1196,6 +1196,20 @@ static void allocate_memory (void)
 
     if (savestate_state == STATE_RESTORE)
     {
+#ifdef __LIBRETRO__
+	    if (savestate_file)
+	    {
+		    size_t to_read = (compressed_size > 0 && (size_t)compressed_size < (size_t)allocated_chipmem)
+		                     ? (size_t)compressed_size : (size_t)allocated_chipmem;
+		    zfile_fseek (savestate_file, chip_filepos, SEEK_SET);
+		    zfile_fread (chipmemory, 1, to_read, savestate_file);
+		    if (allocated_bogomem > 0)
+		    {
+			    zfile_fseek (savestate_file, bogo_filepos, SEEK_SET);
+			    zfile_fread (bogomemory, 1, allocated_bogomem, savestate_file);
+		    }
+	    }
+#else
 	    fseek (savestate_file, chip_filepos, SEEK_SET);
 #ifndef DREAMCAST
 	    void *tmp=malloc(compressed_size);
@@ -1235,6 +1249,7 @@ static void allocate_memory (void)
 		    fseek (savestate_file, bogo_filepos, SEEK_SET);
 		    fread (bogomemory, 1, allocated_bogomem, savestate_file);
 	    }
+#endif
     }
 
     chipmem_bank.baseaddr = chipmemory;

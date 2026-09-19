@@ -126,9 +126,9 @@ Both makefiles allow selecting the desired M68k CPU core by passing flags:
 | Flag | Description |
 |---|---|
 | `UAE_CORE=1` | UAE C-based core (highest compatibility, default for standalone) |
-| `CYCLONE_CORE=1` | Cyclone ARM assembly core (fastest on ARM, default for Miyoo Libretro) |
+| `CYCLONE_CORE=1` (*) | Cyclone ARM assembly core (fastest on ARM, default for Miyoo Libretro) |
 | `FAME_CORE=1` | FAME M68k emulation library (x86 assembly) |
-| `FAME_CORE=1 FAME_CORE_C=1` | FAME C implementation (default for native Libretro) |
+| `FAME_CORE=1 FAME_CORE_C=1` | FAME C implementation (default for native Libretro, to heavy for cross-compiling locally) |
 
 Example:
 ```bash
@@ -136,6 +136,8 @@ make -j$(nproc) UAE_CORE=1
 # or for libretro:
 make -j$(nproc) -f Makefile.libretro platform=miyoo CYCLONE_CORE=1
 ```
+
+*) *The CYCLONE is an experimental core, currently missing Savestate implementation and maybe less accurate than others*
 
 ---
 

@@ -2116,6 +2116,7 @@ void vsync_handle_redraw (int long_frame, int lof_changed)
 	 * done at other times.
 	 */
 
+#ifndef __LIBRETRO__
 	if (savestate_state == STATE_DOSAVE)
 	{
 		custom_prepare_savestate ();
@@ -2127,6 +2128,7 @@ void vsync_handle_redraw (int long_frame, int lof_changed)
 		savestate_state = 0;
 	}
 	else
+#endif
 		if (savestate_state == STATE_DORESTORE)
 		{
 			pause_sound();

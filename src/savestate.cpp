@@ -70,6 +70,19 @@
 #endif
 
 #include "savestate.h"
+#include "zfile.h"
+
+#ifdef __LIBRETRO__
+#include "libretro-core.h"
+extern FILE *retro_deserialize_file;
+
+/* Libretro saves to an in-memory zfile. */
+#define fclose zfile_fclose
+#define fseek zfile_fseek
+#define ftell zfile_ftell
+#define fread zfile_fread
+#define fwrite zfile_fwrite
+#endif
 
 int savestate_state;
 
@@ -282,7 +295,11 @@ static void clear_events(void) {
 }
 /* restore all subsystems */
 
+#ifdef __LIBRETRO__
+void restore_state (void)
+#else
 void restore_state (const char *filename)
+#endif
 {
     FILE *f;
     uae_u8 *chunk,*end;
@@ -312,7 +329,11 @@ void restore_state (const char *filename)
     puts("-->restore_state");fflush(stdout);
 #endif
     chunk = 0;
+#ifdef __LIBRETRO__
+	f = retro_deserialize_file;
+#else
     f = fopen (filename, "rb");
+#endif
     if (!f) {
 #ifdef DREAMCAST
 	char *ad=(char *)calloc(strlen(filename)+16,1);
@@ -326,9 +347,15 @@ void restore_state (const char *filename)
     }
 
     chunk = restore_chunk (f, name, &len, &filepos);
+#ifdef __LIBRETRO__
+    if (!chunk || memcmp (name, "ASF ", 4)) {
+	write_log ("STATERESTORE libretro serialization data is not an AmigaStateFile\n");
+	goto error;
+#else
     if (!chunk || memcmp (name, "ASF ", 4)) {
 	write_log ("%s is not an AmigaStateFile\n",filename);
 	goto error;
+#endif
     }
     savestate_file = f;
     restore_header (chunk);
@@ -437,8 +464,16 @@ void restore_state (const char *filename)
     savestate_file = 0;
     if (chunk)
 	free (chunk);
+#ifdef __LIBRETRO__
+	if (retro_deserialize_file)
+	{
+		zfile_fclose (retro_deserialize_file);
+		retro_deserialize_file = NULL;
+	}
+#else
     if (f)
 	fclose (f);
+#endif
     resume_sound();
     if (produce_sound)
     	update_audio();
@@ -470,6 +505,9 @@ void savestate_restore_finish (void)
     	update_audio();
     savestate_file = 0;
     savestate_state = 0;
+#ifdef __LIBRETRO__
+    retro_deserialize_file = NULL;
+#endif
 //    unset_special(SPCFLAG_BRK);
     notice_screen_contents_lost();
     gui_set_message("Restored", 50);
@@ -477,7 +515,11 @@ void savestate_restore_finish (void)
 
 /* Save all subsystems  */
 
+#ifdef __LIBRETRO__
+FILE *save_state (const char *description, size_t size)
+#else
 void save_state (const char *filename, const char *description)
+#endif
 {
     uae_u8 header[1000];
     char tmp[100];
@@ -498,7 +540,9 @@ void save_state (const char *filename, const char *description)
 	SDL_Flip(prSDLScreen);
 #endif
 
+#ifndef __LIBRETRO__
     gui_show_window_bar(0, 10, 0);
+#endif
 #ifdef DREAMCAST
 	extern void reinit_sdcard(void);
 	reinit_sdcard();
@@ -506,7 +550,14 @@ void save_state (const char *filename, const char *description)
 #ifdef DEBUG_SAVESTATE
     printf("-->save_state('%s','%s'\n",filename,description);fflush(stdout);
 #endif
+custom_prepare_savestate ();
+
+
+#ifdef __LIBRETRO__
+    f = zfile_open_empty (description, size);
+#else
     f = fopen (filename, "wb");
+#endif
     if (!f) {
 #ifdef DREAMCAST
 	char *ad=(char *)calloc(strlen(filename)+16,1);
@@ -516,7 +567,11 @@ void save_state (const char *filename, const char *description)
 	free(ad);
 	if (!f)
 #endif
+#ifdef __LIBRETRO__
+	return NULL;
+#else
 	return;
+#endif
     } 
 
     gui_show_window_bar(0, 10, 0);
@@ -614,7 +669,11 @@ void save_state (const char *filename, const char *description)
     puts("--> save CRAM");fflush(stdout);
 #endif
     dst = save_cram (&len);
+#ifdef __LIBRETRO__
+    save_chunk (f, dst, len, "CRAM");
+#else
     save_chunk_compressed (f, dst, len, "CRAM");
+#endif
 #ifdef DEBUG_SAVESTATE
     puts("--> save BRAM");fflush(stdout);
 #endif
@@ -651,6 +710,12 @@ void save_state (const char *filename, const char *description)
 #endif
     fwrite ("END ", 1, 4, f);
     fwrite ("\0\0\0\08", 1, 4, f);
+#ifdef __LIBRETRO__
+    write_log ("STATESAVE libretro serialization complete\n");
+    savestate_state = 0;
+    zfile_fseek (f, 0, SEEK_SET);
+    return f;
+#else
     write_log ("Save of '%s' complete\n", filename);
     fclose (f);
 #ifdef DINGOO
@@ -659,6 +724,7 @@ void save_state (const char *filename, const char *description)
     gui_show_window_bar(10, 10, 0);
     clear_events();
     notice_screen_contents_lost();
+#endif
 #ifdef DEBUG_SAVESTATE
     printf("SAVED state=%X, flags=%X, PC=%X\n",savestate_state,_68k_spcflags,_68k_getpc());fflush(stdout);
 #endif
