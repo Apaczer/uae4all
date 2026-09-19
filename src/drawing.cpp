@@ -2068,6 +2068,7 @@ static _INLINE_ void finish_drawing_frame (void)
 	1
 #endif
 	)
+#else
     {
 #if !defined(DOUBLEBUFFER) && !defined(STATUS_ALWAYS)
 	back_drive_track0=gui_data.drive_track[0];
