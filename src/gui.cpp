@@ -304,7 +304,9 @@ extern char *gfx_mem;
 		strcpy(uae4all_image_file2,"prueba2.adz");
 	#endif
 
+#ifndef NO_VKBD
 	vkbd_init();
+#endif
 	if (argc == 1)
 		init_text(1,0);
 	else
@@ -498,7 +500,9 @@ static void goMenu(void)
    SDL_DC_EmulateKeyboard(SDL_FALSE);
 #endif
     getChanges();
+#ifndef NO_VKBD
     vkbd_init_button2();
+#endif
     if (exitmode==1 || exitmode==2)
     {
     	    extern char *savestate_filename;
