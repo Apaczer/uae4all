@@ -23,8 +23,6 @@
 #include "filesys.h"
 #include "autoconf.h"
 
-int mainMenu_statusbar=1;
-
 unsigned int VIRTUAL_WIDTH=PREFS_GFX_WIDTH;
 unsigned int retrow=PREFS_GFX_WIDTH;
 unsigned int retroh=PREFS_GFX_HEIGHT;
@@ -37,6 +35,7 @@ extern char uae4all_image_file2[];
 extern int mainMenu_throttle;
 extern int mainMenu_vpos;
 extern int mainMenu_frameskip;
+extern int mainMenu_statusbar;
 
 extern int JOYSTICK_EMULATED;
 extern int KEYBOARD_PROCESS;
@@ -167,6 +166,7 @@ void retro_set_environment(retro_environment_t cb)
       { "uae4all_frameskip",  "Frameskip (need Restart); 0|1|2|3|4|5|auto", },
       { "uae4all_memchip",    "Chip RAM (need Restart); default(512 KB)|512 KB|1 MB|1.5 MB|2 MB", },
       { "uae4all_vpos",       "Adjust screen Vertically (need Restart); default(8)|0|8|16|24|32|40", },
+      { "uae4all_statusbar",  "Show status bar; on|off", },
       { "uae4all_joystick",   "Joystick emulation; on|off", },
 #ifdef HAVE_KBDJOYPAD
       { "uae4all_keyboard",   "Keyboard processing; off|on", },
@@ -337,6 +337,15 @@ void update_prefs_retrocfg(void)
       {
          mainMenu_frameskip = -1;
       }
+   }
+
+   var.key = "uae4all_statusbar";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (strcmp(var.value, "on")  == 0) mainMenu_statusbar = 1;
+      if (strcmp(var.value, "off") == 0) mainMenu_statusbar = 0;
    }
 
    var.key = "uae4all_joystick";

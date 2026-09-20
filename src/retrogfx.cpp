@@ -27,6 +27,7 @@ SDL_Surface *prSDLScreen = NULL;
 int mainMenu_vpos=1;
 int mainMenu_sound=-1;
 int mainMenu_frameskip=0;
+int mainMenu_statusbar=1;
 int mainMenu_throttle=0;
 int mainMenu_autosave=-1;
 int saveMenu_n_savestate=0;
