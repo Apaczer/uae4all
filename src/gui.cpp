@@ -163,12 +163,10 @@ void loadConfig()
 			sscanf(arg, "%d", &mainMenu_autosave);
 		else if(!strcmp(line, "USE_JOY"))
 			sscanf(arg, "%d", &mainMenu_usejoy);
-	#if defined(MIYOO) || defined(RS97)
 		else if(!strcmp(line, "STATUS_BAR"))
 			sscanf(arg, "%d", &mainMenu_statusbar);
 		else if(!strcmp(line, "2MB_RAM"))
 			sscanf(arg, "%d", &mainMenu_ram);
-#endif
 		else if(!strcmp(line, "LAST_DIR"))
 		{
 			int len = strlen(arg);
@@ -229,11 +227,7 @@ void storeConfig()
 		return;
 	}
 
-#if defined(MIYOO) || defined(RS97)
 	fprintf(f, "THROTTLE %d\nFRAMESKIP %d\nSCREEN_POS %d\nSOUND %d\nSAVE_DISKS %d\nUSE_JOY %d\nSTATUS_BAR %d\n2MB_RAM %d\n", mainMenu_throttle, mainMenu_frameskip, mainMenu_vpos, mainMenu_sound, mainMenu_autosave, mainMenu_usejoy, mainMenu_statusbar, mainMenu_ram);
-#else
-	fprintf(f, "THROTTLE %d\nFRAMESKIP %d\nSCREEN_POS %d\nSOUND %d\nSAVE_DISKS %d\nUSE_JOY %d\n", mainMenu_throttle, mainMenu_frameskip, mainMenu_vpos, mainMenu_sound, mainMenu_autosave, mainMenu_usejoy);
-#endif
 
 	if(last_directory[0])
 	{

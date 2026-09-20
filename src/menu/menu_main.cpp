@@ -301,7 +301,6 @@ static void draw_mainMenu(enum MainMenuEntry c)
 	else
 		write_text(column, row, text_str_on);
 
-#if defined(MIYOO) || defined(RS97) 
 	row += 2;
 
 	write_text(6, row, text_str_status);
@@ -331,7 +330,6 @@ static void draw_mainMenu(enum MainMenuEntry c)
 		write_text_inv(column, row, text_str_on);
 	else
 		write_text(column, row, text_str_on);
-#endif
 
 	row++;
 	write_text(6, row++, text_str_separator);
