@@ -87,20 +87,20 @@ Alternatively, set up a native Debian 9 toolchain environment for MiyooCFW.
 
 ### 2. Standalone Build (`Makefile`)
 
-- **Standalone binary**:
+- **Cross-compile Standalone MiyooCFW binary**:
   ```bash
   make clean
-  make -j$(nproc)
+  make -j$(nproc) platform=miyoo
   ```
 
 - **Distribution IPK package** (for Gmenu2X / MiyooCFW):
   ```bash
-  make -j$(nproc) gm2xpkg-ipk
+  make -j$(nproc) platform=miyoo gm2xpkg-ipk
   ```
 
 - **Native Linux build**:
   ```bash
-  make -j$(nproc) LINUX="YES"
+  make -j$(nproc)
   ```
 
 ---
