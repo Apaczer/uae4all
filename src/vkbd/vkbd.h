@@ -22,6 +22,7 @@ void vkbd_redraw(void);
 void vkbd_mouse(void);
 SDLKey vkbd_process(void);
 void vkbd_init_button2(void);
+void vkbd_restore_button2(void);
 
 extern int vkbd_mode;
 extern int vkbd_move;

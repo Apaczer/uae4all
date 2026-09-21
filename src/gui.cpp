@@ -547,6 +547,9 @@ static void goMenu(void)
     }
     check_all_prefs();
     gui_purge_events();
+#ifndef NO_VKBD
+	vkbd_restore_button2();
+#endif
     notice_screen_contents_lost();
 #ifdef DEBUG_FRAMERATE
     uae4all_update_time();
