@@ -17,11 +17,32 @@ SELECT + L - Quick save state
 SELECT + Y - increase Throttle
 SELECT + X - decrease Throttle
 
+[Menu/CFG Options]
+"Throttle" - set optimization level (may brake emualtion)
+"Frameskip" - adjust frameskipping for better performance (see Usage)
+"Save disks" - write/read savedisk's "temporary" save data to/from <8hex>.ADS compressed file (*)
+"Screen pos" - adjust screen vertically
+"Use analog" - use real hardware joystick inputs (if connected)
+"Status bar" - show/hide lower status bar
+"2MB RAM" - increase Chip default RAM (512kB) to 2MB
+
+*) the compressed savedata filename e.g. "6E22D1ED.ads" can be represended with cmd: 
+    printf "%s%08X.ads\n" "$SAVE_PREFIX" "$crc"
+    SAVE_PREFIX=<CWD of savedisk>
+    crc=<8-HEX savedisk's custom uae4all_checksum>
+
 [Usage]
 Before first use:
 Provide a valid Amiga 500 Kickstart bootstrap firmware and copy it to the following location:
 /mnt/.uae4all/kick.rom
 UAE4ALL will refuse to launch without this file present.
+
+Save disk:
+The program by design stores save data in virtual memory until closing emulator.
+To preserve and use savedisk's data for future use, keep enabled "Save disks" feature in menu,
+which will store/read memory in/from separate ADS file, however can severy slow down save process.
+It is advised to use a pre-formatted for specific game [save disk], as using plain blank ADF file 
+may not always work for above "Save disks" method.
 
 Launching programs via menu:
 UAE4ALL will work with disk images in "adf" and "adz" format.
