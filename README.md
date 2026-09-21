@@ -1,6 +1,6 @@
 # UAE4ALL
 
-UAE4All is an optimized "Lite" Commodore Amiga 500 emulator based on the E-UAE core. It emulates Commodore Amiga 500 hardware with OCS (Original Chip Set), 512 KB / 1 MB / 2 MB Chip RAM, and up to 4 floppy drives.
+UAE4All is an optimized "Lite" Commodore Amiga 500 emulator based on the E-UAE core. It emulates Commodore Amiga 500 hardware with OCS (Original Chip Set), 512 KB / 1 MB / 2 MB Chip RAM, and up to 4 floppy drives (currently restricted to 2 - DF0 & DF1).
 
 This repository provides both a **standalone** emulator build (optimized for MiyooCFW handhelds and Linux) and a **Libretro core** (`uae4all_libretro.so`) for RetroArch / Libretro frontends. Remember to provide `uae4all_libretro.info` file in RetroArch **`core_info`** directory for core to be detactable.
 
