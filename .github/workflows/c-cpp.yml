@@ -1,5 +1,5 @@
 
-name: CI Build
+name: CI standalone build
 
 on: [push, pull_request]
 
@@ -12,7 +12,7 @@ jobs:
     - name: build
       run: |
         sudo apt-get update && sudo apt-get install -y build-essential libsdl1.2-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libbz2-dev
-        make -j$(nproc) LINUX=YES
+        make -j$(nproc)
     - uses: actions/upload-artifact@v4
       with:
         name: UAE4ALL (Linux)
@@ -27,7 +27,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: build
-      run: make -j$(nproc) gm2xpkg-ipk
+      run: make -j$(nproc) platform=miyoo gm2xpkg-ipk
     - uses: actions/upload-artifact@v4
       with:
         name: UAE4ALL (MiyooCFW)
