@@ -5,8 +5,15 @@ RM      = rm -f
 # ---------------------------------------------------------------------------
 # Build mode: LIBRETRO=1 builds the libretro core, default builds standalone
 # ---------------------------------------------------------------------------
+
+# for libretro
 LIBRETRO      ?= 0
-STATIC_LINKING ?= 0
+STATIC_LINKING ?=0
+
+INSTALLDIR ?= $(HOME)
+
+# Possible values: 0, YES, APPLY
+PROFILE ?= 0
 
 ifeq ($(LIBRETRO), 1)
   ifeq ($(STATIC_LINKING), 1)
@@ -29,9 +36,10 @@ else
 endif
 
 # ---------------------------------------------------------------------------
-# Toolchain: platform=miyoo → cross-compile; no platform → native host
+# Toolchain: platform=miyoo (cross-compile); no platform (native host)
 # ---------------------------------------------------------------------------
 ifeq ($(platform), miyoo)
+  INSTALLDIR = /mnt
   CHAINPREFIX  ?= /opt/miyoo
   CROSS_COMPILE = $(CHAINPREFIX)/usr/bin/arm-linux-
 endif
@@ -68,9 +76,6 @@ $(info AR=$(AR))
 
 all: $(PROG)
 
-# Possible values: 0, YES, APPLY
-PROFILE ?= 0
-
 # ---------------------------------------------------------------------------
 # Platform / mode configuration
 # ---------------------------------------------------------------------------
@@ -100,10 +105,6 @@ ifeq ($(LIBRETRO), 1)
     endif
   endif
 
-  ifeq ($(LTO), yes)
-    LDFLAGS += -flto
-  endif
-
   ifeq ($(STATIC_LINKING), 0)
     SHARED = -shared -Wl,--version-script=libretro/link.T
   else
@@ -118,6 +119,11 @@ ifeq ($(LIBRETRO), 1)
 else
   ## --- Standalone build ---
 
+  ## use 7z savestate compression for *.asf files
+  LIB7Z   ?= 1
+  HOME_DIR ?= 1
+  #SOUND_NEW=1  # minimal audio by notaz via gp2x (experimental)
+
   SYSROOT      := $(shell $(CC) --print-sysroot)
   PKGS          = sdl SDL_image zlib SDL_mixer
   PKGS_CFLAGS   = $(shell $(SYSROOT)/../../usr/bin/pkg-config --cflags $(PKGS))
@@ -130,18 +136,7 @@ else
     LDFLAGS += -lm
   endif
 
-  ifeq ($(PROFILE), YES)
-    LDFLAGS += -lgcov
-  endif
-
   OPTIMIZE_CFLAGS = -O2 -fno-rtti
-
-  ifeq ($(PROFILE), YES)
-    OPTIMIZE_CFLAGS += -fprofile-generate=/mnt/profile
-  else ifeq ($(PROFILE), APPLY)
-    OPTIMIZE_CFLAGS += -fprofile-use=profile -fbranch-probabilities
-    OPTIMIZE_CFLAGS += -flto
-  endif
 
   MORE_CFLAGS += -DUSE_SDL -DDOUBLEBUFFER -DNO_DEFAULT_THROTTLE
   MORE_CFLAGS += -DROM_PATH_PREFIX=\"./\" -DSAVE_PREFIX=\"./\"
@@ -166,19 +161,23 @@ else
 
   MORE_CFLAGS += -DUSE_BLIT_MASKTABLE
 
-  ifndef SOUND_NEW  # crashes on menu load
-    MORE_CFLAGS += -DMENU_MUSIC
-  endif
   ifndef SOUND_NEW
+    MORE_CFLAGS += -DMENU_MUSIC
     MORE_CFLAGS += -DNO_THREADS
   endif
 
-  ## use 7z savestate compression for *.asf files
-  LIB7Z   ?= 1
-  HOME_DIR ?= 1
-  #SOUND_NEW=1  # minimal audio by notaz via gp2x (experimental)
-
 endif  # LIBRETRO / standalone
+
+ifeq ($(LTO), yes)
+LDFLAGS += -flto
+endif
+
+ifeq ($(PROFILE), YES)
+LDFLAGS += -lgcov
+OPTIMIZE_CFLAGS += -fprofile-generate=$(INSTALLDIR)/profile
+else ifeq ($(PROFILE), APPLY)
+OPTIMIZE_CFLAGS += -fprofile-use=profile -fbranch-probabilities
+endif
 
 # ---------------------------------------------------------------------------
 # Common flags (both modes)
@@ -427,18 +426,15 @@ install: $(PROG)
 	cp $(PROG) ~/.config/retroarch/cores/
 endif
 
-run: $(PROG)
-	./$(PROG)
-
 package: $(PROG)
 	@mkdir -p $(RELEASEDIR)
 	@cp *$(NAME) $(RELEASEDIR)/
-	@mkdir -p $(RELEASEDIR)/mnt/$(DESTDIR)/$(NAME)
-	@mkdir -p $(RELEASEDIR)/mnt/gmenu2x/sections/$(SECTION)
-	@mv $(RELEASEDIR)/*$(NAME) $(RELEASEDIR)/mnt/$(DESTDIR)/$(NAME)/
-	@cp -r $(ASSETSDIR)/* $(RELEASEDIR)/mnt/$(DESTDIR)/$(NAME)
-	@cp $(LINK) $(RELEASEDIR)/mnt/gmenu2x/sections/$(SECTION)
-	-@cp $(OPKG_ASSETSDIR)/$(ALIASES) $(RELEASEDIR)/mnt/$(DESTDIR)/$(NAME)
+	@mkdir -p $(RELEASEDIR)$(INSTALLDIR)/$(DESTDIR)/$(NAME)
+	@mkdir -p $(RELEASEDIR)$(INSTALLDIR)/gmenu2x/sections/$(SECTION)
+	@mv $(RELEASEDIR)/*$(NAME) $(RELEASEDIR)$(INSTALLDIR)/$(DESTDIR)/$(NAME)/
+	@cp -r $(ASSETSDIR)/* $(RELEASEDIR)$(INSTALLDIR)/$(DESTDIR)/$(NAME)
+	@cp $(LINK) $(RELEASEDIR)$(INSTALLDIR)/gmenu2x/sections/$(SECTION)
+	-@cp $(OPKG_ASSETSDIR)/$(ALIASES) $(RELEASEDIR)$(INSTALLDIR)/$(DESTDIR)/$(NAME)
 
 zip: package
 	@cd $(RELEASEDIR) && zip -rq $(NAME)$(VERSION).zip ./* && mv *.zip ..
@@ -446,7 +442,7 @@ zip: package
 
 ipk: package
 	@mkdir -p $(RELEASEDIR)/data
-	@mv $(RELEASEDIR)/mnt $(RELEASEDIR)/data/
+	@mv $(RELEASEDIR)$(INSTALLDIR) $(RELEASEDIR)/data/
 	@cp -r $(OPKG_ASSETSDIR)/CONTROL $(RELEASEDIR)
 	@sed "s/^Version:.*/Version: $(VERSION)/" $(OPKG_ASSETSDIR)/CONTROL/control > $(RELEASEDIR)/CONTROL/control
 	@echo 2.0 > $(RELEASEDIR)/debian-binary
@@ -455,8 +451,10 @@ ipk: package
 	@ar r $(NAME).ipk $(RELEASEDIR)/control.tar.gz $(RELEASEDIR)/data.tar.gz $(RELEASEDIR)/debian-binary
 	@rm -rf $(RELEASEDIR)
 
+ifeq ($(platform), miyoo)
 gm2xpkg-ipk: $(PROG)
 	gm2xpkg -i -f pkg.cfg
+endif
 
 opk: $(PROG)
 	mkdir -p $(RELEASEDIR)
@@ -479,7 +477,10 @@ clean:
 	rm -f *.ipk
 	rm -f *.zip
 
-.PHONY: all clean almostclean run package zip ipk gm2xpkg-ipk opk libretro
+.PHONY: all clean almostclean opk libretro package zip ipk
 ifeq ($(LIBRETRO), 1)
 .PHONY: install
+endif
+ifeq ($(platform), miyoo)
+.PHONY: gm2xpkg-ipk
 endif
