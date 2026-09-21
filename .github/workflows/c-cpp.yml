@@ -1,5 +1,5 @@
 
-name: CI Build
+name: CI standalone build
 
 on: [push, pull_request]
 
