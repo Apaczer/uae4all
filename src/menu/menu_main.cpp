@@ -10,6 +10,11 @@
 #include "sound.h"
 #include "savestate.h"
 #include "gui.h"
+#ifndef NO_VKBD
+#include "vkbd.h"
+#else
+extern void vkbd_clear_button2(void);
+#endif
 
 
 extern int emulating;
@@ -23,6 +28,7 @@ static const char *text_str_autosave="Save disks";
 static const char *text_str_vpos="Screen pos";
 static const char *text_str_joystick="Use analog";
 static const char *text_str_status="Status bar";
+static const char *text_str_vkbd="Clear VirtualButtons";
 static const char *text_str_ram="2MB RAM";
 static const char *text_str_8="8";
 static const char *text_str_16="16";
@@ -64,6 +70,7 @@ enum MainMenuEntry {
 	MAIN_MENU_ENTRY_SAVE_DISKS,
 	MAIN_MENU_ENTRY_USE_JOY,
 	MAIN_MENU_ENTRY_STATUS_BAR,
+	MAIN_MENU_ENTRY_VKBD,
 	MAIN_MENU_ENTRY_RAM,
 	MAIN_MENU_ENTRY_RESET_EMULATION,
 	MAIN_MENU_ENTRY_RETURN_TO_EMULATION,
@@ -318,6 +325,13 @@ static void draw_mainMenu(enum MainMenuEntry c)
 
 	row += 2;
 
+	if (c == MAIN_MENU_ENTRY_VKBD && flash)
+		write_text_inv(6, row, text_str_vkbd);
+	else
+		write_text(6, row, text_str_vkbd);
+
+	row += 2;
+
 	write_text(6, row, text_str_ram);
 	column = 17;
 
@@ -495,6 +509,10 @@ static enum MainMenuEntry key_mainMenu(enum MainMenuEntry *sel)
 					case MAIN_MENU_ENTRY_STATUS_BAR:
 						if (left || right)
 							mainMenu_statusbar = ~mainMenu_statusbar;
+						break;
+					case MAIN_MENU_ENTRY_VKBD:
+						if (activate)
+							vkbd_clear_button2();
 						break;
 					case MAIN_MENU_ENTRY_RAM:
 						if (left || right)

@@ -30,6 +30,7 @@ int vkbd_keysave=-1234567;
 int vkbd_init(void) { return 0; }
 void vkbd_init_button2(void) { }
 void vkbd_restore_button2(void) { }
+void vkbd_clear_button2(void) { }
 void vkbd_quit(void) { }
 SDLKey vkbd_process(void) { return (SDLKey)0; }
 
@@ -183,6 +184,24 @@ void vkbd_restore_button2(void)
 	vkbd_button7=vkbd_button7_lastval;
 	vkbd_button8=vkbd_button8_lastval;
 
+}
+
+void vkbd_clear_button2(void)
+{
+	vkbd_button2=(SDLKey)0;
+	vkbd_button3=(SDLKey)0;
+	vkbd_button4=(SDLKey)0;
+	vkbd_button5=(SDLKey)0;
+	vkbd_button6=(SDLKey)0;
+	vkbd_button7=(SDLKey)0;
+	vkbd_button8=(SDLKey)0;
+	vkbd_button2_lastval=(SDLKey)0;
+	vkbd_button3_lastval=(SDLKey)0;
+	vkbd_button4_lastval=(SDLKey)0;
+	vkbd_button5_lastval=(SDLKey)0;
+	vkbd_button6_lastval=(SDLKey)0;
+	vkbd_button7_lastval=(SDLKey)0;
+	vkbd_button8_lastval=(SDLKey)0;
 }
 
 
