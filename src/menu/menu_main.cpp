@@ -68,7 +68,9 @@ enum MainMenuEntry {
 	MAIN_MENU_ENTRY_SCREEN_POSITION,
 	MAIN_MENU_ENTRY_SOUND,
 	MAIN_MENU_ENTRY_SAVE_DISKS,
+#ifdef MENU_USEJOY
 	MAIN_MENU_ENTRY_USE_JOY,
+#endif
 	MAIN_MENU_ENTRY_STATUS_BAR,
 	MAIN_MENU_ENTRY_VKBD,
 	MAIN_MENU_ENTRY_RAM,
@@ -120,7 +122,7 @@ int mainMenu_sound=-1;
 int mainMenu_sound=0;
 #endif
 int mainMenu_autosave=-1;
-int mainMenu_usejoy=-1;
+int mainMenu_usejoy=1;
 int mainMenu_statusbar=-1;
 int mainMenu_ram=0;
 
@@ -295,6 +297,7 @@ static void draw_mainMenu(enum MainMenuEntry c)
 
 	row += 2;
 
+#ifdef MENU_USEJOY
 	write_text(6, row, text_str_joystick);
 	column = 17;
 
@@ -309,6 +312,7 @@ static void draw_mainMenu(enum MainMenuEntry c)
 		write_text(column, row, text_str_on);
 
 	row += 2;
+#endif
 
 	write_text(6, row, text_str_status);
 	column = 17;
@@ -502,10 +506,12 @@ static enum MainMenuEntry key_mainMenu(enum MainMenuEntry *sel)
 						if (left || right)
 							mainMenu_autosave = ~mainMenu_autosave;
 						break;
+#ifdef MENU_USEJOY
 					case MAIN_MENU_ENTRY_USE_JOY:
 						if (left || right)
 							mainMenu_usejoy = ~mainMenu_usejoy;
 						break;
+#endif
 					case MAIN_MENU_ENTRY_STATUS_BAR:
 						if (left || right)
 							mainMenu_statusbar = ~mainMenu_statusbar;
