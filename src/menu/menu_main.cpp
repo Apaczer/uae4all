@@ -294,7 +294,7 @@ static void draw_mainMenu(enum MainMenuEntry c)
 		write_text(column, row, text_str_on);
 
 	row += 2;
-
+#if 0
 	write_text(6, row, text_str_joystick);
 	column = 17;
 
@@ -309,7 +309,7 @@ static void draw_mainMenu(enum MainMenuEntry c)
 		write_text(column, row, text_str_on);
 
 	row += 2;
-
+#endif
 	write_text(6, row, text_str_status);
 	column = 17;
 
