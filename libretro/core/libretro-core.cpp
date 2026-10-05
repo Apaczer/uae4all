@@ -12,6 +12,7 @@
 #include "sysdeps.h"
 #include "options.h"
 #include "custom.h"
+#include "graph.h"
 
 #include "m68k/uae/newcpu.h"
 
@@ -39,6 +40,7 @@ extern int mainMenu_statusbar;
 
 extern int JOYSTICK_EMULATED;
 extern int KEYBOARD_PROCESS;
+extern int MOUSE_EMULATED;
 
 extern void DISK_GUI_change (void);
 
@@ -77,6 +79,7 @@ FILE *retro_deserialize_file = NULL;
 static size_t save_state_file_size = 0;
 
 int libretroreset = 1;
+int draw_osd = 0;
 
 // Amiga default kickstarts
 
@@ -661,6 +664,14 @@ void retro_run(void)
    flush_audio();
 
    DISK_GUI_change();
+
+   if (draw_osd != 0) {
+	   if (MOUSE_EMULATED == 1)
+         Draw_text((char*)gfx_mem,20 , 20 ,RGB565(7, 7, 7), RGB565(29, 29, 29) ,1, 1,100,"Mouse emulated: ON");
+	   else
+         Draw_text((char*)gfx_mem,20 , 20 ,RGB565(7, 7, 7), RGB565(29, 29, 29) ,1, 1,100,"Mouse emulated: OFF");
+	   draw_osd--;
+   }
 
    video_cb(gfx_mem,retrow,retroh,retrow<<PIXEL_BYTES);
 

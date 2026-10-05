@@ -18,6 +18,7 @@
 //FIXME
 extern int uae4all_keystate[256];
 extern void changedisk( bool );
+extern int draw_osd;
 
 
 //TIME
@@ -558,11 +559,15 @@ int Retro_PollEvent()
         MOUSE_EMULATED=-MOUSE_EMULATED;
         if (MOUSE_EMULATED==1)
         {
+            draw_osd = 50;
             LOGI("Switch to mouse emulation.\n");
             second_joystick_enable = 0;   // disable 2nd joystick if mouse activated...
         }
         else
+        {
+            draw_osd = 50;
             LOGI("Switch-off mouse emulation.\n");
+        }
     }
 
     i=RETRO_DEVICE_ID_JOYPAD_L;     //select previous disk
