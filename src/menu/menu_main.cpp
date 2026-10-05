@@ -511,8 +511,14 @@ static enum MainMenuEntry key_mainMenu(enum MainMenuEntry *sel)
 							mainMenu_statusbar = ~mainMenu_statusbar;
 						break;
 					case MAIN_MENU_ENTRY_VKBD:
-						if (activate)
+						if (activate) {
 							vkbd_clear_button2();
+							text_draw_background();
+							text_draw_window(71, 88, 200, 48, "  VirtualButtons");
+							write_centered_text(27, "Bindings cleared");
+							text_flip();
+							SDL_Delay(2000); // Show OSD 2s
+						}
 						break;
 					case MAIN_MENU_ENTRY_RAM:
 						if (left || right)
