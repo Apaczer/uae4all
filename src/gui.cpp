@@ -471,6 +471,23 @@ int gui_update (void)
     real_changed_df[0]=1;
     real_changed_df[1]=1;
     show_mhz();
+
+#ifndef __LIBRETRO__
+    /* Auto-load the autosave state (-0.asf) on boot if it exists */
+    if (uae4all_image_file[0]) {
+
+	    static char autosave_path[256];
+
+	    snprintf(autosave_path, sizeof(autosave_path), "%s-0.asf", uae4all_image_file);
+	    FILE *f = fopen(autosave_path, "rb");
+	    if (f) {
+		    fclose(f);
+		    savestate_filename = autosave_path;
+		    savestate_state = STATE_DORESTORE;
+	    }
+    }
+#endif
+
     return 0;
 }
 

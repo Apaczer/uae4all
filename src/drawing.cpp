@@ -207,6 +207,7 @@ void reset_frameskip()
 {
 	proximo_frameskip=SDL_GetTicks();
 }
+		extern char uae4all_image_file[];
 
 static __inline__ void count_frame (void)
 {
@@ -2138,6 +2139,19 @@ void vsync_handle_redraw (int long_frame, int lof_changed)
 		}
 
 	if (quit_program < 0) {
+#ifndef __LIBRETRO__
+		if (uae4all_image_file[0]) {
+			custom_prepare_savestate ();
+			savestate_state = STATE_SAVE;
+			pause_sound();
+			strcpy(savestate_filename, uae4all_image_file);
+			strcat(savestate_filename, "-0.asf");
+			save_state (savestate_filename, "Description!");
+			resume_sound();
+			gui_set_message("Auto-Saved", 50);
+			savestate_state = 0;
+		}
+#endif
 	    quit_program = -quit_program;
 	    set_inhibit_frame (IHF_QUIT_PROGRAM);
 	    set_special (SPCFLAG_BRK);

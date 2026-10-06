@@ -9,6 +9,7 @@
 #include "options.h"
 #include "sound.h"
 #include "savestate.h"
+#include "custom.h"
 #include "gui.h"
 #ifndef NO_VKBD
 #include "vkbd.h"
@@ -627,6 +628,17 @@ int run_mainMenu()
 //malloc(16*1024*1024);
 				arch_reboot();
 #else
+#ifndef __LIBRETRO__
+				{
+					extern char uae4all_image_file[];
+					if (emulating && uae4all_image_file[0]) {
+						custom_prepare_savestate();
+						strcpy(savestate_filename, uae4all_image_file);
+						strcat(savestate_filename, "-0.asf");
+						save_state(savestate_filename, "Description!");
+					}
+				}
+#endif
 				do_leave_program();
 				exit(0);
 #endif
