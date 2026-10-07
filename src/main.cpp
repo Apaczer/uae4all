@@ -329,10 +329,11 @@ static cmdline_opt cmdl_opts[] =
 //	{ "-df3",             sizeof(uae4all_image_file2), uae4all_image_file3 },
 };
 
+int found = 0;
+
 void parse_cmdline(int argc, char **argv)
 {
 	int arg, i;
-	int found = 0;
 	printf("Parsing %i parameters.\n",argc);
 
 	for (arg = 1; arg < argc; arg++)
