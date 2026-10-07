@@ -31,6 +31,8 @@ int mainMenu_statusbar=1;
 int mainMenu_throttle=0;
 int mainMenu_autosave=-1;
 int saveMenu_n_savestate=0;
+int auto_loadstate=0;
+int auto_savestate=0;
 
 void init_text(int splash, int args)
 {
