@@ -457,10 +457,13 @@ int gui_update (void)
     {
 	    case 1:
     		strcat(savestate_filename,"-1.asf");
+			break;
 	    case 2:
     		strcat(savestate_filename,"-2.asf");
+			break;
 	    case 3:
     		strcat(savestate_filename,"-3.asf");
+			break;
 	    default: 
     	   	strcat(savestate_filename,".asf");
     }
@@ -525,10 +528,13 @@ static void goMenu(void)
     	    {
 	    	case 1:
     			strcat(savestate_filename,"-1.asf");
+				break;
 	    	case 2:
     			strcat(savestate_filename,"-2.asf");
+				break;
 	    	case 3:
     			strcat(savestate_filename,"-3.asf");
+				break;
 	    	default: 
     	   		strcat(savestate_filename,".asf");
     	    }
