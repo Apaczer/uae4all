@@ -154,6 +154,7 @@ else
     # Native host standalone
     MORE_CFLAGS += -DDATA_PREFIX=\"./assets/data/\"
     MORE_CFLAGS += -DCWD_MENU_DIR
+    OPTIMIZE_CFLAGS += -fno-stack-protector #omit potential "stack smashing" in loadstate
     ifndef FAME_CORE
       #UAE_CORE   = 1
     endif
