@@ -81,6 +81,9 @@ enum MainMenuEntry {
 	MAIN_MENU_ENTRY_COUNT, /* the number of entries to be shown */
 };
 
+int auto_loadstate=0;
+int auto_savestate=0;
+
 int mainMenu_vpos=1;
 #if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
 #if defined(NO_DEFAULT_THROTTLE)
@@ -629,7 +632,7 @@ int run_mainMenu()
 				arch_reboot();
 #else
 #ifndef __LIBRETRO__
-				{
+				if (auto_savestate) {
 					extern char uae4all_image_file[];
 					if (emulating && uae4all_image_file[0]) {
 						custom_prepare_savestate();

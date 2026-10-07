@@ -291,6 +291,9 @@ extern int  mainMenu_throttle, mainMenu_frameskip, mainMenu_sound, mainMenu_case
 extern unsigned int sound_rate;
 #endif
 
+extern int auto_savestate;
+extern int auto_loadstate;
+
 extern char uae4all_image_file[128];
 extern char uae4all_image_file2[128];
 
@@ -306,6 +309,8 @@ static cmdline_opt cmdl_opts[] =
 	{ "-systemclock",     0, &mainMenu_throttle },
 //	{ "-syncthreshold",   0, &timeslice_mode },
 	{ "-frameskip",       0, &mainMenu_frameskip },
+	{ "-autosave-state",  0, &auto_savestate },
+	{ "-autoload-state",  0, &auto_loadstate },
 //	{ "-skipintro",       0, &skipintro },
 #ifdef ANDROIDSDL
 	{ "-onscreen",       0, &mainMenu_onScreen },

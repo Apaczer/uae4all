@@ -73,6 +73,8 @@ extern struct uae_prefs currprefs;
 extern SDL_Joystick *uae4all_joy0, *uae4all_joy1;
 #endif
 
+extern int auto_loadstate;
+
 #ifndef NO_VKBD
 extern int keycode2amiga(SDL_keysym *prKeySym);
 #endif
@@ -474,7 +476,7 @@ int gui_update (void)
 
 #ifndef __LIBRETRO__
     /* Auto-load the autosave state (-0.asf) on boot if it exists */
-    if (uae4all_image_file[0]) {
+    if (uae4all_image_file[0] && auto_loadstate) {
 
 	    static char autosave_path[256];
 

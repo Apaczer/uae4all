@@ -85,6 +85,8 @@ extern int mainMenu_statusbar;
 
 extern int drawfinished;
 
+extern int auto_savestate;
+
 /* Lookup tables for dual playfields.  The dblpf_*1 versions are for the case
    that playfield 1 has the priority, dbplpf_*2 are used if playfield 2 has
    priority.  If we need an array for non-dual playfield mode, it has no number.  */
@@ -2140,7 +2142,7 @@ void vsync_handle_redraw (int long_frame, int lof_changed)
 
 	if (quit_program < 0) {
 #ifndef __LIBRETRO__
-		if (uae4all_image_file[0]) {
+		if (uae4all_image_file[0] && auto_savestate) {
 			custom_prepare_savestate ();
 			savestate_state = STATE_SAVE;
 			pause_sound();
