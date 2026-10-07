@@ -76,6 +76,8 @@ extern SDL_Joystick *uae4all_joy0, *uae4all_joy1;
 extern int auto_loadstate;
 extern int auto_savestate;
 
+extern int found;
+
 #ifndef NO_VKBD
 extern int keycode2amiga(SDL_keysym *prKeySym);
 #endif
@@ -295,7 +297,7 @@ extern char *gfx_mem;
 		// parse_cmdline() in real_main() runs before gui_init() and populates
 		// uae4all_image_file/uae4all_image_file2 when -df0/-df1 options are given.
 		// Only fall back to the legacy positional argv path if they are still empty.
-		if (uae4all_image_file[0] == 0)
+		if (uae4all_image_file[0] == 0 && found == 0)
 		{
 			if (argc == 2 || argc == 3)
 			{
