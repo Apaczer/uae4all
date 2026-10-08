@@ -331,12 +331,13 @@ static cmdline_opt cmdl_opts[] =
 
 void parse_cmdline(int argc, char **argv)
 {
-	int arg, i, found;
+	int arg, i;
+	int found = 0;
 	printf("Parsing %i parameters.\n",argc);
 
-	for (arg = 1; arg < argc-1; arg++)
+	for (arg = 1; arg < argc; arg++)
 	{
-		for (i = found = 0; i < sizeof(cmdl_opts) / sizeof(cmdl_opts[0]); i++)
+		for (i = 0; i < sizeof(cmdl_opts) / sizeof(cmdl_opts[0]); i++)
 		{
 			if (strcmp(argv[arg], cmdl_opts[i].optname) == 0)
 			{
@@ -352,7 +353,7 @@ void parse_cmdline(int argc, char **argv)
 				break;
 			}
 		}
-		if (!found) printf("skipping unknown option: \"%s\"\n", argv[arg]);
+		if (found == 0) printf("skipping unknown option: \"%s\"\n", argv[arg]);
 	}
 }
 
