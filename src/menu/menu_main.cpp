@@ -81,8 +81,8 @@ enum MainMenuEntry {
 	MAIN_MENU_ENTRY_COUNT, /* the number of entries to be shown */
 };
 
-int auto_loadstate=0;
-int auto_savestate=0;
+extern int auto_loadstate;
+extern int auto_savestate;
 
 int mainMenu_vpos=1;
 #if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
