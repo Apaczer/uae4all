@@ -28,11 +28,18 @@ static const char *text_str_savevmu="Save to VMU (R)";
 #else
 static const char *text_str_loadmem="Load state (Y)";
 static const char *text_str_savemem="Save state (X)";
+static const char *text_str_autosave="Auto save";
+static const char *text_str_autoload="Auto load";
+static const char *text_str_on="on";
+static const char *text_str_off="off";
 #endif
 static const char *text_str_separator="----------------------";
 static const char *text_str_exit="Main menu (B)";
 
 extern int emulating;
+
+int auto_savestate=0;
+int auto_loadstate=0;
 
 int saveMenu_n_savestate=0;
 int saveMenu_case=-1;
@@ -97,6 +104,30 @@ static inline void draw_saveMenu(int c)
 		write_text_inv(9,19,text_str_savevmu);
 	else
 		write_text(9,19,text_str_savevmu);
+#else
+	write_text(9,16,text_str_separator);
+
+	write_text(9,17,text_str_autosave);
+	if ((!auto_savestate)&&((c!=3)||(bb)))
+		write_text_inv(22,17,text_str_off);
+	else
+		write_text(22,17,text_str_off);
+	if ((auto_savestate)&&((c!=3)||(bb)))
+		write_text_inv(27,17,text_str_on);
+	else
+		write_text(27,17,text_str_on);
+
+	write_text(9,18,text_str_separator);
+
+	write_text(9,19,text_str_autoload);
+	if ((!auto_loadstate)&&((c!=4)||(bb)))
+		write_text_inv(22,19,text_str_off);
+	else
+		write_text(22,19,text_str_off);
+	if ((auto_loadstate)&&((c!=4)||(bb)))
+		write_text_inv(27,19,text_str_on);
+	else
+		write_text(27,19,text_str_on);
 #endif
 
 	write_text(9,20,text_str_separator);
@@ -211,31 +242,43 @@ static inline int key_saveMenu(int *cp)
 			{
 				if (c>0) c=(c-1)%6;
 				else c=5;
-#ifndef DREAMCAST_SAVE_VMU
-				if (c==4) c=2;
-#endif
 			}
 			else if (down)
 			{
 				c=(c+1)%6;
-#ifndef DREAMCAST_SAVE_VMU
-				if (c==3) c=5;
-#endif
 			}
 			else
 			if (left)
 			{
-				if (saveMenu_n_savestate>0)
-					saveMenu_n_savestate--;
+#ifndef DREAMCAST_SAVE_VMU
+				if (c == 3)
+					auto_savestate = ~auto_savestate;
+				else if (c == 4)
+					auto_loadstate = ~auto_loadstate;
 				else
-					saveMenu_n_savestate=3;
+#endif
+				{
+					if (saveMenu_n_savestate>0)
+						saveMenu_n_savestate--;
+					else
+						saveMenu_n_savestate=3;
+				}
 			}
 			else if (right)
 			{
-				if (saveMenu_n_savestate<3)
-					saveMenu_n_savestate++;
+#ifndef DREAMCAST_SAVE_VMU
+				if (c == 3)
+					auto_savestate = ~auto_savestate;
+				else if (c == 4)
+					auto_loadstate = ~auto_loadstate;
 				else
-					saveMenu_n_savestate=0;
+#endif
+				{
+					if (saveMenu_n_savestate<3)
+						saveMenu_n_savestate++;
+					else
+						saveMenu_n_savestate=0;
+				}
 			}
 			switch(c)
 			{

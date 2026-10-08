@@ -74,6 +74,7 @@ extern SDL_Joystick *uae4all_joy0, *uae4all_joy1;
 #endif
 
 extern int auto_loadstate;
+extern int auto_savestate;
 
 #ifndef NO_VKBD
 extern int keycode2amiga(SDL_keysym *prKeySym);
@@ -169,6 +170,10 @@ void loadConfig()
 			sscanf(arg, "%d", &mainMenu_statusbar);
 		else if(!strcmp(line, "2MB_RAM"))
 			sscanf(arg, "%d", &mainMenu_ram);
+		else if(!strcmp(line, "AUTO_SAVESTATE"))
+			sscanf(arg, "%d", &auto_savestate);
+		else if(!strcmp(line, "AUTO_LOADSTATE"))
+			sscanf(arg, "%d", &auto_loadstate);
 		else if(!strcmp(line, "LAST_DIR"))
 		{
 			int len = strlen(arg);
@@ -229,7 +234,7 @@ void storeConfig()
 		return;
 	}
 
-	fprintf(f, "THROTTLE %d\nFRAMESKIP %d\nSCREEN_POS %d\nSOUND %d\nSAVE_DISKS %d\nUSE_JOY %d\nSTATUS_BAR %d\n2MB_RAM %d\n", mainMenu_throttle, mainMenu_frameskip, mainMenu_vpos, mainMenu_sound, mainMenu_autosave, mainMenu_usejoy, mainMenu_statusbar, mainMenu_ram);
+	fprintf(f, "THROTTLE %d\nFRAMESKIP %d\nSCREEN_POS %d\nSOUND %d\nSAVE_DISKS %d\nUSE_JOY %d\nSTATUS_BAR %d\n2MB_RAM %d\nAUTO_SAVESTATE %d\nAUTO_LOADSTATE %d\n", mainMenu_throttle, mainMenu_frameskip, mainMenu_vpos, mainMenu_sound, mainMenu_autosave, mainMenu_usejoy, mainMenu_statusbar, mainMenu_ram, auto_savestate, auto_loadstate);
 
 	if(last_directory[0])
 	{
