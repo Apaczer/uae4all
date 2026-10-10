@@ -338,6 +338,18 @@ void parse_cmdline(int argc, char **argv)
 
 	for (arg = 1; arg < argc; arg++)
 	{
+		if (strcmp(argv[arg], "-h") == 0) {
+			printf("Usage: %s [options]\n", argv[0]);
+			printf("  -h                Show this help message\n");
+			printf("  -sound            Turn ON/OFF sound\n");
+			printf("  -autosave         Store ON/OFF savedisk data via ADS file\n");
+			printf("  -systemclock      Set CPU throttle to [0|1|2|3|4|5] which equals 0,20,40,60,80,100%\n");
+			printf("  -kick             Path to kickstart ROM file\n");
+			printf("  -df0              Path to disk 0\n");
+			printf("  -df1              Path to disk 1\n");
+			printf("e.g. $: %s -sound 1 -sytemclock 2 -df0 Game(Disk 1 of 2).adf -df1 Game(Disk 2 of 2).adf \n", argv[0]);
+			exit (0);
+		}
 		for (i = 0; i < sizeof(cmdl_opts) / sizeof(cmdl_opts[0]); i++)
 		{
 			if (strcmp(argv[arg], cmdl_opts[i].optname) == 0)
