@@ -320,7 +320,7 @@ extern char *gfx_mem;
 		init_text(1,0);
 	else
 		init_text(0,1);
-	loadConfig();
+	//loadConfig();
 	// Display the menu if no parameter exists
 	if (argc == 1)
 		run_mainMenu();

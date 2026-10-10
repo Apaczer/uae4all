@@ -375,6 +375,8 @@ void parse_cmdline(int argc, char **argv)
 extern void update_prefs_retrocfg(void);
 #endif
 
+extern void loadConfig();
+
 void real_main (int argc, char **argv)
 {
 #ifdef USE_SDL
@@ -387,6 +389,8 @@ void real_main (int argc, char **argv)
 #endif
 
     default_prefs ();
+
+	loadConfig();
 
     parse_cmdline(argc, argv);
 #ifdef __LIBRETRO__
