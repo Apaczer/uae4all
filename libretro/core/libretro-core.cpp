@@ -727,6 +727,7 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info, 
 
 size_t retro_serialize_size(void)
 {
+#ifndef NO_SAVESTATE
    if (save_state_file_size == 0)
    {
       savestate_filename[0] = '\0';
@@ -746,10 +747,14 @@ size_t retro_serialize_size(void)
       }
    }
    return save_state_file_size;
+#else
+   return 0;
+#endif
 }
 
 bool retro_serialize(void *data_, size_t size)
 {
+#ifndef NO_SAVESTATE
    if (savestate_state || !data_)
       return false;
 
@@ -778,10 +783,14 @@ bool retro_serialize(void *data_, size_t size)
    }
 
    return success;
+#else
+   return false;
+#endif
 }
 
 bool retro_unserialize(const void *data_, size_t size)
 {
+#ifndef NO_SAVESTATE
    bool success = false;
 
    if (!savestate_state && data_ && size > 0)
@@ -818,6 +827,9 @@ bool retro_unserialize(const void *data_, size_t size)
    }
 
    return success;
+#else
+   return false;
+#endif
 }
 
 void *retro_get_memory_data(unsigned id)
