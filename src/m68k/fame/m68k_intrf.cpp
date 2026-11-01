@@ -2,9 +2,6 @@
 #include <kos.h>
 #endif
 
-#define NO_SHORT_EVENTS
-#define PROTECT_INFINITE
-
 #include <string.h>
 
 #include "sysconfig.h"
@@ -21,8 +18,11 @@
 #include "m68k/debug_m68k.h"
 
 #undef dprintf
+#if defined(DEBUG_UAE4ALL) || defined(UAE_CONSOLE)
+#define dprintf(f,...) printf("%05i: %s: " f "\n",M68KCONTEXT.cycles_counter,__FUNCTION__,##__VA_ARGS__)
+#else
 #define dprintf(...)
-//#define dprintf(f,...) printf("%05i: %s: " f "\n",M68KCONTEXT.cycles_counter,__FUNCTION__,##__VA_ARGS__)
+#endif
 
 static unsigned short mimemoriadummy[65536/2];
 
@@ -67,7 +67,8 @@ static void m68k_exception(unsigned n)
 
 	m68k_set_register(M68K_REG_PC,m68k_fetch((n*4)+2,0)+(m68k_fetch(n*4,0)<<16));
 
-	m68k_release_timeslice();
+	//m68k_release_timeslice();
+	if (n==4) IO_CYCLE+=4; // adjust for cyclone
 	M68KCONTEXT.execinfo&=0x65;
 }
 

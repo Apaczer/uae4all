@@ -641,7 +641,11 @@ OPCODE(0x007C)
 		u32 newPC = (u32)(PC) - BasePC;
 		SET_PC(newPC-2);
 		execute_exception(M68K_PRIVILEGE_VIOLATION_EX);
+#ifdef USE_CYCLONE_TIMING
+		RET(0)
+#else
 		RET(4)
+#endif
 	}
 RET(20)
 }
@@ -1066,7 +1070,11 @@ OPCODE(0x0280)
 	flag_NotZ = res;
 	flag_N = res >> 24;
 	DREGu32((Opcode >> 0) & 7) = res;
+#ifdef USE_CYCLONE_TIMING
+RET(14)
+#else
 RET(16)
+#endif
 }
 
 // ANDI
@@ -17318,7 +17326,11 @@ OPCODE(0x4890)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(8)
+#else
 RET(12)
+#endif
 }
 
 // MOVEMRa
@@ -17374,7 +17386,11 @@ OPCODE(0x48A8)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(12)
+#else
 RET(20)
+#endif
 }
 
 // MOVEMRa
@@ -17402,7 +17418,11 @@ OPCODE(0x48B0)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(14)
+#else
 RET(24)
+#endif
 }
 
 // MOVEMRa
@@ -17429,7 +17449,11 @@ OPCODE(0x48B8)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(12)
+#else
 RET(20)
+#endif
 }
 
 // MOVEMRa
@@ -17456,7 +17480,11 @@ OPCODE(0x48B9)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(16)
+#else
 RET(28)
+#endif
 }
 
 // MOVEMRa
@@ -17511,7 +17539,11 @@ OPCODE(0x48D0)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(8)
+#else
 RET(16)
+#endif
 }
 
 // MOVEMRa
@@ -17567,7 +17599,11 @@ OPCODE(0x48E8)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(12)
+#else
 RET(24)
+#endif
 }
 
 // MOVEMRa
@@ -17595,7 +17631,11 @@ OPCODE(0x48F0)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(14)
+#else
 RET(28)
+#endif
 }
 
 // MOVEMRa
@@ -17622,7 +17662,11 @@ OPCODE(0x48F8)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(12)
+#else
 RET(24)
+#endif
 }
 
 // MOVEMRa
@@ -17649,7 +17693,11 @@ OPCODE(0x48F9)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(16)
+#else
 RET(32)
+#endif
 }
 
 // MOVEMRa
@@ -18455,7 +18503,11 @@ OPCODE(0x4C90)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(12)
+#else
 RET(16)
+#endif
 }
 
 // MOVEMaR
@@ -18511,7 +18563,11 @@ OPCODE(0x4CA8)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(16)
+#else
 RET(24)
+#endif
 }
 
 // MOVEMaR
@@ -18539,7 +18595,11 @@ OPCODE(0x4CB0)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(18)
+#else
 RET(28)
+#endif
 }
 
 // MOVEMaR
@@ -18566,7 +18626,11 @@ OPCODE(0x4CB8)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(16)
+#else
 RET(24)
+#endif
 }
 
 // MOVEMaR
@@ -18593,7 +18657,11 @@ OPCODE(0x4CB9)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(20)
+#else
 RET(32)
+#endif
 }
 
 // MOVEMaR
@@ -18621,7 +18689,11 @@ OPCODE(0x4CBA)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(16)
+#else
 RET(24)
+#endif
 }
 
 // MOVEMaR
@@ -18649,7 +18721,11 @@ OPCODE(0x4CBB)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(18)
+#else
 RET(28)
+#endif
 }
 
 // MOVEMaR
@@ -18704,7 +18780,11 @@ OPCODE(0x4CD0)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(12)
+#else
 RET(20)
+#endif
 }
 
 // MOVEMaR
@@ -18760,7 +18840,11 @@ OPCODE(0x4CE8)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(16)
+#else
 RET(28)
+#endif
 }
 
 // MOVEMaR
@@ -18788,7 +18872,11 @@ OPCODE(0x4CF0)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(18)
+#else
 RET(32)
+#endif
 }
 
 // MOVEMaR
@@ -18815,7 +18903,11 @@ OPCODE(0x4CF8)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(16)
+#else
 RET(28)
+#endif
 }
 
 // MOVEMaR
@@ -18842,7 +18934,11 @@ OPCODE(0x4CF9)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(20)
+#else
 RET(36)
+#endif
 }
 
 // MOVEMaR
@@ -18870,7 +18966,11 @@ OPCODE(0x4CFA)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(16)
+#else
 RET(28)
+#endif
 }
 
 // MOVEMaR
@@ -18898,7 +18998,11 @@ OPCODE(0x4CFB)
 	} while (res >>= 1);
 	POST_IO
 	io_cycle_counter -= (adr - dst) * 2;
+#ifdef USE_CYCLONE_TIMING
+RET(18)
+#else
 RET(32)
+#endif
 }
 
 // MOVEMaR
@@ -23791,7 +23895,11 @@ OPCODE(0x5048)
 	dst = AREGu32((Opcode >> 0) & 7);
 	res = dst + src;
 	AREG((Opcode >> 0) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_ // breaks Project-X
+RET(4)
+#else
 RET(8)
+#endif
 }
 
 // ADDQ
@@ -24853,7 +24961,7 @@ OPCODE(0x6501)
 	if (flag_C & 0x100)
 	{
 		PC += ((s8)(Opcode & 0xFE)) >> 1;
-		io_cycle_counter -= 2;
+	io_cycle_counter -= 2;
 	}
 RET(8)
 }
@@ -24867,7 +24975,7 @@ OPCODE(0x6601)
 	if (flag_NotZ)
 	{
 		PC += ((s8)(Opcode & 0xFE)) >> 1;
-		io_cycle_counter -= 2;
+	io_cycle_counter -= 2;
 	}
 RET(8)
 }
@@ -24881,7 +24989,7 @@ OPCODE(0x6701)
 	if (!flag_NotZ)
 	{
 		PC += ((s8)(Opcode & 0xFE)) >> 1;
-		io_cycle_counter -= 2;
+	io_cycle_counter -= 2;
 	}
 RET(8)
 }
@@ -24895,7 +25003,7 @@ OPCODE(0x6801)
 	if (!(flag_V & 0x80))
 	{
 		PC += ((s8)(Opcode & 0xFE)) >> 1;
-		io_cycle_counter -= 2;
+	io_cycle_counter -= 2;
 	}
 RET(8)
 }
@@ -24909,7 +25017,7 @@ OPCODE(0x6901)
 	if (flag_V & 0x80)
 	{
 		PC += ((s8)(Opcode & 0xFE)) >> 1;
-		io_cycle_counter -= 2;
+	io_cycle_counter -= 2;
 	}
 RET(8)
 }
@@ -24923,7 +25031,7 @@ OPCODE(0x6A01)
 	if (!(flag_N & 0x80))
 	{
 		PC += ((s8)(Opcode & 0xFE)) >> 1;
-		io_cycle_counter -= 2;
+	io_cycle_counter -= 2;
 	}
 RET(8)
 }
@@ -24937,7 +25045,7 @@ OPCODE(0x6B01)
 	if (flag_N & 0x80)
 	{
 		PC += ((s8)(Opcode & 0xFE)) >> 1;
-		io_cycle_counter -= 2;
+	io_cycle_counter -= 2;
 	}
 RET(8)
 }
@@ -24951,7 +25059,7 @@ OPCODE(0x6C01)
 	if (!((flag_N ^ flag_V) & 0x80))
 	{
 		PC += ((s8)(Opcode & 0xFE)) >> 1;
-		io_cycle_counter -= 2;
+	io_cycle_counter -= 2;
 	}
 RET(8)
 }
@@ -24965,7 +25073,7 @@ OPCODE(0x6D01)
 	if ((flag_N ^ flag_V) & 0x80)
 	{
 		PC += ((s8)(Opcode & 0xFE)) >> 1;
-		io_cycle_counter -= 2;
+	io_cycle_counter -= 2;
 	}
 RET(8)
 }
@@ -24979,7 +25087,7 @@ OPCODE(0x6E01)
 	if (flag_NotZ && (!((flag_N ^ flag_V) & 0x80)))
 	{
 		PC += ((s8)(Opcode & 0xFE)) >> 1;
-		io_cycle_counter -= 2;
+	io_cycle_counter -= 2;
 	}
 RET(8)
 }
@@ -24993,7 +25101,7 @@ OPCODE(0x6F01)
 	if ((!flag_NotZ) || ((flag_N ^ flag_V) & 0x80))
 	{
 		PC += ((s8)(Opcode & 0xFE)) >> 1;
-		io_cycle_counter -= 2;
+	io_cycle_counter -= 2;
 	}
 RET(8)
 }
@@ -25349,7 +25457,7 @@ OPCODE(0x6100)
 		PUSH_32_F(oldPC)
 		newPC += GET_SWORD;
 		SET_PC(newPC);
-		CHECK_BRANCH_EXCEPTION(newPC) 
+		CHECK_BRANCH_EXCEPTION(newPC)
 	}
 	POST_IO
 RET(18)
@@ -26861,7 +26969,11 @@ OPCODE(0x80C0)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(10)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(140)
+#else
+RET(10)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -26873,7 +26985,11 @@ OPCODE(0x80C0)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
-	RET(70)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(140)
+#else
+RET(70)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -26882,7 +26998,11 @@ OPCODE(0x80C0)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(140)
+#else
 RET(90)
+#endif
 }
 
 // DIVU
@@ -26897,7 +27017,11 @@ OPCODE(0x80D0)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(14)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(144)
+#else
+RET(14)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -26909,7 +27033,11 @@ OPCODE(0x80D0)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(144)
+#else
 	RET(74)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -26918,7 +27046,11 @@ OPCODE(0x80D0)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(144)
+#else
 RET(94)
+#endif
 }
 
 // DIVU
@@ -26934,7 +27066,11 @@ OPCODE(0x80D8)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(14)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(144)
+#else
+RET(14)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -26946,7 +27082,11 @@ OPCODE(0x80D8)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(144)
+#else
 	RET(74)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -26955,7 +27095,11 @@ OPCODE(0x80D8)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(144)
+#else
 RET(94)
+#endif
 }
 
 // DIVU
@@ -26971,7 +27115,11 @@ OPCODE(0x80E0)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(16)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(146)
+#else
+RET(16)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -26983,7 +27131,11 @@ OPCODE(0x80E0)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(146)
+#else
 	RET(76)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -26992,7 +27144,11 @@ OPCODE(0x80E0)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(146)
+#else
 RET(96)
+#endif
 }
 
 // DIVU
@@ -27008,7 +27164,11 @@ OPCODE(0x80E8)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(18)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(148)
+#else
+RET(18)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -27020,7 +27180,11 @@ OPCODE(0x80E8)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(148)
+#else
 	RET(78)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -27029,7 +27193,11 @@ OPCODE(0x80E8)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(148)
+#else
 RET(98)
+#endif
 }
 
 // DIVU
@@ -27045,7 +27213,11 @@ OPCODE(0x80F0)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(20)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(150)
+#else
+RET(20)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -27057,7 +27229,11 @@ OPCODE(0x80F0)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(150)
+#else
 	RET(80)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -27066,7 +27242,11 @@ OPCODE(0x80F0)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(150)
+#else
 RET(100)
+#endif
 }
 
 // DIVU
@@ -27081,7 +27261,11 @@ OPCODE(0x80F8)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(18)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(148)
+#else
+RET(18)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -27093,7 +27277,11 @@ OPCODE(0x80F8)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(148)
+#else
 	RET(78)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -27102,7 +27290,11 @@ OPCODE(0x80F8)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(148)
+#else
 RET(98)
+#endif
 }
 
 // DIVU
@@ -27117,7 +27309,11 @@ OPCODE(0x80F9)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(22)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(162)
+#else
+RET(22)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -27129,7 +27325,11 @@ OPCODE(0x80F9)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(162)
+#else
 	RET(82)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -27138,7 +27338,11 @@ OPCODE(0x80F9)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(162)
+#else
 RET(102)
+#endif
 }
 
 // DIVU
@@ -27154,7 +27358,11 @@ OPCODE(0x80FA)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(18)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(148)
+#else
+RET(18)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -27166,7 +27374,11 @@ OPCODE(0x80FA)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(148)
+#else
 	RET(78)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -27175,7 +27387,11 @@ OPCODE(0x80FA)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(148)
+#else
 RET(98)
+#endif
 }
 
 // DIVU
@@ -27191,7 +27407,11 @@ OPCODE(0x80FB)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(20)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(160)
+#else
+RET(20)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -27203,7 +27423,11 @@ OPCODE(0x80FB)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(160)
+#else
 	RET(80)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -27212,7 +27436,11 @@ OPCODE(0x80FB)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(160)
+#else
 RET(100)
+#endif
 }
 
 // DIVU
@@ -27225,7 +27453,11 @@ OPCODE(0x80FC)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(14)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(144)
+#else
+RET(14)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -27237,7 +27469,11 @@ OPCODE(0x80FC)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(144)
+#else
 	RET(74)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -27246,7 +27482,11 @@ OPCODE(0x80FC)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(144)
+#else
 RET(94)
+#endif
 }
 
 // DIVU
@@ -27262,7 +27502,11 @@ OPCODE(0x80DF)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(14)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(144)
+#else
+RET(14)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -27274,7 +27518,11 @@ OPCODE(0x80DF)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(144)
+#else
 	RET(74)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -27283,7 +27531,11 @@ OPCODE(0x80DF)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(144)
+#else
 RET(94)
+#endif
 }
 
 // DIVU
@@ -27299,7 +27551,11 @@ OPCODE(0x80E7)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
-		RET(16)
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(146)
+#else
+RET(16)
+#endif
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
 	{
@@ -27311,7 +27567,11 @@ OPCODE(0x80E7)
 		if (q & 0xFFFF0000)
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(146)
+#else
 	RET(76)
+#endif
 		}
 		q &= 0x0000FFFF;
 		flag_NotZ = q;
@@ -27320,7 +27580,11 @@ OPCODE(0x80E7)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+RET(146)
+#else
 RET(96)
+#endif
 }
 
 // DIVS
@@ -27333,6 +27597,9 @@ OPCODE(0x81C0)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(10)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27342,6 +27609,9 @@ OPCODE(0x81C0)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(50)
 	}
 	{
@@ -27353,6 +27623,9 @@ OPCODE(0x81C0)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(80)
 		}
 		q &= 0x0000FFFF;
@@ -27362,6 +27635,9 @@ OPCODE(0x81C0)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(108)
 }
 
@@ -27377,6 +27653,9 @@ OPCODE(0x81D0)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(14)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27386,6 +27665,9 @@ OPCODE(0x81D0)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(54)
 	}
 	{
@@ -27397,6 +27679,9 @@ OPCODE(0x81D0)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(84)
 		}
 		q &= 0x0000FFFF;
@@ -27406,6 +27691,9 @@ OPCODE(0x81D0)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(112)
 }
 
@@ -27422,6 +27710,9 @@ OPCODE(0x81D8)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(14)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27431,6 +27722,9 @@ OPCODE(0x81D8)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(54)
 	}
 	{
@@ -27442,6 +27736,9 @@ OPCODE(0x81D8)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(84)
 		}
 		q &= 0x0000FFFF;
@@ -27451,6 +27748,9 @@ OPCODE(0x81D8)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(112)
 }
 
@@ -27467,6 +27767,9 @@ OPCODE(0x81E0)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(16)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27476,6 +27779,9 @@ OPCODE(0x81E0)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(56)
 	}
 	{
@@ -27487,6 +27793,9 @@ OPCODE(0x81E0)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(86)
 		}
 		q &= 0x0000FFFF;
@@ -27496,6 +27805,9 @@ OPCODE(0x81E0)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(114)
 }
 
@@ -27512,6 +27824,9 @@ OPCODE(0x81E8)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(18)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27521,6 +27836,9 @@ OPCODE(0x81E8)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(58)
 	}
 	{
@@ -27532,6 +27850,9 @@ OPCODE(0x81E8)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(88)
 		}
 		q &= 0x0000FFFF;
@@ -27541,6 +27862,9 @@ OPCODE(0x81E8)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(116)
 }
 
@@ -27557,6 +27881,9 @@ OPCODE(0x81F0)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(20)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27566,6 +27893,9 @@ OPCODE(0x81F0)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(60)
 	}
 	{
@@ -27577,6 +27907,9 @@ OPCODE(0x81F0)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(90)
 		}
 		q &= 0x0000FFFF;
@@ -27586,6 +27919,9 @@ OPCODE(0x81F0)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(118)
 }
 
@@ -27601,6 +27937,9 @@ OPCODE(0x81F8)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(18)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27610,6 +27949,9 @@ OPCODE(0x81F8)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(58)
 	}
 	{
@@ -27621,6 +27963,9 @@ OPCODE(0x81F8)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(88)
 		}
 		q &= 0x0000FFFF;
@@ -27630,6 +27975,9 @@ OPCODE(0x81F8)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(116)
 }
 
@@ -27645,6 +27993,9 @@ OPCODE(0x81F9)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(22)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27654,6 +28005,9 @@ OPCODE(0x81F9)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(62)
 	}
 	{
@@ -27665,6 +28019,9 @@ OPCODE(0x81F9)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(92)
 		}
 		q &= 0x0000FFFF;
@@ -27674,6 +28031,9 @@ OPCODE(0x81F9)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(120)
 }
 
@@ -27690,6 +28050,9 @@ OPCODE(0x81FA)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(18)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27699,6 +28062,9 @@ OPCODE(0x81FA)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(58)
 	}
 	{
@@ -27710,6 +28076,9 @@ OPCODE(0x81FA)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(88)
 		}
 		q &= 0x0000FFFF;
@@ -27719,6 +28088,9 @@ OPCODE(0x81FA)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(116)
 }
 
@@ -27735,6 +28107,9 @@ OPCODE(0x81FB)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(20)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27744,6 +28119,9 @@ OPCODE(0x81FB)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(60)
 	}
 	{
@@ -27755,6 +28133,9 @@ OPCODE(0x81FB)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(90)
 		}
 		q &= 0x0000FFFF;
@@ -27764,6 +28145,9 @@ OPCODE(0x81FB)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(118)
 }
 
@@ -27777,6 +28161,9 @@ OPCODE(0x81FC)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(14)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27786,6 +28173,9 @@ OPCODE(0x81FC)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(54)
 	}
 	{
@@ -27797,6 +28187,9 @@ OPCODE(0x81FC)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(84)
 		}
 		q &= 0x0000FFFF;
@@ -27806,6 +28199,9 @@ OPCODE(0x81FC)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(112)
 }
 
@@ -27822,6 +28218,9 @@ OPCODE(0x81DF)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(14)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27831,6 +28230,9 @@ OPCODE(0x81DF)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(54)
 	}
 	{
@@ -27842,6 +28244,9 @@ OPCODE(0x81DF)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(84)
 		}
 		q &= 0x0000FFFF;
@@ -27851,6 +28256,9 @@ OPCODE(0x81DF)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(112)
 }
 
@@ -27867,6 +28275,9 @@ OPCODE(0x81E7)
 	if (src == 0)
 	{
 		execute_exception(M68K_ZERO_DIVIDE_EX);
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 		RET(16)
 	}
 	dst = DREGu32((Opcode >> 9) & 7);
@@ -27876,6 +28287,9 @@ OPCODE(0x81E7)
 		flag_V = flag_C = 0;
 		res = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(56)
 	}
 	{
@@ -27887,6 +28301,9 @@ OPCODE(0x81E7)
 		if ((q > 0x7FFF) || (q < -0x8000))
 		{
 			flag_V = M68K_SR_V;
+#ifdef USE_CYCLONE_TIMING_DIV
+goto end;
+#endif
 	RET(86)
 		}
 		q &= 0x0000FFFF;
@@ -27896,6 +28313,9 @@ OPCODE(0x81E7)
 		res = q | (r << 16);
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
+#ifdef USE_CYCLONE_TIMING_DIV
+end:	io_cycle_counter -= 50;
+#endif
 RET(114)
 }
 
@@ -29803,7 +30223,11 @@ OPCODE(0x91C0)
 	dst = AREGu32((Opcode >> 9) & 7);
 	res = dst - src;
 	AREG((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING
+RET(8)
+#else
 RET(6)
+#endif
 }
 
 // SUBA
@@ -29816,7 +30240,11 @@ OPCODE(0x91C8)
 	dst = AREGu32((Opcode >> 9) & 7);
 	res = dst - src;
 	AREG((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING
+RET(8)
+#else
 RET(6)
+#endif
 }
 
 // SUBA
@@ -29979,7 +30407,11 @@ OPCODE(0x91FC)
 	dst = AREGu32((Opcode >> 9) & 7);
 	res = dst - src;
 	AREG((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING
+RET(16)
+#else
 RET(14)
+#endif
 }
 
 // SUBA
@@ -33679,7 +34111,11 @@ OPCODE(0xC0C0)
 	flag_NotZ = res;
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING
+RET(54)
+#else
 RET(50)
+#endif
 }
 
 // MULU
@@ -33698,7 +34134,11 @@ OPCODE(0xC0D0)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(58)
+#else
 RET(54)
+#endif
 }
 
 // MULU
@@ -33718,7 +34158,11 @@ OPCODE(0xC0D8)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(58)
+#else
 RET(54)
+#endif
 }
 
 // MULU
@@ -33738,7 +34182,11 @@ OPCODE(0xC0E0)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(60)
+#else
 RET(56)
+#endif
 }
 
 // MULU
@@ -33758,7 +34206,11 @@ OPCODE(0xC0E8)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(62)
+#else
 RET(58)
+#endif
 }
 
 // MULU
@@ -33778,7 +34230,11 @@ OPCODE(0xC0F0)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(64)
+#else
 RET(60)
+#endif
 }
 
 // MULU
@@ -33797,7 +34253,11 @@ OPCODE(0xC0F8)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(62)
+#else
 RET(58)
+#endif
 }
 
 // MULU
@@ -33816,7 +34276,11 @@ OPCODE(0xC0F9)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(66)
+#else
 RET(62)
+#endif
 }
 
 // MULU
@@ -33836,7 +34300,11 @@ OPCODE(0xC0FA)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(62)
+#else
 RET(58)
+#endif
 }
 
 // MULU
@@ -33856,7 +34324,11 @@ OPCODE(0xC0FB)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(64)
+#else
 RET(60)
+#endif
 }
 
 // MULU
@@ -33872,7 +34344,11 @@ OPCODE(0xC0FC)
 	flag_NotZ = res;
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING
+RET(58)
+#else
 RET(54)
+#endif
 }
 
 // MULU
@@ -33892,7 +34368,11 @@ OPCODE(0xC0DF)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(58)
+#else
 RET(54)
+#endif
 }
 
 // MULU
@@ -33912,7 +34392,11 @@ OPCODE(0xC0E7)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(60)
+#else
 RET(56)
+#endif
 }
 
 // MULS
@@ -33928,7 +34412,11 @@ OPCODE(0xC1C0)
 	flag_NotZ = res;
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING
+RET(54)
+#else
 RET(50)
+#endif
 }
 
 // MULS
@@ -33947,7 +34435,11 @@ OPCODE(0xC1D0)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(58)
+#else
 RET(54)
+#endif
 }
 
 // MULS
@@ -33967,7 +34459,11 @@ OPCODE(0xC1D8)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(58)
+#else
 RET(54)
+#endif
 }
 
 // MULS
@@ -33987,7 +34483,11 @@ OPCODE(0xC1E0)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(60)
+#else
 RET(56)
+#endif
 }
 
 // MULS
@@ -34007,7 +34507,11 @@ OPCODE(0xC1E8)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(62)
+#else
 RET(58)
+#endif
 }
 
 // MULS
@@ -34027,7 +34531,11 @@ OPCODE(0xC1F0)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(64)
+#else
 RET(60)
+#endif
 }
 
 // MULS
@@ -34046,7 +34554,11 @@ OPCODE(0xC1F8)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(62)
+#else
 RET(58)
+#endif
 }
 
 // MULS
@@ -34065,7 +34577,11 @@ OPCODE(0xC1F9)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(66)
+#else
 RET(62)
+#endif
 }
 
 // MULS
@@ -34085,7 +34601,11 @@ OPCODE(0xC1FA)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(62)
+#else
 RET(58)
+#endif
 }
 
 // MULS
@@ -34105,7 +34625,11 @@ OPCODE(0xC1FB)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(64)
+#else
 RET(60)
+#endif
 }
 
 // MULS
@@ -34121,7 +34645,11 @@ OPCODE(0xC1FC)
 	flag_NotZ = res;
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING
+RET(58)
+#else
 RET(54)
+#endif
 }
 
 // MULS
@@ -34141,7 +34669,11 @@ OPCODE(0xC1DF)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(58)
+#else
 RET(54)
+#endif
 }
 
 // MULS
@@ -34161,7 +34693,11 @@ OPCODE(0xC1E7)
 	flag_V = flag_C = 0;
 	DREGu32((Opcode >> 9) & 7) = res;
 	POST_IO
+#ifdef USE_CYCLONE_TIMING
+RET(60)
+#else
 RET(56)
+#endif
 }
 
 // EXGDD
@@ -36110,7 +36646,11 @@ OPCODE(0xD1C0)
 	dst = AREGu32((Opcode >> 9) & 7);
 	res = dst + src;
 	AREG((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING
+RET(8)
+#else
 RET(6)
+#endif
 }
 
 // ADDA
@@ -36123,7 +36663,11 @@ OPCODE(0xD1C8)
 	dst = AREGu32((Opcode >> 9) & 7);
 	res = dst + src;
 	AREG((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING
+RET(8)
+#else
 RET(6)
+#endif
 }
 
 // ADDA
@@ -36286,7 +36830,11 @@ OPCODE(0xD1FC)
 	dst = AREGu32((Opcode >> 9) & 7);
 	res = dst + src;
 	AREG((Opcode >> 9) & 7) = res;
+#ifdef USE_CYCLONE_TIMING
+RET(16)
+#else
 RET(14)
+#endif
 }
 
 // ADDA
@@ -36946,6 +37494,11 @@ RET(6)
 // ASRD
 OPCODE(0xE0A0)
 {
+#ifdef USE_CYCLONE_TIMING
+#define CYC 8
+#else
+#define CYC 6
+#endif
 	u32 adr, res;
 	u32 src, dst;
 
@@ -36964,7 +37517,7 @@ OPCODE(0xE0A0)
 			flag_N = res >> 24;
 			flag_NotZ = res;
 	DREGu32((Opcode >> 0) & 7) = res;
-	RET(6)
+	RET(CYC)
 		}
 
 		if (src & (1 << 31))
@@ -36976,7 +37529,7 @@ OPCODE(0xE0A0)
 			flag_X = M68K_SR_X;
 			res = 0xFFFFFFFF;
 	DREGu32((Opcode >> 0) & 7) = res;
-	RET(6)
+	RET(CYC)
 		}
 
 		flag_N = 0;
@@ -36986,14 +37539,15 @@ OPCODE(0xE0A0)
 		flag_X = 0;
 		res = 0;
 	DREGu32((Opcode >> 0) & 7) = res;
-	RET(6)
+	RET(CYC)
 	}
 
 	flag_V = 0;
 	flag_C = 0;
 	flag_N = src >> 24;
 	flag_NotZ = src;
-RET(6)
+RET(CYC)
+#undef CYC
 }
 
 // LSRD
@@ -37077,6 +37631,11 @@ RET(6)
 // LSRD
 OPCODE(0xE0A8)
 {
+#ifdef USE_CYCLONE_TIMING
+#define CYC 8
+#else
+#define CYC 6
+#endif
 	u32 adr, res;
 	u32 src, dst;
 
@@ -37094,7 +37653,7 @@ OPCODE(0xE0A8)
 			res = src >> sft;
 			flag_NotZ = res;
 	DREGu32((Opcode >> 0) & 7) = res;
-	RET(6)
+	RET(CYC)
 		}
 
 		if (sft == 32) flag_C = src >> (31 - M68K_SR_C_SFT);
@@ -37105,14 +37664,15 @@ OPCODE(0xE0A8)
 		flag_V = 0;
 		res = 0;
 	DREGu32((Opcode >> 0) & 7) = res;
-	RET(6)
+	RET(CYC)
 	}
 
 	flag_V = 0;
 	flag_C = 0;
 	flag_N = src >> 24;
 	flag_NotZ = src;
-RET(6)
+RET(CYC)
+#undef CYC
 }
 
 // ROXRD
@@ -37182,6 +37742,11 @@ RET(6)
 // ROXRD
 OPCODE(0xE0B0)
 {
+#ifdef USE_CYCLONE_TIMING
+#define CYC 8
+#else
+#define CYC 6
+#endif
 	u32 adr, res;
 	u32 src, dst;
 
@@ -37206,14 +37771,15 @@ OPCODE(0xE0B0)
 		flag_N = res >> 24;
 		flag_NotZ = res;
 	DREGu32((Opcode >> 0) & 7) = res;
-	RET(6)
+	RET(CYC)
 	}
 
 	flag_V = 0;
 	flag_C = flag_X;
 	flag_N = src >> 24;
 	flag_NotZ = src;
-RET(6)
+RET(CYC)
+#undef CYC
 }
 
 // RORD
@@ -37230,7 +37796,7 @@ OPCODE(0xE038)
 	{
 	io_cycle_counter -= sft * 2;
 		sft &= 0x07;
-		
+
 		flag_C = src << (M68K_SR_C_SFT - ((sft - 1) & 7));
 		res = (src >> sft) | (src << (8 - sft));
 		flag_V = 0;
@@ -37261,7 +37827,7 @@ OPCODE(0xE078)
 	{
 	io_cycle_counter -= sft * 2;
 		sft &= 0x0F;
-		
+
 		flag_C = (src >> ((sft - 1) & 15)) << M68K_SR_C_SFT;
 		res = (src >> sft) | (src << (16 - sft));
 		flag_V = 0;
@@ -37281,6 +37847,11 @@ RET(6)
 // RORD
 OPCODE(0xE0B8)
 {
+#ifdef USE_CYCLONE_TIMING
+#define CYC 8
+#else
+#define CYC 6
+#endif
 	u32 adr, res;
 	u32 src, dst;
 
@@ -37292,21 +37863,22 @@ OPCODE(0xE0B8)
 	{
 	io_cycle_counter -= sft * 2;
 		sft &= 0x1F;
-		
+
 		flag_C = (src >> ((sft - 1) & 31)) << M68K_SR_C_SFT;
 		res = (src >> sft) | (src << (32 - sft));
 		flag_V = 0;
 		flag_N = res >> 24;
 		flag_NotZ = res;
 	DREGu32((Opcode >> 0) & 7) = res;
-	RET(6)
+	RET(CYC)
 	}
 
 	flag_V = 0;
 	flag_C = 0;
 	flag_N = src >> 24;
 	flag_NotZ = src;
-RET(6)
+RET(CYC)
+#undef CYC
 }
 
 // ASLD
@@ -37408,6 +37980,11 @@ RET(6)
 // ASLD
 OPCODE(0xE1A0)
 {
+#ifdef USE_CYCLONE_TIMING
+#define CYC 8
+#else
+#define CYC 6
+#endif
 	u32 adr, res;
 	u32 src, dst;
 
@@ -37431,7 +38008,7 @@ OPCODE(0xE1A0)
 				src &= msk;
 				if ((src) && (src != msk)) flag_V = M68K_SR_V;
 			}
-	RET(6)
+	RET(CYC)
 		}
 
 		if (sft == 0) flag_C = src << M68K_SR_C_SFT;
@@ -37443,14 +38020,15 @@ OPCODE(0xE1A0)
 	DREGu32((Opcode >> 0) & 7) = res;
 		flag_N = 0;
 		flag_NotZ = 0;
-	RET(6)
+	RET(CYC)
 	}
 
 	flag_V = 0;
 	flag_C = 0;
 	flag_N = src >> 24;
 	flag_NotZ = src;
-RET(6)
+RET(CYC)
+#undef CYC
 }
 
 // LSLD
@@ -37536,6 +38114,11 @@ RET(6)
 // LSLD
 OPCODE(0xE1A8)
 {
+#ifdef USE_CYCLONE_TIMING
+#define CYC 8
+#else
+#define CYC 6
+#endif
 	u32 adr, res;
 	u32 src, dst;
 
@@ -37554,7 +38137,7 @@ OPCODE(0xE1A8)
 			flag_N = res >> 24;
 			flag_NotZ = res;
 	DREGu32((Opcode >> 0) & 7) = res;
-	RET(6)
+	RET(CYC)
 		}
 
 		if (sft == 32) flag_C = src << M68K_SR_C_SFT;
@@ -37565,14 +38148,15 @@ OPCODE(0xE1A8)
 		flag_V = 0;
 		res = 0;
 	DREGu32((Opcode >> 0) & 7) = res;
-	RET(6)
+	RET(CYC)
 	}
 
 	flag_V = 0;
 	flag_C = 0;
 	flag_N = src >> 24;
 	flag_NotZ = src;
-RET(6)
+RET(CYC)
+#undef CYC
 }
 
 // ROXLD
@@ -37642,6 +38226,11 @@ RET(6)
 // ROXLD
 OPCODE(0xE1B0)
 {
+#ifdef USE_CYCLONE_TIMING
+#define CYC 8
+#else
+#define CYC 6
+#endif
 	u32 adr, res;
 	u32 src, dst;
 
@@ -37666,14 +38255,15 @@ OPCODE(0xE1B0)
 		flag_N = res >> 24;
 		flag_NotZ = res;
 	DREGu32((Opcode >> 0) & 7) = res;
-	RET(6)
+	RET(CYC)
 	}
 
 	flag_V = 0;
 	flag_C = flag_X;
 	flag_N = src >> 24;
 	flag_NotZ = src;
-RET(6)
+RET(CYC)
+#undef CYC
 }
 
 // ROLD
@@ -37755,6 +38345,11 @@ RET(6)
 // ROLD
 OPCODE(0xE1B8)
 {
+#ifdef USE_CYCLONE_TIMING
+#define CYC 8
+#else
+#define CYC 6
+#endif
 	u32 adr, res;
 	u32 src, dst;
 
@@ -37773,21 +38368,22 @@ OPCODE(0xE1B8)
 			flag_N = res >> 24;
 			flag_NotZ = res;
 	DREGu32((Opcode >> 0) & 7) = res;
-	RET(6)
+	RET(CYC)
 		}
 
 		flag_V = 0;
 		flag_C = src << M68K_SR_C_SFT;
 		flag_N = src >> 24;
 		flag_NotZ = src;
-	RET(6)
+	RET(CYC)
 	}
 
 	flag_V = 0;
 	flag_C = 0;
 	flag_N = src >> 24;
 	flag_NotZ = src;
-RET(6)
+RET(CYC)
+#undef CYC
 }
 
 // ASR

@@ -45,6 +45,7 @@ void write_num(int x, int y, int v);
 int menu_msg_pos=330;
 int menu_moving=1;
 Uint32 menu_msg_time=0x12345678;
+int skipintro=0;
 
 #ifdef DREAMCAST
 extern int __sdl_dc_emulate_keyboard;
@@ -247,6 +248,7 @@ void init_text(int splash)
 
 		obten_colores();
 		uae4all_init_sound();
+		if (skipintro) goto skipintro;
 #if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
 		tmp=SDL_LoadBMP(MENU_FILE_SPLASH);
 		if (tmp==NULL)
@@ -304,6 +306,7 @@ void init_text(int splash)
 #endif
 #endif
 #endif
+skipintro:
 		for(i=0;i<10;i++)
 		{
 			SDL_Event ev;
@@ -311,7 +314,7 @@ void init_text(int splash)
 				break;
 
 			text_draw_background();
-			text_draw_window(54,110,250,64,"--- ERROR ---");
+			text_draw_window(54,91,250,64,"--- ERROR ---");
 			write_text(11,14,"KICK.ROM not found");
 			write_text(8,16,"Press any button to retry");
 			text_flip();
@@ -542,9 +545,9 @@ void text_draw_window(int x, int y, int w, int h, char *title)
 {
 	int i,j;
 	int r8x = x / 8;
-	int r8y = y / 8;
+	int r8y = y / 7;
 	int rx = r8x * 8;
-	int ry = r8y * 8;
+	int ry = r8y * 7;
 	int r32w =  w / 32;
 	int r24h =  h / 24;
 	int rw = r32w * 32;

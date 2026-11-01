@@ -31,8 +31,12 @@ void init_m68k(void);
 #else
 #define IO_CYCLE __io_cycle_counter
 #endif
-extern unsigned IO_CYCLE;
-#define m68k_irq_update()
+extern int IO_CYCLE;
+#define m68k_irq_update(end_timeslice) \
+	if ((end_timeslice) && IO_CYCLE > 0) { \
+		M68KCONTEXT.cycles_counter += 24 - IO_CYCLE; \
+		IO_CYCLE = 24; \
+	}
 
 
 #include "m68k/fame/fame.h"
@@ -93,7 +97,7 @@ int  m68k_lower_irq(int level);
 int  m68k_reset(void);
 int  m68k_emulate(int cycles);
 #define M68K_AUTOVECTORED_IRQ 0 // not going to use vector number
-void m68k_irq_update(void);
+void m68k_irq_update(int end_timeslice);
 
 typedef struct
 {

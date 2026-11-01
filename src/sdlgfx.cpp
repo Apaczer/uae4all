@@ -391,7 +391,7 @@ show_volumecontrol = 0;
 		return 0;
 
     buttonstate[0] = buttonstate[1] = buttonstate[2] = 0;
-    for (i = 0; i < 256; i++)
+    for (i = 256; i--;)
 	uae4all_keystate[i] = 0;
 
 #ifdef DEBUG_FRAMERATE

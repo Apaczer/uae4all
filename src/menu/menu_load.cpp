@@ -140,7 +140,7 @@ static int getFiles(char *dir)
 	if (text_dir_files!=NULL)
 		free(text_dir_files);
 
-	text_draw_window(96,64,140,32,"-------");
+	text_draw_window(96,55,140,32,"-------");
 	write_text(14,9,"Please wait");
 	text_flip();
 

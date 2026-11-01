@@ -5,24 +5,6 @@ KOS_INIT_FLAGS(INIT_DEFAULT);
 KOS_INIT_ROMDISK(romdisk);
 #endif
 
-#ifdef GP2X
-#include "gp2xutil.h"
-#include "menu.h"
-#include <sys/file.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-
-int relaunchGP2XMenu;
-//unsigned long soundDev;
-unsigned long memDev;
-//int flashLED = 1;
-volatile unsigned short* MEM_REG;
-int gp2xClockSpeed;
-//char launchDir[256];
-#endif
-
 extern "C" int main( int argc, char *argv[] );
 
 /*
@@ -68,6 +50,9 @@ extern "C" int main( int argc, char *argv[] );
 #endif
 #ifdef DREAMCAST
 #include<SDL_dreamcast.h>
+#endif
+#ifdef GP2X
+#include "gp2xutil.h"
 #endif
 long int version = 256*65536L*UAEMAJOR + 65536L*UAEMINOR + UAESUBREV;
 
@@ -238,29 +223,10 @@ void real_main (int argc, char **argv)
 	);
 #endif
 
-#ifdef GP2X
-	if (argc == 2 && strcmp(argv[1], "-norelaunchmenu") == 0)
-	{
-		relaunchGP2XMenu = 0;
-	}
-	else
-	{
-		relaunchGP2XMenu = 1;
-	}
-
-	//getcwd(launchDir, 256);
-	gp2xClockSpeed = -1;
-
-	//soundDev = open("/dev/mixer", O_RDWR);
-	//vol =(((vol*0x50)/100)<<8)|((vol*0x50)/100);
-	//ioctl(soundDev, SOUND_MIXER_WRITE_PCM, &vol);
-
-	memDev = open("/dev/mem", O_RDWR);
-	MEM_REG=(unsigned short *)mmap(0, 0x10000, PROT_READ|PROT_WRITE, MAP_SHARED,memDev, 0xc0000000);
-
-	gp2x_init();
-#endif
     default_prefs ();
+#ifdef GP2X
+    gp2x_init(argc, argv);
+#endif
     
     if (! graphics_setup ()) {
 	exit (1);

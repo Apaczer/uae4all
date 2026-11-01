@@ -170,15 +170,17 @@ static int sbasecol[2];
 
 int inhibit_frame;
 
-int framecnt = 0;
+int framecnt = 0, fs_framecnt = 0;
 static int frame_redraw_necessary;
 
 #ifdef NO_THREADS
-#define UMBRAL 21
+#define UMBRAL_PAL   21<<8
 #else
-#define UMBRAL 20
+#define UMBRAL_PAL   ((1000<<8)/50)
 #endif
-#define PARTIDA (UMBRAL/2)
+#define UMBRAL_NTSC  ((1000<<8)/60+1)
+#define PARTIDA_PAL  (UMBRAL_PAL/2)
+#define PARTIDA_NTSC (UMBRAL_NTSC/2+1)
 
 extern Uint32 uae4all_numframes;
 
@@ -190,9 +192,11 @@ extern double uae4all_framerate;
 static Uint32 proximo_frameskip;
 extern int *tabla_ajuste;
 
-void reset_frameskip()
+void reset_frameskip(void)
 {
-	proximo_frameskip=SDL_GetTicks();
+	// will reset ticks automatically
+	proximo_frameskip=0;
+//	proximo_frameskip=SDL_GetTicks()<<8;
 }
 
 static __inline__ void count_frame (void)
@@ -267,22 +271,42 @@ static __inline__ void count_frame (void)
 #endif
 #endif
 #endif
+
+
+    Uint32 partida = (beamcon0 & 0x20) ? PARTIDA_PAL : PARTIDA_NTSC;
+    Uint32 ahora = SDL_GetTicks() << 8;
+
+    proximo_frameskip += (beamcon0 & 0x20) ? UMBRAL_PAL : UMBRAL_NTSC;
+
+    if (ahora - (100<<8) > proximo_frameskip)
+    {
+	    // out of sync
+	    proximo_frameskip = ahora;
+    }
+
     if (prefs_gfx_framerate>=0)
     {
-    	framecnt++;
-    	if (framecnt > prefs_gfx_framerate)
-		framecnt = 0;
+    	fs_framecnt++;
+    	if (fs_framecnt > prefs_gfx_framerate)
+		fs_framecnt = 0;
 #ifdef DEBUG_FRAMERATE
 	else
 		uae4all_frameskipped++;
 #endif
+	// limiter..
+	if ((ahora+partida)<proximo_frameskip)
+	{
+#ifdef DREAMCAST
+//		SDL_Delay(proximo_frameskip-ahora-PARTIDA+1);
+#else
+		SDL_Delay((proximo_frameskip-ahora)>>8);
+#endif
+	}
     }
     else
     {
+	// auto frameskip
 	static int cuantos=0;
-
-	Uint32 ahora=SDL_GetTicks();
-	proximo_frameskip+=UMBRAL;
 
 #ifdef NO_THREADS
 	if (!produce_sound)
@@ -290,18 +314,18 @@ static __inline__ void count_frame (void)
 	else
 		proximo_frameskip+=(tabla_ajuste[uae4all_numframes%9]);
 #endif
-	if ((ahora-PARTIDA)>proximo_frameskip)
+	if ((ahora-partida)>proximo_frameskip)
 	{	
 		cuantos++;
-		if (cuantos>5)
+		if (cuantos>5) // auto FS limit
 		{
-			proximo_frameskip=ahora+2;
-			framecnt=0;
+			proximo_frameskip=ahora+(1<<8);
+			fs_framecnt=0;
 			cuantos=0;
 		}
 		else
 		{
-			framecnt=1;
+			fs_framecnt=1;
 #ifdef DEBUG_FRAMERATE
 			uae4all_frameskipped++;
 #endif
@@ -309,16 +333,16 @@ static __inline__ void count_frame (void)
 	}
 	else
 	{
-		if ((ahora+PARTIDA)<proximo_frameskip)
+		if ((ahora+partida)<proximo_frameskip)
 		{
 #ifdef DREAMCAST
 //			SDL_Delay(proximo_frameskip-ahora-PARTIDA+1);
 #else
-			SDL_Delay(proximo_frameskip-ahora);
+			SDL_Delay((proximo_frameskip-ahora)>>8);
 #endif
-			proximo_frameskip=SDL_GetTicks();
+			//proximo_frameskip=SDL_GetTicks() << 8;
 		}
-		framecnt=0;
+		fs_framecnt=0;
 		cuantos=0;
 	}
     }
@@ -1639,7 +1663,7 @@ static _INLINE_ void init_row_map (void)
 static _INLINE_ void init_aspect_maps (void)
 {
     int i, maxl;
-    double native_lines_per_amiga_line;
+    //double native_lines_per_amiga_line;
 
     if (native2amiga_line_map)
 	free (native2amiga_line_map);
@@ -1650,13 +1674,14 @@ static _INLINE_ void init_aspect_maps (void)
     amiga2aspect_line_map = (int *)xmalloc (sizeof (int) * (MAXVPOS + 1)*2 + 1);
     native2amiga_line_map = (int *)xmalloc (sizeof (int) * GFXVIDINFO_HEIGHT);
 
-	native_lines_per_amiga_line = 1;
+	//native_lines_per_amiga_line = 1;
 
     maxl = (MAXVPOS + 1);
     min_ypos_for_screen = minfirstline;
     max_drawn_amiga_line = -1;
     for (i = 0; i < maxl; i++) {
-	int v = (int) ((i - min_ypos_for_screen) * native_lines_per_amiga_line);
+	//int v = (int) ((i - min_ypos_for_screen) * native_lines_per_amiga_line);
+	int v = (int) (i - min_ypos_for_screen);
 	if (v >= GFXVIDINFO_HEIGHT && max_drawn_amiga_line == -1)
 	    max_drawn_amiga_line = i - min_ypos_for_screen;
 	if (i < min_ypos_for_screen || v >= GFXVIDINFO_HEIGHT)
@@ -1664,20 +1689,20 @@ static _INLINE_ void init_aspect_maps (void)
 	amiga2aspect_line_map[i] = v;
     }
 
-    for (i = 0; i < GFXVIDINFO_HEIGHT; i++)
+    for (i = GFXVIDINFO_HEIGHT; i--;)
 	native2amiga_line_map[i] = -1;
-
+/*
     if (native_lines_per_amiga_line < 1) {
-	/* Must omit drawing some lines. */
+	// Must omit drawing some lines.
 	for (i = maxl - 1; i > min_ypos_for_screen; i--) {
 	    if (amiga2aspect_line_map[i] == amiga2aspect_line_map[i-1]) {
 		    amiga2aspect_line_map[i] = -1;
 	    }
 	}
     }
-
+*/
     for (i = maxl-1; i >= min_ypos_for_screen; i--) {
-	int j;
+	register int j;
 	if (amiga2aspect_line_map[i] == -1)
 	    continue;
 	for (j = amiga2aspect_line_map[i]; j < GFXVIDINFO_HEIGHT && native2amiga_line_map[j] == -1; j++)
@@ -2095,6 +2120,7 @@ static _INLINE_ void finish_drawing_frame (void)
 void vsync_handle_redraw (int long_frame, int lof_changed)
 {
     last_redraw_point++;
+    count_frame ();
     if (lof_changed || ! interlace_seen || last_redraw_point >= 2 || long_frame) {
 	last_redraw_point = 0;
 	interlace_seen = 0;
@@ -2118,7 +2144,8 @@ void vsync_handle_redraw (int long_frame, int lof_changed)
 	    return;
 	}
 
-	count_frame ();
+	//count_frame ();
+	framecnt = fs_framecnt;
 
 	if (inhibit_frame != 0)
 	    framecnt = 1;
@@ -2177,4 +2204,3 @@ void drawing_init ()
 
     gen_pfield_tables();
 }
-

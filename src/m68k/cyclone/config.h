@@ -127,3 +127,10 @@
  * Enable this if you are emulating a 16 bit system.
  */
 #define SPLIT_MOVEL_PD            1
+
+/*
+ * Enable emulation of trace mode. Shouldn't cause any performance decrease, so it
+ * should be safe to keep this ON.
+ */
+#define EMULATE_TRACE             1
+

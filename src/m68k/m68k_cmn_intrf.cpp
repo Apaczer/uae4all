@@ -25,12 +25,14 @@
 #include "savestate.h"
 #include "blitter.h"
 #include "events.h"
+#include "sound.h"
 
 #include "m68k/debug_m68k.h"
 
 #ifdef FAME_INTERRUPTS_PATCH
 int uae4all_go_interrupt=0;
 #endif
+
 
 #ifdef DEBUG_UAE4ALL
 int DEBUG_AHORA=1;
@@ -97,10 +99,9 @@ void carga(void)
 
 
 int m68k_speed=5;
-static double cycles_factor=1.0;
-static unsigned timeslice_shift=6;
-int next_positions[512];
-int *next_vpos=&next_positions[0];
+int timeslice_mode=2;
+static unsigned cycles_factor=1<<8;
+int next_vpos[512];
 
 #ifndef USE_CYCLONE_CORE
 extern struct M68K_CONTEXT micontexto;
@@ -169,13 +170,14 @@ static int do_specialties (int cycles)
     unset_special (SPCFLAG_STOP);
 #endif
 
-#if !defined(FAME_INTERRUPTS_SECURE_PATCH) && defined(FAME_INTERRUPTS_PATCH)
+#if 0 // !defined(FAME_INTERRUPTS_SECURE_PATCH) && defined(FAME_INTERRUPTS_PATCH)
     if (uae4all_go_interrupt)
     {
+	/*if (verb)*/ printf("uae4all_go_interrupt (s): %02x\n", uae4all_go_interrupt);
 	M68KCONTEXT.interrupts[0]=uae4all_go_interrupt;
 	M68KCONTEXT.execinfo&=0xFF67;
 	uae4all_go_interrupt=0;
-	m68k_irq_update();
+	m68k_irq_update(0);
     }
 #endif
 
@@ -222,7 +224,7 @@ static void uae4all_reset(void)
     	M68KCONTEXT.interrupts[i]=0x18+i;
 #endif
     M68KCONTEXT.interrupts[0]=0;
-    m68k_irq_update();
+    m68k_irq_update(0);
     mispcflags=0;
     _68k_areg(7) = get_long (0x00f80000);
     _68k_setpc(get_long (0x00f80004));
@@ -244,25 +246,32 @@ static void m68k_run (void)
 
 #else
 		uae4all_prof_start(0);
+		cycles = nextevent - currcycle;
+		switch (timeslice_mode) {
+			case 3:  cycles>>=6; break;
+			case 2:  cycles>>=7; break;
+			case 1:  cycles=(cycles>>8)+(cycles>>9); break;
+			default: cycles>>=8; break;
+		}
 #ifdef DEBUG_TIMESLICE
-		unsigned ts=(nextevent - currcycle)>>timeslice_shift;
+		unsigned ts=cycles;
 #endif
 #if defined(FAME_INTERRUPTS_SECURE_PATCH) && defined(FAME_INTERRUPTS_PATCH)
 		if (uae4all_go_interrupt)
 			m68k_emulate(FAME_INTERRUPTS_PATCH);
 		else
 #endif
-			m68k_emulate((nextevent - currcycle)>>timeslice_shift);
+			m68k_emulate(cycles);
 		uae4all_prof_end(0);
 #endif
-#ifdef FAME_INTERRUPTS_PATCH
+#if 0 // def FAME_INTERRUPTS_PATCH
 		if (uae4all_go_interrupt)
 		{
-//			M68KCONTEXT.interrupts[0]=(M68KCONTEXT.interrupts[0]&1)|uae4all_go_interrupt;
+			/*if (verb)*/ printf("uae4all_go_interrupt: %02x\n", uae4all_go_interrupt);
 			M68KCONTEXT.interrupts[0]=uae4all_go_interrupt;
 			M68KCONTEXT.execinfo&=0xFF67;
 			uae4all_go_interrupt=0;
-			m68k_irq_update();
+			m68k_irq_update(0);
 		}
 #endif
 #ifdef DEBUG_M68K
@@ -272,41 +281,19 @@ static void m68k_run (void)
 #endif
                 uae4all_prof_start(1);
 
-#ifdef DEBUG_M68K
-		cycles=3413;
-#else
-		cycles=((unsigned)(((double)(M68KCONTEXT.cycles_counter-cycles_actual))*cycles_factor))<<8;
+		//cycles=((unsigned)(((double)(M68KCONTEXT.cycles_counter-cycles_actual))*cycles_factor))<<8;
+		cycles=(M68KCONTEXT.cycles_counter-cycles_actual) * cycles_factor;
 
 #ifdef DEBUG_INTERRUPTS
-		dbgf("cycles=%i (%i) -> PC=%.6x\n",cycles>>8,(nextevent - currcycle)>>timeslice_shift, _68k_getpc());
+		dbgf("cycles=%i (%i) -> PC=%.6x\n",cycles>>8,nextevent - currcycle, _68k_getpc());
 #endif
 
-#ifdef DEBUG_TIMESLICE
-		unsigned real_ts=(M68KCONTEXT.cycles_counter-cycles_actual);
-		int diff_ts=((int)ts)-((int)real_ts);
-		static int media_diff_ts=0, media_ts=0;
-		if (media_ts)
-		{
-			media_diff_ts=(media_diff_ts+diff_ts)/2;
-			media_ts=(media_ts+((int)real_ts))/2;
-		}
-		else
-		{
-			media_diff_ts=diff_ts;
-			media_ts=real_ts;
-		}
-		static unsigned count_ts=0;
-		if (!(count_ts&1023))
-			printf("MEDIA TIMESLICE=%i, DIFF MEDIA=%i\n",media_ts,media_diff_ts);
-		count_ts++;
-#endif
 
 #ifdef NO_SHORT_EVENTS
 #ifdef PROTECT_INFINITE
 		unsigned cuentalo=0;
 #endif
 		do{
-#endif
 #endif
 			do_cycles(cycles);
 			if (mispcflags)
@@ -353,6 +340,8 @@ void m68k_go (int may_quit)
             quit_program = 0;
             reset_all_systems ();
             customreset ();
+	    check_prefs_changed_cpu ();
+	    sound_default_evtime ();
             /* We may have been restoring state, but we're done now.  */
             handle_active_events ();
             if (mispcflags)
@@ -372,11 +361,15 @@ void m68k_go (int may_quit)
 void check_prefs_changed_cpu (void)
 {
 	int i;
+
+	for(i=0;i<512;i++)
+		next_vpos[i]=i+1;
+
 	switch(m68k_speed)
 	{
 		case 6:
-			timeslice_shift=9;
-			cycles_factor=1.86;
+			cycles_factor=(unsigned)(1.86*256);
+			if (!(beamcon0 & 0x20)) break;
 			for(i=0;i<4;i++)
 				next_vpos[i]=4;
 			next_vpos[4]=5;
@@ -392,21 +385,9 @@ void check_prefs_changed_cpu (void)
 				next_vpos[i]=510;
 			break;
 		case 5:
-			timeslice_shift=6;
-			cycles_factor=(4.0/3.0);
-			for(i=0;i<4;i++)
-				next_vpos[i]=4;
-			next_vpos[4]=5;
-			for(i=5;i<40;i++)
-				next_vpos[i]=40;
-			for(i=40;i<280;i++)
-				next_vpos[i]=i+1;
-			for(i=280;i<312;i++)
-				next_vpos[i]=510;
-			break;
 		case 4:
-			timeslice_shift=7;
-			cycles_factor=(4.0/3.0);
+			cycles_factor=(unsigned)(4.0/3.0*256);
+			if (!(beamcon0 & 0x20)) break;
 			for(i=0;i<4;i++)
 				next_vpos[i]=4;
 			next_vpos[4]=5;
@@ -418,25 +399,9 @@ void check_prefs_changed_cpu (void)
 				next_vpos[i]=510;
 			break;
 		case 3:
-			timeslice_shift=7;
-			cycles_factor=(7.0/6.0);
-			for(i=0;i<4;i++)
-				next_vpos[i]=4;
-			next_vpos[4]=5;
-			for(i=5;i<20;i++)
-				next_vpos[i]=20;
-			for(i=20;i<280;i++)
-				next_vpos[i]=i+1;
-			for(i=280;i<306;i++)
-				next_vpos[i]=306;
-			for(i=306;i<311;i++)
-				next_vpos[i]=i+1;
-			for(i=311;i<512;i++)
-				next_vpos[i]=510;
-			break;
 		case 2:
-			timeslice_shift=8;
-			cycles_factor=(7.0/6.0);
+			cycles_factor=(unsigned)(7.0/6.0*256);
+			if (!(beamcon0 & 0x20)) break;
 			for(i=0;i<4;i++)
 				next_vpos[i]=4;
 			next_vpos[4]=5;
@@ -452,16 +417,9 @@ void check_prefs_changed_cpu (void)
 				next_vpos[i]=510;
 			break;
 		case 1:
-			timeslice_shift=7;
-			cycles_factor=1.0;
-			for(i=0;i<512;i++)
-				next_vpos[i]=i+1;
-			break;
 		default:
-			timeslice_shift=8;
-			cycles_factor=1.0;
-			for(i=0;i<512;i++)
-				next_vpos[i]=i+1;
+			cycles_factor=1*256;
+			break;
 
 	}
 	next_vpos[511]=0;

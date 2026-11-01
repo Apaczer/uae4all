@@ -1,5 +1,5 @@
 
-;@ Dave's Cyclone 68000 Emulator v0.087 - Assembler Output
+;@ Dave's Cyclone 68000 Emulator v0.088 - Assembler Output
 
 ;@ (c) Copyright 2003 Dave, All rights reserved.
 ;@ some code (c) Copyright 2005-2007 notaz, All rights reserved.
@@ -7,12 +7,17 @@
 
 ;@ For commercial use, separate licencing terms must be obtained.
 
+  .text
+  .align 4
+
   .global CycloneInit
   .global CycloneRun
   .global CycloneSetSr
   .global CycloneGetSr
+  .global CycloneFlushIrq
   .global CycloneVer
-CycloneVer: .long 0x0087
+
+CycloneVer: .long 0x0088
 
 ;@ --------------------------- Framework --------------------------
 CycloneRun:
@@ -28,6 +33,8 @@ CycloneRun:
   mov r9,r9,lsl #28  ;@ r9 = Flags 0xf0000000, cpsr format
                      ;@ r10 = Source value / Memory Base
 
+  mov r2,#0
+  str r2,[r7,#0x98]  ;@ clear custom CycloneEnd
 ;@ CheckInterrupt:
   movs r0,r1,lsr #24 ;@ Get IRQ level
   beq NoInts0
@@ -37,30 +44,37 @@ CycloneRun:
   bgt CycloneDoInterrupt
 NoInts0:
 
-;@ Check if our processor is in stopped state and jump to opcode handler if not
+;@ Check if our processor is in special state
+;@ and jump to opcode handler if not
   ldr r0,[r7,#0x58]
   ldrh r8,[r4],#2 ;@ Fetch first opcode
-  tst r0,r0 ;@ stopped?
-  bne CycloneStopped
-  ldr pc,[r6,r8,asl #2] ;@ Jump to opcode handler
+  tst r0,#3 ;@ tracing or stopped?
+  ldreq pc,[r6,r8,asl #2] ;@ Jump to opcode handler
+
+CycloneSpecial:
+  tst r0,#2 ;@ tracing?
+  bne CycloneDoTrace
+;@ stopped
+  mov r5,#0
+  str r5,[r7,#0x5C]  ;@ eat all cycles
+  ldmia sp!,{r4-r11,pc} ;@ we are stopped, do nothing!
 
 
 ;@ We come back here after execution
 CycloneEnd:
   sub r4,r4,#2
 CycloneEndNoBack:
+  ldr r1,[r7,#0x98]
   mov r9,r9,lsr #28
+  tst r1,r1
+  bxne r1            ;@ jump to alternative CycloneEnd
   str r4,[r7,#0x40]  ;@ Save Current PC + Memory Base
   str r5,[r7,#0x5c]  ;@ Save Cycles
   strb r9,[r7,#0x46] ;@ Save Flags (NZCV)
   ldmia sp!,{r4-r11,pc}
-
-CycloneStopped:
-  mov r5,#0
-  str r5,[r7,#0x5C]  ;@ eat all cycles
-  ldmia sp!,{r4-r11,pc} ;@ we are stopped, do nothing!
-
   .ltorg
+
+
 ;@ uncompress jump table
 CycloneInit:
   ldr r12,=CycloneJumpTab
@@ -110,17 +124,8 @@ unc_fill4:
 
 CycloneSetSr:
   mov r2,r1,lsr #8
-  ldrb r3,[r0,#0x44] ;@ get SR high
-  eor r3,r3,r2
-  tst r3,#0x20
-  and r2,r2,#0xa7 ;@ only nonzero bits
+  and r2,r2,#0xa7 ;@ only defined bits
   strb r2,[r0,#0x44] ;@ set SR high
-  bne setsr_noswap
-  ldr r2,[r0,#0x3C] ;@ Get A7
-  ldr r3,[r0,#0x48] ;@ Get OSP
-  str r3,[r0,#0x3C]
-  str r2,[r0,#0x48]
-setsr_noswap:
   mov r2,r1,lsl #25
   str r2,[r0,#0x4c] ;@ the X flag
   bic r2,r1,#0xf3
@@ -144,6 +149,34 @@ CycloneGetSr:
   ldrb r1,[r0,#0x44] ;@ the SR high
   orr r0,r2,r1,lsl #8
   bx lr
+
+CycloneFlushIrq:
+  ldr r1,[r0,#0x44]  ;@ Get SR high T_S__III and irq level
+  mov r2,r1,lsr #24 ;@ Get IRQ level
+  cmp r2,#6 ;@ irq>6 ?
+  andle r1,r1,#7 ;@ Get interrupt mask
+  cmple r2,r1 ;@ irq<=6: Is irq<=mask ?
+  movle r0,#0
+  bxle lr ;@ no ints
+
+  stmdb sp!,{r4,r5,r7-r11,lr}
+  mov r7,r0
+  mov r0,r2
+  ldrb r9,[r7,#0x46] ;@ r9 = Flags (NZCV)
+  mov r5,#0
+  ldr r4,[r7,#0x40]  ;@ r4 = Current PC + Memory Base
+  mov r9,r9,lsl #28  ;@ r9 = Flags 0xf0000000, cpsr format
+  adr r2,CycloneFlushIrqEnd
+  str r2,[r7,#0x98]  ;@ set custom CycloneEnd
+  b CycloneDoInterrupt
+
+CycloneFlushIrqEnd:
+  rsb r0,r5,#0
+  str r4,[r7,#0x40]  ;@ Save Current PC + Memory Base
+  strb r9,[r7,#0x46] ;@ Save Flags (NZCV)
+  ldmia sp!,{r4,r5,r7-r11,lr}
+  bx lr
+
 
 CycloneSetRealTAS:
   bx lr
@@ -200,12 +233,12 @@ CycloneDoInterrupt:
   ldr pc,[r7,#0x64] ;@ Call checkpc()
   mov r4,r0
 
+  ldr r2,[r7,#0x58] ;@ state flags
   ldrb r0,[r7,#0x47] ;@ IRQ
-  mov r2,#0
+  bic r2,r2,#3 ;@ clear stopped and trace states
+  str r2,[r7,#0x58]
   orr r1,r0,#0x20 ;@ Supervisor mode + IRQ number
   strb r1,[r7,#0x44] ;@ Put SR high
-;@ Clear stopped states:
-  str r2,[r7,#0x58]
 
   ldr r11,[r7,#0x8c] ;@ IrqCallback
   tst r11,r11
@@ -261,11 +294,61 @@ Exception:
   ldr pc,[r7,#0x64] ;@ Call checkpc()
   mov r4,r0
 
+  ldr r2,[r7,#0x58] ;@ state flags
   ldr r0,[r7,#0x44] ;@ Get SR high
+  bic r2,r2,#2 ;@ clear trace state
+  str r2,[r7,#0x58]
   bic r0,r0,#0xd8 ;@ clear trace and unused flags
   orr r0,r0,#0x20 ;@ set supervisor mode
   strb r0,[r7,#0x44]
   ldmia sp!,{pc} ;@ Return
+
+CycloneDoTraceWithChecks:
+  ldr r0,[r7,#0x58]
+  cmp r5,#0
+  orr r0,r0,#2 ;@ go to trace mode
+  str r0,[r7,#0x58]
+  blt CycloneEnd
+;@ CheckInterrupt:
+  movs r0,r1,lsr #24 ;@ Get IRQ level
+  beq CycloneDoTrace
+  cmp r0,#6 ;@ irq>6 ?
+  andle r1,r1,#7 ;@ Get interrupt mask
+  cmple r0,r1 ;@ irq<=6: Is irq<=mask ?
+  bgt CycloneDoInterruptGoBack
+
+CycloneDoTrace:
+  str r5,[r7,#0x9c] ;@ save cycles
+  ldr r1,[r7,#0x98]
+  mov r5,#0
+  str r1,[r7,#0xa0]
+  adr r0,TraceEnd
+  str r0,[r7,#0x98] ;@ store TraceEnd as CycloneEnd hadler
+  ldr pc,[r6,r8,asl #2] ;@ Jump to opcode handler
+
+TraceEnd:
+  ldr r2,[r7,#0x58]
+  ldr r0,[r7,#0x9c] ;@ restore cycles
+  ldr r1,[r7,#0xa0] ;@ old CycloneEnd handler
+  mov r9,r9,lsl #28
+  add r5,r0,r5
+  str r1,[r7,#0x98]
+;@ still tracing?
+  tst r2,#2
+  beq TraceDisabled
+;@ trace exception
+  mov r0,#0x24
+  bl Exception
+  ldrh r8,[r4],#2 ;@ Fetch next opcode
+  subs r5,r5,#34 ;@ Subtract cycles
+  ldrge pc,[r6,r8,asl #2] ;@ Jump to opcode handler
+  b CycloneEnd
+
+TraceDisabled:
+  ldrh r8,[r4],#2 ;@ Fetch next opcode
+  cmp r5,#0
+  ldrge pc,[r6,r8,asl #2] ;@ Jump to opcode handler
+  b CycloneEnd
 
 ;@ ---------------------------- Opcodes ---------------------------
 Op____: ;@ Called if an opcode is not recognised
@@ -701,26 +784,17 @@ Op0039:
 
 ;@ ---------- [003c] ori.b #$33, ccr uses Op003c ----------
 Op003c:
-;@ EaCalc : Get '#$33' into r10:
-  ldrsb r10,[r4],#2 ;@ Fetch immediate value
-;@ EaRead : Read '#$33' (address in r10) into r10:
+;@ EaCalc : Get '#$33' into r0:
+  ldrsb r0,[r4],#2 ;@ Fetch immediate value
+;@ EaRead : Read '#$33' (address in r0) into r0:
 
-  ldr r0,[r7,#0x4c]   ;@ X bit
-  mov r1,r9,lsr #28   ;@ ____NZCV
-  eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
-  tst r2,#1           ;@ 1 if C!=V
-  eorne r1,r1,#3      ;@ ____NZVC
-
-  and r0,r0,#0x20000000
-  orr r1,r1,r0,lsr #25 ;@ ___XNZVC
-
-  orr r0,r1,r10
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
-  mov r2,r0,lsl #25
   tst r1,#1           ;@ 1 if C!=V
   eorne r0,r0,#3      ;@ ___XNZCV
-  str r2,[r7,#0x4c]   ;@ Store X bit
-  mov r9,r0,lsl #28   ;@ r9=NZCV...
+  ldr r2,[r7,#0x4c]   ;@ Load old X bit
+  orr r9,r9,r0,lsl #28
+  orr r2,r2,r0,lsl #25 ;@ X bit
+  str r2,[r7,#0x4c]   ;@ Save X bit
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -1024,34 +1098,28 @@ Op007c:
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
-;@ EaCalc : Get '#$3333' into r10:
-  ldrsh r10,[r4],#2 ;@ Fetch immediate value
-;@ EaRead : Read '#$3333' (address in r10) into r10:
+;@ EaCalc : Get '#$3333' into r0:
+  ldrsh r0,[r4],#2 ;@ Fetch immediate value
+;@ EaRead : Read '#$3333' (address in r0) into r0:
 
-  ldr r0,[r7,#0x4c]   ;@ X bit
-  mov r1,r9,lsr #28   ;@ ____NZCV
-  eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
-  tst r2,#1           ;@ 1 if C!=V
-  eorne r1,r1,#3      ;@ ____NZVC
-
-  ldrb r2,[r7,#0x44]  ;@ Include SR high
-  and r0,r0,#0x20000000
-  orr r1,r1,r0,lsr #25 ;@ ___XNZVC
-  orr r1,r1,r2,lsl #8
-
-  orr r0,r1,r10
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
-  mov r2,r0,lsl #25
   tst r1,#1           ;@ 1 if C!=V
   eorne r0,r0,#3      ;@ ___XNZCV
-  str r2,[r7,#0x4c]   ;@ Store X bit
-  mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  ldr r2,[r7,#0x4c]   ;@ Load old X bit
+  orr r9,r9,r0,lsl #28
+  orr r2,r2,r0,lsl #25 ;@ X bit
+  orr r1,r11,r0,lsr #8
+  and r1,r1,#0xa7 ;@ mask-out unused bits
+  str r2,[r7,#0x4c]   ;@ Save X bit
+  strb r1,[r7,#0x44]
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#20 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   ldrge pc,[r6,r8,asl #2] ;@ Jump to opcode handler
   b CycloneEnd
 
@@ -3459,26 +3527,17 @@ Op0239:
 
 ;@ ---------- [023c] andi.b #$33, ccr uses Op023c ----------
 Op023c:
-;@ EaCalc : Get '#$33' into r10:
-  ldrsb r10,[r4],#2 ;@ Fetch immediate value
-;@ EaRead : Read '#$33' (address in r10) into r10:
+;@ EaCalc : Get '#$33' into r0:
+  ldrsb r0,[r4],#2 ;@ Fetch immediate value
+;@ EaRead : Read '#$33' (address in r0) into r0:
 
-  ldr r0,[r7,#0x4c]   ;@ X bit
-  mov r1,r9,lsr #28   ;@ ____NZCV
-  eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
-  tst r2,#1           ;@ 1 if C!=V
-  eorne r1,r1,#3      ;@ ____NZVC
-
-  and r0,r0,#0x20000000
-  orr r1,r1,r0,lsr #25 ;@ ___XNZVC
-
-  and r0,r1,r10
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
-  mov r2,r0,lsl #25
   tst r1,#1           ;@ 1 if C!=V
   eorne r0,r0,#3      ;@ ___XNZCV
-  str r2,[r7,#0x4c]   ;@ Store X bit
-  mov r9,r0,lsl #28   ;@ r9=NZCV...
+  ldr r2,[r7,#0x4c]   ;@ Load old X bit
+  and r9,r9,r0,lsl #28
+  and r2,r2,r0,lsl #25 ;@ X bit
+  str r2,[r7,#0x4c]   ;@ Save X bit
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -3782,34 +3841,22 @@ Op027c:
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
-;@ EaCalc : Get '#$3333' into r10:
-  ldrsh r10,[r4],#2 ;@ Fetch immediate value
-;@ EaRead : Read '#$3333' (address in r10) into r10:
+;@ EaCalc : Get '#$3333' into r0:
+  ldrsh r0,[r4],#2 ;@ Fetch immediate value
+;@ EaRead : Read '#$3333' (address in r0) into r0:
 
-  ldr r0,[r7,#0x4c]   ;@ X bit
-  mov r1,r9,lsr #28   ;@ ____NZCV
-  eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
-  tst r2,#1           ;@ 1 if C!=V
-  eorne r1,r1,#3      ;@ ____NZVC
-
-  ldrb r2,[r7,#0x44]  ;@ Include SR high
-  and r0,r0,#0x20000000
-  orr r1,r1,r0,lsr #25 ;@ ___XNZVC
-  orr r1,r1,r2,lsl #8
-
-  and r0,r1,r10
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
-  mov r2,r0,lsl #25
   tst r1,#1           ;@ 1 if C!=V
   eorne r0,r0,#3      ;@ ___XNZCV
-  str r2,[r7,#0x4c]   ;@ Store X bit
-  mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  ldr r2,[r7,#0x4c]   ;@ Load old X bit
+  and r9,r9,r0,lsl #28
+  and r2,r2,r0,lsl #25 ;@ X bit
+  and r1,r11,r0,lsr #8
+  str r2,[r7,#0x4c]   ;@ Save X bit
+  strb r1,[r7,#0x44]
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap027c
  ;@ swap OSP and A7:
@@ -3818,11 +3865,12 @@ Op027c:
   str r11,[r7,#0x48]
   str r0, [r7,#0x3C]
 no_sp_swap027c:
+
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
+  ldr r1,[r7,#0x44]
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -8004,26 +8052,17 @@ Op0a39:
 
 ;@ ---------- [0a3c] eori.b #$33, ccr uses Op0a3c ----------
 Op0a3c:
-;@ EaCalc : Get '#$33' into r10:
-  ldrsb r10,[r4],#2 ;@ Fetch immediate value
-;@ EaRead : Read '#$33' (address in r10) into r10:
+;@ EaCalc : Get '#$33' into r0:
+  ldrsb r0,[r4],#2 ;@ Fetch immediate value
+;@ EaRead : Read '#$33' (address in r0) into r0:
 
-  ldr r0,[r7,#0x4c]   ;@ X bit
-  mov r1,r9,lsr #28   ;@ ____NZCV
-  eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
-  tst r2,#1           ;@ 1 if C!=V
-  eorne r1,r1,#3      ;@ ____NZVC
-
-  and r0,r0,#0x20000000
-  orr r1,r1,r0,lsr #25 ;@ ___XNZVC
-
-  eor r0,r1,r10
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
-  mov r2,r0,lsl #25
   tst r1,#1           ;@ 1 if C!=V
   eorne r0,r0,#3      ;@ ___XNZCV
-  str r2,[r7,#0x4c]   ;@ Store X bit
-  mov r9,r0,lsl #28   ;@ r9=NZCV...
+  ldr r2,[r7,#0x4c]   ;@ Load old X bit
+  eor r9,r9,r0,lsl #28
+  eor r2,r2,r0,lsl #25 ;@ X bit
+  str r2,[r7,#0x4c]   ;@ Save X bit
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -8327,34 +8366,23 @@ Op0a7c:
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
-;@ EaCalc : Get '#$3333' into r10:
-  ldrsh r10,[r4],#2 ;@ Fetch immediate value
-;@ EaRead : Read '#$3333' (address in r10) into r10:
+;@ EaCalc : Get '#$3333' into r0:
+  ldrsh r0,[r4],#2 ;@ Fetch immediate value
+;@ EaRead : Read '#$3333' (address in r0) into r0:
 
-  ldr r0,[r7,#0x4c]   ;@ X bit
-  mov r1,r9,lsr #28   ;@ ____NZCV
-  eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
-  tst r2,#1           ;@ 1 if C!=V
-  eorne r1,r1,#3      ;@ ____NZVC
-
-  ldrb r2,[r7,#0x44]  ;@ Include SR high
-  and r0,r0,#0x20000000
-  orr r1,r1,r0,lsr #25 ;@ ___XNZVC
-  orr r1,r1,r2,lsl #8
-
-  eor r0,r1,r10
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
-  mov r2,r0,lsl #25
   tst r1,#1           ;@ 1 if C!=V
   eorne r0,r0,#3      ;@ ___XNZCV
-  str r2,[r7,#0x4c]   ;@ Store X bit
-  mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  ldr r2,[r7,#0x4c]   ;@ Load old X bit
+  eor r9,r9,r0,lsl #28
+  eor r2,r2,r0,lsl #25 ;@ X bit
+  eor r1,r11,r0,lsr #8
+  and r1,r1,#0xa7 ;@ mask-out unused bits
+  str r2,[r7,#0x4c]   ;@ Save X bit
+  strb r1,[r7,#0x44]
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap0a7c
  ;@ swap OSP and A7:
@@ -8363,11 +8391,16 @@ Op0a7c:
   str r11,[r7,#0x48]
   str r0, [r7,#0x3C]
 no_sp_swap0a7c:
+
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#20 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -26850,12 +26883,12 @@ Op46c0:
   eorne r0,r0,#3      ;@ ___XNZCV
   str r2,[r7,#0x4c]   ;@ Store X bit
   mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  mov r1,r0,ror #8
+  and r1,r1,#0xa7 ;@ only take defined bits
+  strb r1,[r7,#0x44] ;@ Store SR high
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap46c0
  ;@ swap OSP and A7:
@@ -26865,10 +26898,14 @@ Op46c0:
   str r0, [r7,#0x3C]
 no_sp_swap46c0:
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#12 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -26899,12 +26936,12 @@ Op46d0:
   eorne r0,r0,#3      ;@ ___XNZCV
   str r2,[r7,#0x4c]   ;@ Store X bit
   mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  mov r1,r0,ror #8
+  and r1,r1,#0xa7 ;@ only take defined bits
+  strb r1,[r7,#0x44] ;@ Store SR high
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap46d0
  ;@ swap OSP and A7:
@@ -26915,10 +26952,14 @@ Op46d0:
 no_sp_swap46d0:
   ldr r5,[r7,#0x5c] ;@ Load Cycles
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#16 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -26950,12 +26991,12 @@ Op46d8:
   eorne r0,r0,#3      ;@ ___XNZCV
   str r2,[r7,#0x4c]   ;@ Store X bit
   mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  mov r1,r0,ror #8
+  and r1,r1,#0xa7 ;@ only take defined bits
+  strb r1,[r7,#0x44] ;@ Store SR high
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap46d8
  ;@ swap OSP and A7:
@@ -26966,10 +27007,14 @@ Op46d8:
 no_sp_swap46d8:
   ldr r5,[r7,#0x5c] ;@ Load Cycles
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#16 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -27002,12 +27047,12 @@ Op46e0:
   eorne r0,r0,#3      ;@ ___XNZCV
   str r2,[r7,#0x4c]   ;@ Store X bit
   mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  mov r1,r0,ror #8
+  and r1,r1,#0xa7 ;@ only take defined bits
+  strb r1,[r7,#0x44] ;@ Store SR high
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap46e0
  ;@ swap OSP and A7:
@@ -27018,10 +27063,14 @@ Op46e0:
 no_sp_swap46e0:
   ldr r5,[r7,#0x5c] ;@ Load Cycles
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#18 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -27053,12 +27102,12 @@ Op46e8:
   eorne r0,r0,#3      ;@ ___XNZCV
   str r2,[r7,#0x4c]   ;@ Store X bit
   mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  mov r1,r0,ror #8
+  and r1,r1,#0xa7 ;@ only take defined bits
+  strb r1,[r7,#0x44] ;@ Store SR high
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap46e8
  ;@ swap OSP and A7:
@@ -27069,10 +27118,14 @@ Op46e8:
 no_sp_swap46e8:
   ldr r5,[r7,#0x5c] ;@ Load Cycles
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#20 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -27113,12 +27166,12 @@ Op46f0:
   eorne r0,r0,#3      ;@ ___XNZCV
   str r2,[r7,#0x4c]   ;@ Store X bit
   mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  mov r1,r0,ror #8
+  and r1,r1,#0xa7 ;@ only take defined bits
+  strb r1,[r7,#0x44] ;@ Store SR high
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap46f0
  ;@ swap OSP and A7:
@@ -27129,10 +27182,14 @@ Op46f0:
 no_sp_swap46f0:
   ldr r5,[r7,#0x5c] ;@ Load Cycles
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#22 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -27161,12 +27218,12 @@ Op46f8:
   eorne r0,r0,#3      ;@ ___XNZCV
   str r2,[r7,#0x4c]   ;@ Store X bit
   mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  mov r1,r0,ror #8
+  and r1,r1,#0xa7 ;@ only take defined bits
+  strb r1,[r7,#0x44] ;@ Store SR high
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap46f8
  ;@ swap OSP and A7:
@@ -27177,10 +27234,14 @@ Op46f8:
 no_sp_swap46f8:
   ldr r5,[r7,#0x5c] ;@ Load Cycles
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#20 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -27211,12 +27272,12 @@ Op46f9:
   eorne r0,r0,#3      ;@ ___XNZCV
   str r2,[r7,#0x4c]   ;@ Store X bit
   mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  mov r1,r0,ror #8
+  and r1,r1,#0xa7 ;@ only take defined bits
+  strb r1,[r7,#0x44] ;@ Store SR high
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap46f9
  ;@ swap OSP and A7:
@@ -27227,10 +27288,14 @@ Op46f9:
 no_sp_swap46f9:
   ldr r5,[r7,#0x5c] ;@ Load Cycles
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#24 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -27263,12 +27328,12 @@ Op46fa:
   eorne r0,r0,#3      ;@ ___XNZCV
   str r2,[r7,#0x4c]   ;@ Store X bit
   mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  mov r1,r0,ror #8
+  and r1,r1,#0xa7 ;@ only take defined bits
+  strb r1,[r7,#0x44] ;@ Store SR high
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap46fa
  ;@ swap OSP and A7:
@@ -27279,10 +27344,14 @@ Op46fa:
 no_sp_swap46fa:
   ldr r5,[r7,#0x5c] ;@ Load Cycles
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#20 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -27323,12 +27392,12 @@ Op46fb:
   eorne r0,r0,#3      ;@ ___XNZCV
   str r2,[r7,#0x4c]   ;@ Store X bit
   mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  mov r1,r0,ror #8
+  and r1,r1,#0xa7 ;@ only take defined bits
+  strb r1,[r7,#0x44] ;@ Store SR high
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap46fb
  ;@ swap OSP and A7:
@@ -27339,10 +27408,14 @@ Op46fb:
 no_sp_swap46fb:
   ldr r5,[r7,#0x5c] ;@ Load Cycles
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#22 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -27367,12 +27440,12 @@ Op46fc:
   eorne r0,r0,#3      ;@ ___XNZCV
   str r2,[r7,#0x4c]   ;@ Store X bit
   mov r9,r0,lsl #28   ;@ r9=NZCV...
-  mov r0,r0,ror #8
-  and r0,r0,#0xa7 ;@ only take defined bits
-  strb r0,[r7,#0x44] ;@ Store SR high
+  mov r1,r0,ror #8
+  and r1,r1,#0xa7 ;@ only take defined bits
+  strb r1,[r7,#0x44] ;@ Store SR high
 
 ;@ A7 <-> OSP?
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap46fc
  ;@ swap OSP and A7:
@@ -27382,10 +27455,14 @@ Op46fc:
   str r0, [r7,#0x3C]
 no_sp_swap46fc:
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#16 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -30691,10 +30768,11 @@ Op4e72:
   str r0, [r7,#0x3C]
 no_sp_swap4e72:
 
-  mov r0,#1
-  str r0,[r7,#0x58] ;@ stopped
-
+  ldr r0,[r7,#0x58]
   mov r5,#0 ;@ eat cycles
+  orr r0,r0,#1 ;@ stopped
+  str r0,[r7,#0x58]
+
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#4 ;@ Subtract cycles
@@ -30740,9 +30818,9 @@ Op4e73:
   ldr pc,[r7,#0x64] ;@ Call checkpc()
   mov r4,r0
 
+  ldr r1,[r7,#0x44] ;@ reload SR high
 ;@ A7 <-> OSP?
-  ldr r0,[r7,#0x44] ;@ Get other SR high
-  eor r0,r0,r11
+  eor r0,r1,r11
   tst r0,#0x20
   beq no_sp_swap4e73
  ;@ swap OSP and A7:
@@ -30753,10 +30831,14 @@ Op4e73:
 no_sp_swap4e73:
   ldr r5,[r7,#0x5c] ;@ Load Cycles
   ldrh r8,[r4],#2 ;@ Fetch next opcode
+  ldr r1,[r7,#0x44]
   subs r5,r5,#20 ;@ Subtract cycles
+;@ CheckTrace:
+  tst r1,#0x80
+  bne CycloneDoTraceWithChecks
+  cmp r5,#0
   blt CycloneEnd
 ;@ CheckInterrupt:
-  ldr r1,[r7,#0x44] ;@ Get SR high T_S__III and irq level
   movs r0,r1,lsr #24 ;@ Get IRQ level
   ldreq pc,[r6,r8,asl #2] ;@ Jump to next opcode handler
   cmp r0,#6 ;@ irq>6 ?
@@ -31623,7 +31705,8 @@ Op5048:
   str r1,[r7,r10,lsl #2]
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
-  subs r5,r5,#4 ;@ Subtract cycles
+@ Hack hack hack...
+  subs r5,r5,#8 ;@ Subtract cycles
   ldrge pc,[r6,r8,asl #2] ;@ Jump to opcode handler
   b CycloneEnd
 
@@ -37112,7 +37195,8 @@ Op5e48:
   str r1,[r7,r10,lsl #2]
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
-  subs r5,r5,#4 ;@ Subtract cycles
+@ Hack hack hack...
+  subs r5,r5,#8 ;@ Subtract cycles
   ldrge pc,[r6,r8,asl #2] ;@ Jump to opcode handler
   b CycloneEnd
 

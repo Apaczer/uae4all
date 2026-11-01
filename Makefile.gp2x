@@ -17,27 +17,36 @@ PROG   = $(NAME)
 all: $(PROG)
 
 CYCLONE_CORE=1
-#FAME_CORE=1
-#FAME_CORE_C=1
+ifndef CYCLONE_CORE
+FAME_CORE=1
+FAME_CORE_C=1
+endif
 
 DEFAULT_CFLAGS = `$(SDL_BASE)sdl-config --cflags`
 #LDFLAGS        = `$(SDL_BASE)sdl-config --libs` -lSDL_mixer -lsmpeg -lstdc++ -lSDL -lmikmod -lm -lz -static
 LDFLAGS        = `$(SDL_BASE)sdl-config --libs` -lSDL -lz -static
 
 
-MORE_CFLAGS += -O3 -Isrc/gp2x -Isrc -Isrc/include/ -Isrc/menu -Isrc/vkbd -fomit-frame-pointer  -Wno-unused -Wno-format -DUSE_SDL -DGCCCONSTFUNC="__attribute__((const))" -DUSE_UNDERSCORE -fno-exceptions -DUNALIGNED_PROFITABLE -DREGPARAM="__attribute__((regparm(3)))" -DOPTIMIZED_FLAGS -D__inline__=__inline__ -DSHM_SUPPORT_LINKS=0 -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
+MORE_CFLAGS += -DGP2X
+#-Wall -fprofile-use
+
+MORE_CFLAGS += -Isrc -Isrc/gp2x -Isrc/menu -Isrc/include -Isrc/gp2x/menu -Isrc/vkbd -fomit-frame-pointer -Wno-unused -Wno-format -DUSE_SDL -DGCCCONSTFUNC="__attribute__((const))" -DUSE_UNDERSCORE -fno-exceptions -DUNALIGNED_PROFITABLE -DOPTIMIZED_FLAGS -DSHM_SUPPORT_LINKS=0 -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
 #-DMENU_MUSIC
 
-MORE_CFLAGS += -DGP2X
-#-Wall
+MORE_CFLAGS += -DROM_PATH_PREFIX=\"./\" -DDATA_PREFIX=\"./data/\" -DSAVE_PREFIX=\"./saves/\"
 
-MORE_CFLAGS+= -DROM_PATH_PREFIX=\"./\" -DDATA_PREFIX=\"./data/\" -DSAVE_PREFIX=\"./saves/\"
-
-MORE_CFLAGS+= -mcpu=arm920 -mtune=arm920t
-MORE_CFLAGS += -msoft-float -ffast-math -fstrict-aliasing -mstructure-size-boundary=32 -fexpensive-optimizations
-MORE_CFLAGS += -fweb -frename-registers -fomit-frame-pointer 
+MORE_CFLAGS += -mcpu=arm920 -mtune=arm920t -msoft-float -ffast-math
+ifndef DEBUG
+MORE_CFLAGS += -O3
+MORE_CFLAGS += -fstrict-aliasing -mstructure-size-boundary=32 -fexpensive-optimizations
+MORE_CFLAGS += -fweb -frename-registers -fomit-frame-pointer
 MORE_CFLAGS += -falign-functions=32 -falign-loops -falign-labels -falign-jumps
 MORE_CFLAGS += -finline -finline-functions -fno-builtin
+else
+MORE_CFLAGS += -ggdb
+endif
+
+ASFLAGS += -mfloat-abi=soft -mcpu=arm920t
 
 #MORE_CFLAGS+= -DUSE_AUTOCONFIG
 #MORE_CFLAGS+= -DUAE_CONSOLE
@@ -110,6 +119,8 @@ OBJS =	\
 	src/zfile.o \
 	src/menu/fade.o \
 	src/vkbd/vkbd.o \
+	src/gp2x/memcpy.o \
+	src/gp2x/memset.o \
 	src/gp2x/gp2x.o \
 	src/gp2x/inputmode.o \
 	src/gp2x/volumecontrol.o \
@@ -140,7 +151,6 @@ ifdef CYCLONE_CORE
 # use all FAME hacks in uae code for Cyclone too
 CFLAGS+=-DUSE_FAME_CORE
 CFLAGS+=-DUSE_CYCLONE_CORE
-ASFLAGS+=-mfloat-abi=soft -mcpu=arm920t
 OBJS += src/m68k/cyclone/cyclone.o
 OBJS += src/m68k/m68k_cmn_intrf.o
 OBJS += src/m68k/cyclone/m68k_intrf.o
@@ -159,9 +169,11 @@ endif
 
 CPPFLAGS  = $(CFLAGS)
 
-$(PROG): $(OBJS) 
+$(PROG): $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LDFLAGS)
+ifndef DEBUG
 	$(STRIP) $(PROG)
+endif
 
 
 run: $(PROG)
@@ -170,4 +182,6 @@ run: $(PROG)
 clean:
 	$(RM) $(PROG) $(OBJS)
 
+up: $(PROG)
+	cp -v $< /mnt/gp2x/mnt/sd/emus/uae4all/
 

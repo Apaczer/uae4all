@@ -10,34 +10,33 @@
 #include <sys/resource.h>
 #include <string.h>
 #include <stdlib.h>
+#include <linux/soundcard.h>
 #include "SDL.h"
 #include "gp2x.h"
 #include "gp2xutil.h"
-#include "menu.h"
+#include "menu/menu.h"
 
 extern int uae4all_keystate[256];
 extern void record_key(int);
 
-extern unsigned long memDev;
-extern volatile unsigned short* MEM_REG;
 
 int vol = 100;
-//volatile unsigned short *MEM_REG;
+unsigned long memDev;
+volatile unsigned short* MEM_REG;
+int gp2xClockSpeed;
 
-unsigned long soundDev;
-//unsigned long memDev;
+static int mixerdev;
 int soundVolume = 50;
 int flashLED;
 
 int gp2xMouseEmuOn;
 int gp2xButtonRemappingOn;
 int hasGp2xButtonRemapping;
-//int gp2xClockSpeed;
-char launchDir [300];
+char launchDir[300];
 
 extern int graphics_init (void);
 
-#define SOUND_MIXER_WRITE_PCM 0xc0044d04
+//#define SOUND_MIXER_WRITE_PCM 0xc0044d04
 
 #define GPIOHOUT 0x106E
 #define GPIOHPINLVL 0x118E
@@ -51,7 +50,6 @@ static int mmuhack(int first_time)
 	{
 		// unload possibly wrong mmuhack if it's loaded
 		system("/sbin/rmmod mmuhack");
-//		volatile unsigned int *secbuf = (unsigned int *)malloc (204800);
 		snprintf(cmdLine, sizeof(cmdLine), "/sbin/insmod -f %s/mmuhack.o", launchDir);
 		system(cmdLine);
 	}
@@ -68,17 +66,18 @@ static int mmuhack(int first_time)
 }
 
 
-void gp2x_init()
+void gp2x_init(int argc, char **argv)
 {
-//	gp2xClockSpeed = -1;
+	parse_cmdline(argc, argv);
 
-	soundDev = open("/dev/mixer", O_RDWR);
-	int vol =(((100*0x50)/100)<<8)|((100*0x50)/100);
-	ioctl(soundDev, SOUND_MIXER_WRITE_PCM, &vol);
+	//getcwd(launchDir, 256);
+	gp2xClockSpeed = -1;
 
-/*	memDev = open("/dev/mem", O_RDWR);
+	memDev = open("/dev/mem", O_RDWR);
 	MEM_REG=(unsigned short *)mmap(0, 0x10000, PROT_READ|PROT_WRITE, MAP_SHARED,memDev, 0xc0000000);
-*/
+
+	mixerdev = open("/dev/mixer", O_RDWR);
+
 	soundVolume=50;
 	gp2x_set_volume(soundVolume);
 	flashLED = 0;
@@ -151,7 +150,7 @@ void handle_remapped_button_up(int button)
 void gp2x_set_volume(int volume)
 {
 	int vol = (((volume*0x50)/100)<<8)|((volume*0x50)/100);
-	ioctl(soundDev, SOUND_MIXER_WRITE_PCM, &vol);
+	ioctl(mixerdev, SOUND_MIXER_WRITE_PCM, &vol);
 }
 
 void setBatteryLED(int state)

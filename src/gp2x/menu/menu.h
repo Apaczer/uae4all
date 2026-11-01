@@ -25,6 +25,8 @@ void text_draw_window(int x, int y, int w, int h, char *title);
 // void text_draw_menu_msg();
 void text_flip(void);
 
+void parse_cmdline(int argc, char **argv);
+
 void drawPleaseWait(void);
 void menu_raise(void);
 void menu_unraise(void);

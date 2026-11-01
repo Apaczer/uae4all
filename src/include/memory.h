@@ -314,7 +314,7 @@ static __inline__ void uae4all_memclr(void *_GCCRES_ dest, int n)
 	}
 
 	d[0]=d[1]=d[2]=d[3]=d[4]=d[5]=d[6]=d[7]=d[8]=d[9]=d[10]=d[11]=d[12]=d[13]=d[14]=d[15]=0;
-	
+
 	n>>=5;
 	while(n--)
 	{
@@ -324,6 +324,17 @@ static __inline__ void uae4all_memclr(void *_GCCRES_ dest, int n)
 	d = (unsigned int *)0xe0000000;
 	d[0] = d[8] = 0;
 }
+
+#elif defined(GP2X) || defined(GIZMONDO)
+
+extern "C" {
+	void *arm_memset(void *s, int c, size_t n);
+	void *arm_memcpy(void *dest, const void *src, size_t n);
+}
+
+#define uae4all_memclr(p,l) arm_memset(p,0,l)
+#define uae4all_memcpy arm_memcpy
+#define UAE4ALL_ALIGN
 
 #else
 

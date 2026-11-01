@@ -9,13 +9,23 @@
 
 #include <stdio.h>
 
+#define dprintf_al(f,...) printf("%05i|%03i: %s: " f "\n",M68KCONTEXT.cycles_counter,m68k_context.cycles,__FUNCTION__,##__VA_ARGS__)
 #define dprintf(...)
-//#define dprintf(f,...) printf("%05i: %s: " f "\n",M68KCONTEXT.cycles_counter,__FUNCTION__,##__VA_ARGS__)
+//#define dprintf(f,...) \
+if (verb) \
+printf("%05i| %s: " f "\n",M68KCONTEXT.cycles_counter,__FUNCTION__,##__VA_ARGS__)
 #define mdprintf(...)
 //#define mdprintf(f,...) \
-if (M68KCONTEXT.cycles_counter >= 14000000) \
+if (verb) \
 printf("%05i|%03i: %06x: %s: " f "\n",M68KCONTEXT.cycles_counter,m68k_context.cycles,m68k_context.pc-m68k_context.membase,__FUNCTION__,##__VA_ARGS__)
-#define dprintf_al(f,...) printf("%05i: %s: " f "\n",M68KCONTEXT.cycles_counter,__FUNCTION__,##__VA_ARGS__)
+#if defined(DEBUG_UAE4ALL) || defined(UAE_CONSOLE)
+#define dprintfu dprintf_al
+#else
+#define dprintfu(...)
+#endif
+
+// for easier sync with FAMEC
+//#define SPLIT_32_2_16
 
 struct Cyclone m68k_context;
 M68KCONTEXT_t M68KCONTEXT;
@@ -51,7 +61,7 @@ void init_m68k(void)
 /* FAME interface */
 void m68k_release_timeslice(void)
 {
-	m68k_context.cycles = 0;
+	m68k_context.cycles = -1;
 	dprintf(" ");
 }
 
@@ -59,7 +69,7 @@ void m68k_release_timeslice(void)
 int m68k_raise_irq(int level, int vector)
 {
 	M68KCONTEXT.interrupts[0] |= 1 << level;
-	m68k_irq_update();
+	m68k_irq_update(0);
 	dprintf("lvl: %i, line: %i, irqs: %02x", level, m68k_context.irq, M68KCONTEXT.interrupts[0]);
 
 	return 0;
@@ -69,7 +79,7 @@ int m68k_raise_irq(int level, int vector)
 int m68k_lower_irq(int level)
 {
 	M68KCONTEXT.interrupts[0] &= ~(1 << level);
-	m68k_irq_update();
+	m68k_irq_update(0);
 	dprintf("lvl: %i, line: %i, irqs: %02x", level, m68k_context.irq, M68KCONTEXT.interrupts[0]);
 
 	return 0;
@@ -78,8 +88,8 @@ int m68k_lower_irq(int level)
 
 int m68k_reset(void)
 {
-	dprintf("");
-	m68k_context.stopped = 0;
+	dprintfu("");
+	m68k_context.state_flags = 0;
 	m68k_context.osp = 0;
 	m68k_context.srh = 0x27; // Supervisor mode
 	m68k_context.flags = 0;
@@ -96,18 +106,31 @@ int m68k_emulate(int cycles)
 {
 	cycles -= 1;
 	m68k_context.cycles = cycles;
-	m68k_context.stopped = (M68KCONTEXT.execinfo & 0x80) ? 1 : 0;
 	//dprintf("c = %i, stoped: %i", cycles, m68k_context.stopped);
 
-	if (m68k_context.stopped /*|| M68KCONTEXT.interrupts[0]*/)
-		dprintf("c = %i, stopped: %i, irq: %02x", cycles, m68k_context.stopped, M68KCONTEXT.interrupts[0]);
+	//if (m68k_context.stopped)
+	//	dprintf("c = %i, stopped: %i, irq: %02x", cycles, m68k_context.stopped, M68KCONTEXT.interrupts[0]);
 
 	CycloneRun(&m68k_context);
 
 	M68KCONTEXT.cycles_counter += cycles - m68k_context.cycles;
-	if (m68k_context.stopped)
-	     M68KCONTEXT.execinfo |=  0x80;
-	else M68KCONTEXT.execinfo &= ~0x80;
+
+	// Cyclone doesn't check for irq changes while it executes, so try to take it now
+#if 0
+	if (m68k_context.irq > (m68k_context.srh&7))
+	{
+		int oirq = m68k_context.irq, c = CycloneFlushIrq(&m68k_context);
+		printf("CycEnd irq %i %i -> %i\n", c, oirq, m68k_context.irq);
+		M68KCONTEXT.cycles_counter += c; // CycloneFlushIrq(&m68k_context);
+	}
+#endif
+
+#ifdef SPLIT_32_2_16
+	if (m68k_context.state_flags & 1)
+	{
+	     M68KCONTEXT.cycles_counter++; // adjust for sync with FAME
+	}
+#endif
 
 	return 0;
 }
@@ -116,13 +139,20 @@ int m68k_emulate(int cycles)
 /* helper funcs */
 
 // must call this whenever M68KCONTEXT.interrupts[0] gets changed
-void m68k_irq_update(void)
+void m68k_irq_update(int end_timeslice)
 {
 	int level, ints = M68KCONTEXT.interrupts[0];
 
 	for (level = 7; level && !(ints & (1 << level)); level--);
 
 	m68k_context.irq = level;
+
+	if (end_timeslice && m68k_context.cycles >= 0 && !(m68k_context.state_flags & 1))
+	{
+		// cause timeslice end after 24 cycles
+		M68KCONTEXT.cycles_counter += 24 - 1 - m68k_context.cycles;
+		m68k_context.cycles = 24 - 1;
+	}
 }
 
 
@@ -152,7 +182,7 @@ static unsigned int check_pc(unsigned int pc)
 static void irq_ack(int level)
 {
 	M68KCONTEXT.interrupts[0] &= ~(1 << level);
-	m68k_irq_update();
+	m68k_irq_update(0);
 
 	dprintf("level: %i, irqs: %02x", level, M68KCONTEXT.interrupts[0]);
 }
@@ -163,18 +193,16 @@ static int unrecognized_callback(void)
 	unsigned pc = m68k_context.pc - m68k_context.membase;
 	unsigned opcode = *(uae_u16 *)m68k_context.pc;
 
-	dprintf("op 0x%04x @ 0x%06x", opcode, pc);
-
-//	if (opcode != 0x4E7B) *(int*)0 = 1;
+	dprintfu("op 0x%04x @ 0x%06x", opcode, pc);
 
 	if (cloanto_rom && (opcode & 0xF100) == 0x7100) {
-		dprintf("  cloanto"); // whatever it is
+		dprintfu("  cloanto"); // whatever it is
 		_68k_dreg((opcode >> 9) & 7) = (uae_s8)(opcode & 0xFF);
 		m68k_context.pc += 2;
 		return 1;
 	}
 	if (opcode == 0x4E7B && get_long(0x10) == 0 && (pc & 0xF80000) == 0xF80000) {
-		dprintf("  68020");
+		dprintfu("  68020");
 		write_log("Your Kickstart requires a 68020 CPU. Giving up.\n");
 		set_special (SPCFLAG_BRK);
 		quit_program = 1;
@@ -183,22 +211,22 @@ static int unrecognized_callback(void)
 	}
 	if (opcode == 0xFF0D) {
 		if ((pc & 0xF80000) == 0xF80000) {
-			dprintf("  dummy");
+			dprintfu("  dummy");
 			// This is from the dummy Kickstart replacement
 			uae_u16 arg = *(uae_u16 *)(pc+2);
 			m68k_context.pc += 4;
 			ersatz_perform(arg);
 		} else if ((pc & 0xFFFF0000) == RTAREA_BASE) {
-			dprintf("  stop");
+			dprintfu("  stop");
 			// User-mode STOP replacement 
 			mispcflags|=SPCFLAG_STOP;
-			m68k_context.stopped = 1;
+			m68k_context.state_flags |= 1;
 			m68k_context.cycles = 0;
 		}
 		return 1;
 	}
 	if ((opcode & 0xF000) == 0xA000 && (pc & 0xFFFF0000) == RTAREA_BASE) {
-		dprintf("  call");
+		dprintfu("  call");
 		// Calltrap.
 		m68k_context.pc += 2;
 #ifdef USE_AUTOCONFIG
@@ -207,14 +235,32 @@ static int unrecognized_callback(void)
 		return 1;
 	}
 	if ((opcode & 0xF000) == 0xF000) {
-		dprintf("  exp8");
+		dprintfu("  exp8");
 		return 0;
 	}
 	if ((opcode & 0xF000) == 0xA000) {
-		dprintf("  expA");
+		dprintfu("  expA");
+		exit(1); // rm
 		return 0;
 	}
-	dprintf("  real illegal");
+	dprintfu("  real illegal");
+#if 0
+	if (opcode==0x4e7b && pc==0x00080ab6)
+	{
+		FILE *f;
+		uae_u8 *p;
+		f = fopen("80000.bin", "wb");
+		p = (uae_u8 *) baseaddr[0x80000>>16];
+		fwrite(p+0x80000, 1, 0x20000, f);
+		fclose(f);
+		f = fopen("00000.bin", "wb");
+		p = (uae_u8 *) baseaddr[0x00000>>16];
+		fwrite(p+0x00000, 1, 0x20000, f);
+		fclose(f);
+		sync();
+	}
+#endif
+
 	write_log ("Illegal instruction: %04x at %08x\n", opcode, pc);
 	return 0;
 }
@@ -259,6 +305,9 @@ static unsigned short read16(unsigned int a)
 
 static unsigned int read32(unsigned int a)
 {
+#ifdef SPLIT_32_2_16
+	return (read16(a)<<16) | read16(a+2);
+#else
 	a &= ~0xff000000;
 	uae_u16 *p = (uae_u16 *) baseaddr[a>>16];
 	if ((int)p & 1)
@@ -274,6 +323,7 @@ static unsigned int read32(unsigned int a)
 		a >>= 1;
 		return (p[a]<<16)|p[a+1];
 	}
+#endif
 }
 
 static void write8(unsigned int a, unsigned char d)
@@ -312,6 +362,10 @@ static void write16(unsigned int a,unsigned short d)
 
 static void write32(unsigned int a,unsigned int d)
 {
+#ifdef SPLIT_32_2_16
+	write16(a, d>>16);
+	write16(a+2, d);
+#else
 	a &= ~0xff000000;
 	uae_u16 *p = (uae_u16 *) baseaddr[a>>16];
 	if ((int)p & 1)
@@ -327,6 +381,7 @@ static void write32(unsigned int a,unsigned int d)
 		p[a] = d >> 16;
 		p[a+1] = d;
 	}
+#endif
 }
 
 

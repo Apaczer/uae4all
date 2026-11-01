@@ -65,7 +65,7 @@ void build_blitfilltable(void)
     unsigned int d, fillmask;
     int i;
 
-    for (i = 0; i < BLITTER_MAX_WORDS; i++)
+    for (i = BLITTER_MAX_WORDS; i--;)
 	blit_masktable[i] = 0xFFFF;
 
     for (d = 0; d < 256; d++) {
@@ -473,8 +473,10 @@ static _INLINE_ void blit_init(void)
     blt_info.blitdownbshift = 16 - blt_info.blitbshift;
 
     if (blitline) {
+#ifdef DEBUG_BLITTER
 	if (blt_info.hblitsize != 2)
 	    write_log ("weird hblitsize in linemode: %d\n", blt_info.hblitsize);
+#endif
 
 	bltcnxlpt = bltcpt;
 	bltdnxlpt = bltdpt;
@@ -497,19 +499,22 @@ static _INLINE_ void blit_init(void)
 	if ((bltcon1 & 0x18) == 0x18) {
 	    /* Digital "Trash" demo does this; others too. Apparently, no
 	     * negative effects. */
+#ifdef DEBUG_BLITTER
 	    static int warn = 1;
 	    if (warn)
 		write_log ("warning: weird fill mode (further messages suppressed)\n");
 	    warn = 0;
+#endif
 	}
 	blitdesc = bltcon1 & 0x2;
+#ifdef DEBUG_BLITTER
 	if (blitfill && !blitdesc) {
 	    static int warn = 1;
 	    if (warn)
 		write_log ("warning: blitter fill without desc (further messages suppressed)\n");
 	    warn = 0;
 	}
-#ifdef DEBUG_BLITTER
+
 	dbgf("blit_init blitfc=0x%X, blitife=0x%X, blitfill=0x%X, blitdesc=0x%X\n",blitfc,blitife,blitfill,blitdesc);
 #endif
     }

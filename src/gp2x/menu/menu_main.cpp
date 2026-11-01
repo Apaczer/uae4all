@@ -10,25 +10,30 @@
 #include "sound.h"
 
 #include "gp2x.h"
-extern int relaunchGP2XMenu;
+static int norelaunchGP2XMenu = 0;
 
 //#include "gp2xutil.h"
 #include "cpuspeed/cpuctrl.h"
 
 int init_sound(void);
+void gp2x_stop_sound(void);
 
 extern int emulating;
 extern void setBatteryLED(int);
 extern int flashLED;
 extern int gp2xClockSpeed;
 extern int sound_rate;
+extern int timeslice_mode;
+extern int skipintro;
 
 static char *text_str_title=    "----- UAE4ALL GP2X ------";
 static char *text_str_load=     "Select Image Disk (L)";
 static char *text_str_flash_led="Drive LED";
-static char *text_str_throttle= "Emu Bias CPU  -- -- -- --  CHIP";
+static char *text_str_throttle= "System clock";
+static char *text_str_sync_trsh="Sync threshold";
 static char *text_str_cpu_clock="GP2X Overclock";
 static char *text_str_frameskip="Frameskip";
+static char *text_str_videomode="Video mode";
 static char *text_str_0="0";
 static char *text_str_1="1";
 static char *text_str_2="2";
@@ -46,8 +51,15 @@ static char *text_str_32k="32k";
 static char *text_str_22k="22k";
 static char *text_str_11k="11k";
 static char *text_str_8k="8k";
+static char *text_str_100p="100";
+static char *text_str_83p="83";
+static char *text_str_75p="75";
+static char *text_str_50p="50";
+static char *text_str_25p="25";
+static char *text_str_pal="PAL";
+static char *text_str_ntsc="NTSC";
 static char *text_str_auto="auto";
-static char *text_str_eject="Eject DF1 (Y)";
+static char *text_str_eject="Eject DF1 (X)";
 //static char *text_str_gp2x_clock="Clock MHz";
 static char *text_str_gp2x_clock_none="none";
 static char *text_str_gp2x_clock_200="200";
@@ -59,14 +71,14 @@ static char *text_str_off="off";
 static char *text_str_faked="faked";
 static char *text_str_status_line="Status ln";
 static char *text_str_separator="--------------------------------";
-static char *text_str_reset="Reset";
-static char *text_str_run="Run (R)";
-static char *text_str_exit="Exit";
+static char *text_str_reset="Reset  R";
+static char *text_str_run=  "Run";
+static char *text_str_exit= "Exit";
 static char *text_str_autosave="Autosave";
 static char *text_str_sndrate="Sound rate";
 
+int mainMenu_throttle=0;
 #if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
-int mainMenu_throttle=3;
 int mainMenu_frameskip=-1;
 #else
 #ifdef PROFILER_UAE4ALL
@@ -75,21 +87,10 @@ int mainMenu_frameskip=0;
 #else
 int mainMenu_frameskip=-1;
 #endif
-#ifndef AUTO_PROFILER_THROTTLE
-int mainMenu_throttle=0;
-#else
-int mainMenu_throttle=3;
-#endif
 #else
 #ifdef DEBUG_FRAMERATE
 int mainMenu_frameskip=-1;
-#ifndef AUTO_FRAMERATE_THROTTLE
-int mainMenu_throttle=0;
 #else
-int mainMenu_throttle=3;
-#endif
-#else
-int mainMenu_throttle=0;
 int mainMenu_frameskip=0;
 #endif
 #endif
@@ -100,23 +101,26 @@ int mainMenu_mouseMultiplier = 1;
 int mainMenu_sound=1;
 int mainMenu_case=-1;
 int mainMenu_autosave=1;
+int mainMenu_ntsc=0;
 
 static void draw_mainMenu(int c)
 {
 	/*
 	0 = load
 	1 = throttle
-	2 = frameskip
-	3 = cpu speed
-	4 = mouse cursor speed
-	5 = sound
-	6 = show status line
-	7 = eject df1
-	8 = autosave
-	9 = sound rate
-	10 = reset
-	11 = run
-	12 = exit
+	2 = sync threshold
+	3 = frameskip
+	4 = cpu speed
+	5 = mouse cursor speed
+	6 = sound
+	7 = show status line
+	8 = eject df1
+	9 = autosave
+	10 = sound rate
+	11 = video mode
+	12 = reset
+	13 = run
+	14 = exit
 	*/
 	static int b=0;
 	int bb=(b%6)/3;
@@ -133,10 +137,9 @@ static void draw_mainMenu(int c)
 	int tabstop9 = 33;
 
 	text_draw_background();
-	text_draw_window(20,18,300,220,text_str_title);
-	write_text(leftMargin,menuLine,text_str_separator);
-
-	menuLine++;
+	text_draw_window(20,14,300,220,text_str_title);
+	//write_text(leftMargin,menuLine,text_str_separator);
+	//menuLine++;
 
 	if ((c==0)&&(bb))
 		write_text_inv(leftMargin,menuLine,text_str_load);
@@ -147,130 +150,149 @@ static void draw_mainMenu(int c)
 	write_text(leftMargin,menuLine,text_str_separator);
 	menuLine++;
 
+	// 1
 	write_text(leftMargin,menuLine,text_str_throttle);
 
-	if ((mainMenu_throttle==1)&&((c!=1)||(bb)))
-		write_text_inv(tabstop1,menuLine,"O");
+	if ((mainMenu_throttle==0)&&((c!=1)||(bb)))
+		write_text_inv(tabstop3,menuLine,text_str_100p);
 	else
-		write_text(tabstop1,menuLine,"O");
-	if ((mainMenu_throttle==2)&&((c!=1)||(bb)))
-		write_text_inv(tabstop2+1,menuLine,"O");
-	else
-		write_text(tabstop2+1,menuLine,"O");
-	if ((mainMenu_throttle==3)&&((c!=1)||(bb)))
-		write_text_inv(tabstop3+2,menuLine,"O");
-	else
-		write_text(tabstop3+2,menuLine,"O");
-	if ((mainMenu_throttle==4)&&((c!=1)||(bb)))
-		write_text_inv(tabstop4+3,menuLine,"O");
-	else
-		write_text(tabstop4+3,menuLine,"O");
-	if ((mainMenu_throttle==5)&&((c!=1)||(bb)))
-		write_text_inv(tabstop5+4,menuLine,"O");
-	else
-		write_text(tabstop5+4,menuLine,"O");
+		write_text(tabstop3,menuLine,text_str_100p);
 
+	if ((mainMenu_throttle==2)&&((c!=1)||(bb)))
+		write_text_inv(tabstop5,menuLine,text_str_83p);
+	else
+		write_text(tabstop5,menuLine,text_str_83p);
+
+	if ((mainMenu_throttle==4)&&((c!=1)||(bb)))
+		write_text_inv(tabstop7,menuLine,text_str_75p);
+	else
+		write_text(tabstop7,menuLine,text_str_75p);
+
+	// 2
+	menuLine+=2;
+	write_text(leftMargin,menuLine,text_str_sync_trsh);
+
+	if ((timeslice_mode==0)&&((c!=2)||(bb)))
+		write_text_inv(tabstop3,menuLine,text_str_100p);
+	else
+		write_text(tabstop3,menuLine,text_str_100p);
+
+	if ((timeslice_mode==1)&&((c!=2)||(bb)))
+		write_text_inv(tabstop5,menuLine,text_str_75p);
+	else
+		write_text(tabstop5,menuLine,text_str_75p);
+
+	if ((timeslice_mode==2)&&((c!=2)||(bb)))
+		write_text_inv(tabstop7,menuLine,text_str_50p);
+	else
+		write_text(tabstop7,menuLine,text_str_50p);
+
+	if ((timeslice_mode==3)&&((c!=2)||(bb)))
+		write_text_inv(tabstop9,menuLine,text_str_25p);
+	else
+		write_text(tabstop9,menuLine,text_str_25p);
+
+	// 3
 	menuLine+=2;
 	write_text(leftMargin,menuLine,text_str_frameskip);
-	if ((mainMenu_frameskip==0)&&((c!=2)||(bb)))
+
+	if ((mainMenu_frameskip==0)&&((c!=3)||(bb)))
 		write_text_inv(tabstop1,menuLine,text_str_0);
 	else
 		write_text(tabstop1,menuLine,text_str_0);
-	if ((mainMenu_frameskip==1)&&((c!=2)||(bb)))
+	if ((mainMenu_frameskip==1)&&((c!=3)||(bb)))
 		write_text_inv(tabstop2,menuLine,text_str_1);
 	else
 		write_text(tabstop2,menuLine,text_str_1);
-	if ((mainMenu_frameskip==2)&&((c!=2)||(bb)))
+	if ((mainMenu_frameskip==2)&&((c!=3)||(bb)))
 		write_text_inv(tabstop3,menuLine,text_str_2);
 	else
 		write_text(tabstop3,menuLine,text_str_2);
-	if ((mainMenu_frameskip==3)&&((c!=2)||(bb)))
+	if ((mainMenu_frameskip==3)&&((c!=3)||(bb)))
 		write_text_inv(tabstop4,menuLine,text_str_3);
 	else
 		write_text(tabstop4,menuLine,text_str_3);
-	if ((mainMenu_frameskip==4)&&((c!=2)||(bb)))
+	if ((mainMenu_frameskip==4)&&((c!=3)||(bb)))
 		write_text_inv(tabstop5,menuLine,text_str_4);
 	else
 		write_text(tabstop5,menuLine,text_str_4);
-	if ((mainMenu_frameskip==5)&&((c!=2)||(bb)))
+	if ((mainMenu_frameskip==5)&&((c!=3)||(bb)))
 		write_text_inv(tabstop6,menuLine,text_str_5);
 	else
 		write_text(tabstop6,menuLine,text_str_5);
-	if ((mainMenu_frameskip==-1)&&((c!=2)||(bb)))
+	if ((mainMenu_frameskip==-1)&&((c!=3)||(bb)))
 		write_text_inv(tabstop7,menuLine,text_str_auto);
 	else
 		write_text(tabstop7,menuLine,text_str_auto);
 
+	// 4
 	menuLine+=2;
-
-	if ((c==3)&&(bb))
+	if ((c==4)&&(bb))
 		write_text_inv(leftMargin,menuLine,text_str_cpu_clock);
 	else
 		write_text(leftMargin,menuLine,text_str_cpu_clock);
 
+	// 5
 	menuLine+=2;
-
-
 	write_text(leftMargin,menuLine,text_str_mouse_multiplier);
 
-	if ((mainMenu_mouseMultiplier==1)&&((c!=4)||(bb)))
+	if ((mainMenu_mouseMultiplier==1)&&((c!=5)||(bb)))
 		write_text_inv(tabstop1,menuLine,text_str_1x);
 	else
 		write_text(tabstop1,menuLine,text_str_1x);
 
-	if ((mainMenu_mouseMultiplier==2)&&((c!=4)||(bb)))
+	if ((mainMenu_mouseMultiplier==2)&&((c!=5)||(bb)))
 		write_text_inv(tabstop3,menuLine,text_str_2x);
 	else
 		write_text(tabstop3,menuLine,text_str_2x);
 
-	if ((mainMenu_mouseMultiplier==3)&&((c!=4)||(bb)))
+	if ((mainMenu_mouseMultiplier==3)&&((c!=5)||(bb)))
 		write_text_inv(tabstop5,menuLine,text_str_3x);
 	else
 		write_text(tabstop5,menuLine,text_str_3x);
 
-	if ((mainMenu_mouseMultiplier==4)&&((c!=4)||(bb)))
+	if ((mainMenu_mouseMultiplier==4)&&((c!=5)||(bb)))
 		write_text_inv(tabstop7,menuLine,text_str_4x);
 	else
 		write_text(tabstop7,menuLine,text_str_4x);
 
-	if ((mainMenu_mouseMultiplier==5)&&((c!=4)||(bb)))
+	if ((mainMenu_mouseMultiplier==5)&&((c!=5)||(bb)))
 		write_text_inv(tabstop9,menuLine,text_str_5x);
 	else
 		write_text(tabstop9,menuLine,text_str_5x);
 
+	// 6
 	menuLine+=2;
 	write_text(leftMargin,menuLine,text_str_sound);
-	if ((mainMenu_sound==0)&&((c!=5)||(bb)))
+	if ((mainMenu_sound==0)&&((c!=6)||(bb)))
 		write_text_inv(tabstop1,menuLine,text_str_off);
 	else
 		write_text(tabstop1,menuLine,text_str_off);
 
-	if ((mainMenu_sound==1)&&((c!=5)||(bb)))
+	if ((mainMenu_sound==1)&&((c!=6)||(bb)))
 		write_text_inv(tabstop3,menuLine,text_str_on);
 	else
 		write_text(tabstop3,menuLine,text_str_on);
 
-	if ((mainMenu_sound==2)&&((c!=5)||(bb)))
+	if ((mainMenu_sound==2)&&((c!=6)||(bb)))
 		write_text_inv(tabstop5,menuLine,text_str_faked);
 	else
 		write_text(tabstop5,menuLine,text_str_faked);
 
-
+	// 7
 	menuLine+=2;
-
 	write_text(leftMargin, menuLine,text_str_status_line);
-	if ((!mainMenu_showStatus)&&((c!=6)||(bb)))
+	if ((!mainMenu_showStatus)&&((c!=7)||(bb)))
 		write_text_inv(tabstop1,menuLine, text_str_off);
 	else
 		write_text(tabstop1, menuLine, text_str_off);
-	if ((mainMenu_showStatus)&&((c!=6)||(bb)))
+	if ((mainMenu_showStatus)&&((c!=7)||(bb)))
 		write_text_inv(tabstop3, menuLine,text_str_on);
 	else
 		write_text(tabstop3, menuLine,text_str_on);
 
-	menuLine+=2;
-
-	/*write_text(leftMargin, menuLine,text_str_flash_led);
+	/*menuLine+=2;
+	write_text(leftMargin, menuLine,text_str_flash_led);
 	if ((!flashLED)&&((c!=6)||(bb)))
 		write_text_inv(tabstop1,menuLine, text_str_off);
 	else
@@ -279,83 +301,99 @@ static void draw_mainMenu(int c)
 		write_text_inv(tabstop3, menuLine,text_str_on);
 	else
 		write_text(tabstop3, menuLine,text_str_on);
+	*/
 
-	menuLine+=2;*/
-	if ((c==7)&&(bb))
+	// 8
+	menuLine+=2;
+	if ((c==8)&&(bb))
 		write_text_inv(leftMargin,menuLine,text_str_eject);
 	else
 		write_text(leftMargin, menuLine,text_str_eject);
 	
-
+	// 9
 	menuLine+=2;
-
 	write_text(leftMargin,menuLine,text_str_autosave);
-	if ((!mainMenu_autosave)&&((c!=8)||(bb)))
+	if ((!mainMenu_autosave)&&((c!=9)||(bb)))
 		write_text_inv(tabstop1,menuLine,text_str_off);
 	else
 		write_text(tabstop1,menuLine,text_str_off);
 
-	if ((mainMenu_autosave)&&((c!=8)||(bb)))
+	if ((mainMenu_autosave)&&((c!=9)||(bb)))
 		write_text_inv(tabstop3,menuLine,text_str_on);
 	else
 		write_text(tabstop3,menuLine,text_str_on);
 
-
+	// 10
 	menuLine+=2;
-
 	write_text(leftMargin,menuLine,text_str_sndrate);
 
-	if ((sound_rate==8000)&&((c!=9)||(bb)))
+	if ((sound_rate==8000)&&((c!=10)||(bb)))
 		write_text_inv(tabstop1,menuLine,text_str_8k);
 	else
 		write_text(tabstop1,menuLine,text_str_8k);
 
-	if ((sound_rate==11025)&&((c!=9)||(bb)))
+	if ((sound_rate==11025)&&((c!=10)||(bb)))
 		write_text_inv(tabstop3,menuLine,text_str_11k);
 	else
 		write_text(tabstop3,menuLine,text_str_11k);
 
-	if ((sound_rate==22050)&&((c!=9)||(bb)))
+	if ((sound_rate==22050)&&((c!=10)||(bb)))
 		write_text_inv(tabstop5,menuLine,text_str_22k);
 	else
 		write_text(tabstop5,menuLine,text_str_22k);
 
-	if ((sound_rate==32000)&&((c!=9)||(bb)))
+	if ((sound_rate==32000)&&((c!=10)||(bb)))
 		write_text_inv(tabstop7,menuLine,text_str_32k);
 	else
 		write_text(tabstop7,menuLine,text_str_32k);
 
-	if ((sound_rate==44100)&&((c!=9)||(bb)))
+	if ((sound_rate==44100)&&((c!=10)||(bb)))
 		write_text_inv(tabstop9,menuLine,text_str_44k);
 	else
 		write_text(tabstop9,menuLine,text_str_44k);
 
+	// 11
+	menuLine+=2;
+	write_text(leftMargin,menuLine,text_str_videomode);
+	if ((!mainMenu_ntsc)&&((c!=11)||(bb)))
+		write_text_inv(tabstop1,menuLine,text_str_pal);
+	else
+		write_text(tabstop1,menuLine,text_str_pal);
+
+	if ((mainMenu_ntsc)&&((c!=11)||(bb)))
+		write_text_inv(tabstop3,menuLine,text_str_ntsc);
+	else
+		write_text(tabstop3,menuLine,text_str_ntsc);
+
 
 	menuLine++;
 	write_text(leftMargin,menuLine,text_str_separator);
-	menuLine++;
 
-	if ((c==10)&&(bb))
+	// 12
+	menuLine++;
+	if ((c==12)&&(bb))
 		write_text_inv(leftMargin,menuLine,text_str_reset);
 	else
 		write_text(leftMargin,menuLine,text_str_reset);
 
 	menuLine++;
 	write_text(leftMargin,menuLine,text_str_separator);
-	menuLine++;
 
+	// 13
+	menuLine++;
 	//write_text(leftMargin,20,text_str_separator);
-	if ((c==11)&&(bb))
+	if ((c==13)&&(bb))
 		write_text_inv(leftMargin,menuLine,text_str_run);
 	else
 		write_text(leftMargin,menuLine,text_str_run);
 
 	menuLine++;
 	write_text(leftMargin,menuLine,text_str_separator);
-	menuLine++;
 
+	// 14
+	menuLine++;
 	//write_text(leftMargin,menuLine,text_str_separator);////////////
-	if ((c==12)&&(bb))
+	if ((c==14)&&(bb))
 		write_text_inv(leftMargin,menuLine,text_str_exit);
 	else
 		write_text(leftMargin,menuLine,text_str_exit);
@@ -429,25 +467,25 @@ static int key_mainMenu(int *cp)
 			}
 			else if (hit4)
 			{
-				// run
+				// reset
 				back_c = c;
 				hit0 = 1;
-				c = 10;
+				c = 12;
 			}
 			else if (hit5)
 			{
 				// eject
 				back_c = c;
 				hit0 = 1;
-				c = 7;
+				c = 8;
 			}
 			else if (up)
 			{
 				c--;
-				if (c < 0) c = 12;
+				if (c < 0) c = 14;
 			}
 			else if (down)
-				c=(c+1)%13;
+				c=(c+1)%15;
 			
 			switch(c)
 			{
@@ -461,20 +499,40 @@ static int key_mainMenu(int *cp)
 				case 1:
 					if (left)
 					{
-						if (mainMenu_throttle>1)
-							mainMenu_throttle--;
-						else
-							mainMenu_throttle=5;
+						if (mainMenu_throttle==0)
+							mainMenu_throttle=4;
+						else if (mainMenu_throttle==4)
+							mainMenu_throttle=2;
+						else if (mainMenu_throttle==2)
+							mainMenu_throttle=0;
 					}
 					else if (right)
 					{
-						if (mainMenu_throttle<5)
-							mainMenu_throttle++;
-						else
-							mainMenu_throttle=1;
+						if (mainMenu_throttle==0)
+							mainMenu_throttle=2;
+						else if (mainMenu_throttle==2)
+							mainMenu_throttle=4;
+						else if (mainMenu_throttle==4)
+							mainMenu_throttle=0;
 					}
 					break;
 				case 2:
+					if (left)
+					{
+						if (timeslice_mode>0)
+							timeslice_mode--;
+						else
+							timeslice_mode=3;
+					}
+					else if (right)
+					{
+						if (timeslice_mode<3)
+							timeslice_mode++;
+						else
+							timeslice_mode=0;
+					}
+					break;
+				case 3:
 					if (left)
 					{
 						if (mainMenu_frameskip>-1)
@@ -490,14 +548,14 @@ static int key_mainMenu(int *cp)
 							mainMenu_frameskip=-1;
 					}
 					break;
-				case 3:
+				case 4:
 					if (hit0)
 					{
 						mainMenu_case=MAIN_MENU_CASE_OVERCLOCK;
 						end=1;
 					}
 					break;
-				case 4:
+				case 5:
 					if (left)
 					{
 						if (mainMenu_mouseMultiplier > 1)
@@ -509,7 +567,7 @@ static int key_mainMenu(int *cp)
 							mainMenu_mouseMultiplier++;
 					}
 					break;
-				case 5:
+				case 6:
 					if (left)
 					{
 						if (mainMenu_sound == 1)
@@ -529,12 +587,12 @@ static int key_mainMenu(int *cp)
 							mainMenu_sound = 2;
 					}
 					break;
-				case 6:
+				case 7:
 					if ((left)||(right))
-						mainMenu_showStatus=~mainMenu_showStatus;
+						mainMenu_showStatus=!mainMenu_showStatus;
 					break;
 				/*case 7:
-					/*if ((left)||(right))
+					if ((left)||(right))
 					{
 						if (flashLED)
 							flashLED=0;
@@ -542,7 +600,7 @@ static int key_mainMenu(int *cp)
 							flashLED=1;
 					}
 					break;*/
-				case 7:
+				case 8:
 					// eject
 					if (hit0)
 					{
@@ -550,13 +608,13 @@ static int key_mainMenu(int *cp)
 						end=1;
 					}
 					break;
-				case 8:
+				case 9:
 					if ((left)||(right))
 					{
 						mainMenu_autosave = (mainMenu_autosave == 0) ? 1 : 0;
 					}
 					break;
-				case 9:
+				case 10:
 					if ((left)||(right))
 					{
 						static int rates[] = { 8000, 11025, 22050, 32000, 44100 };
@@ -569,21 +627,27 @@ static int key_mainMenu(int *cp)
 						sound_rate = rates[sel];
 					}
 					break;
-				case 10:
+				case 11:
+					if ((left)||(right))
+					{
+						mainMenu_ntsc = !mainMenu_ntsc;
+					}
+					break;
+				case 12:
 					if (hit0)
 					{
 						mainMenu_case=MAIN_MENU_CASE_RESET;
 						end=1;
 					}
 					break;
-				case 11:
+				case 13:
 					if (hit0)
 					{
 						mainMenu_case=MAIN_MENU_CASE_RUN;
 						end=1;
 					}
 					break;
-				case 12:
+				case 14:
 					if (hit0)
 					{
 						mainMenu_case=MAIN_MENU_CASE_REBOOT;
@@ -689,10 +753,7 @@ int run_mainMenu()
 			mainMenu_case=1;
 			break;
 		case MAIN_MENU_CASE_REBOOT:
-#ifdef DREAMCAST
-			arch_reboot();
-#else
-#ifdef GP2X
+			gp2x_stop_sound();
 			SDL_Quit();
 
 			if (gp2xClockSpeed != -1)
@@ -702,14 +763,12 @@ int run_mainMenu()
 			}
 			sync();
 
-			if (relaunchGP2XMenu)
+			if (!norelaunchGP2XMenu)
 			{
 				chdir("/usr/gp2x");
 				execl("/usr/gp2x/gp2xmenu", "/usr/gp2x/gp2xmenu", NULL);
 			}
-#endif
 			exit(0);
-#endif
 			break;
 		default:
 			mainMenu_case=-1;
@@ -722,3 +781,59 @@ int run_mainMenu()
 	return mainMenu_case;
 #endif
 }
+
+extern char uae4all_image_file[128];
+extern char uae4all_image_file2[128];
+
+typedef struct _cmdline_opt
+{
+	char *optname;
+	int  len; // if 0, it means int
+	void *opt;
+} cmdline_opt;
+
+static cmdline_opt cmdl_opts[] =
+{
+	{ "-norelaunchmenu",  0, &norelaunchGP2XMenu },
+	{ "-statusln",        0, &mainMenu_showStatus },
+	{ "-mousemultiplier", 0, &mainMenu_mouseMultiplier },
+	{ "-sound",           0, &mainMenu_sound },
+	{ "-soundrate",       0, &sound_rate },
+	{ "-autosave",        0, &mainMenu_autosave },
+	{ "-systemclock",     0, &mainMenu_throttle },
+	{ "-syncthreshold",   0, &timeslice_mode },
+	{ "-frameskip",       0, &mainMenu_frameskip },
+	{ "-skipintro",       0, &skipintro },
+	{ "-ntsc",            0, &mainMenu_ntsc },
+	{ "-kick",            sizeof(romfile), romfile },
+	{ "-df0",             sizeof(uae4all_image_file), uae4all_image_file },
+	{ "-df1",             sizeof(uae4all_image_file2), uae4all_image_file2 },
+};
+
+
+void parse_cmdline(int argc, char **argv)
+{
+	int arg, i, found;
+
+	for (arg = 1; arg < argc-1; arg++)
+	{
+		for (i = found = 0; i < sizeof(cmdl_opts) / sizeof(cmdl_opts[0]); i++)
+		{
+			if (strcmp(argv[arg], cmdl_opts[i].optname) == 0)
+			{
+				arg++;
+				if (cmdl_opts[i].len == 0)
+					*(int *)(cmdl_opts[i].opt) = atoi(argv[arg]);
+				else
+				{
+					strncpy((char *)cmdl_opts[i].opt, argv[arg], cmdl_opts[i].len);
+					((char *)cmdl_opts[i].opt)[cmdl_opts[i].len-1] = 0;
+				}
+				found = 1;
+				break;
+			}
+		}
+		if (!found) printf("skipping unknown option: \"%s\"\n", argv[arg]);
+	}
+}
+

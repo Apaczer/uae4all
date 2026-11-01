@@ -85,12 +85,12 @@ extern int keycode2amiga(SDL_keysym *prKeySym);
 extern int uae4all_keystate[];
 
 int emulating=0;
-char uae4all_image_file[128];
-char uae4all_image_file2[128];
+char uae4all_image_file[128]  = { 0, };
+char uae4all_image_file2[128] = { 0, };
 
 int drawfinished=0;
 
-extern int mainMenu_throttle, mainMenu_frameskip, mainMenu_sound, mainMenu_case, mainMenu_autosave;
+extern int mainMenu_throttle, mainMenu_frameskip, mainMenu_sound, mainMenu_case, mainMenu_autosave, mainMenu_ntsc;
 
 static void getChanges(void)
 {
@@ -137,14 +137,15 @@ int gui_init (void)
     {
 	emulating=0;
 #if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
-	uae4all_image_file[0]=0;
-	uae4all_image_file2[0]=0;
+	//uae4all_image_file[0]=0;
+	//uae4all_image_file2[0]=0;
 #else
-	strcpy(uae4all_image_file,"prueba.adz");
-	strcpy(uae4all_image_file2,"prueba2.adz");
+	//strcpy(uae4all_image_file,"prueba.adz");
+	//strcpy(uae4all_image_file2,"prueba2.adz");
 #endif
 	init_text(1);
-	run_mainMenu();
+	if (!uae4all_image_file[0])
+		run_mainMenu();
 	quit_text();
 	vkbd_init();
 

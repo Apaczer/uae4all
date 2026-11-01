@@ -88,7 +88,7 @@ extern uae_u16 INTREQR (void);
 #define MAXVPOS_NTSC 262
 //#define MINFIRSTLINE_PAL 21
 #define MINFIRSTLINE_PAL 42
-#define MINFIRSTLINE_NTSC 18
+#define MINFIRSTLINE_NTSC 34//18
 //#define VBLANK_ENDLINE_PAL 29
 #define VBLANK_ENDLINE_PAL 32
 #define VBLANK_ENDLINE_NTSC 24
@@ -135,4 +135,5 @@ extern int bpl_off[8];
 /* Compute the number of bitplanes from a value written to BPLCON0  */
 #define GET_PLANES(x) ((((x) >> 12) & 7) | (((x) & 0x10) >> 1))
 
+extern unsigned int beamcon0, new_beamcon0;
 #endif

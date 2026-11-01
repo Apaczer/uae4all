@@ -31,7 +31,7 @@ extern unsigned long next_sample_evtime;
 int produce_sound=0;
 int changed_produce_sound=0;
 
-int sound_rate=DEFAULT_SOUND_FREQ;
+unsigned int sound_rate=DEFAULT_SOUND_FREQ;
 
 static uae_u16 sndbuffer[4][SNDBUFFER_LEN+32] UAE4ALL_ALIGN;
 unsigned n_callback_sndbuff, n_render_sndbuff;
@@ -101,24 +101,39 @@ static int have_sound = 0;
 
 void sound_default_evtime(void)
 {
-    switch(m68k_speed)
-    {
-	case 0:
-	case 1:
-	    	// SOUND_EVTIME_NORMAL;
-		scaled_sample_evtime=MAXHPOS_PAL*244*VBLANK_HZ_PAL*CYCLE_UNIT/sound_rate;
-		break;
-	case 2:
-	case 3:
-		// SOUND_EVTIME_THROTTLE;
-		scaled_sample_evtime=MAXHPOS_PAL*270*VBLANK_HZ_PAL*CYCLE_UNIT/sound_rate;
-		break;
-	default:
-		// SOUND_EVTIME_SUPER_THROTTLE;
-		scaled_sample_evtime=MAXHPOS_PAL*312*VBLANK_HZ_PAL*CYCLE_UNIT/sound_rate;
-		break;
-    }
-    schedule_audio();
+	int pal = beamcon0 & 0x20;
+	switch(m68k_speed)
+	{
+		case 6:
+			scaled_sample_evtime=(unsigned)(MAXHPOS_PAL*MAXVPOS_PAL*VBLANK_HZ_PAL*CYCLE_UNIT/1.86)/sound_rate;
+			break;
+
+		case 5:
+		case 4: // ~4/3 234
+			if (pal)
+				scaled_sample_evtime=(MAXHPOS_PAL*244*VBLANK_HZ_PAL*CYCLE_UNIT)/sound_rate; // ???
+			else
+				scaled_sample_evtime=(MAXHPOS_NTSC*255*VBLANK_HZ_NTSC*CYCLE_UNIT)/sound_rate;
+			break;
+
+		case 3:
+		case 2: // ~8/7 273
+			if (pal)
+				scaled_sample_evtime=(MAXHPOS_PAL*270*VBLANK_HZ_PAL*CYCLE_UNIT)/sound_rate;
+			else
+				scaled_sample_evtime=(MAXHPOS_NTSC*255*VBLANK_HZ_NTSC*CYCLE_UNIT)/sound_rate;
+			break;
+
+		case 1:
+		default: // MAXVPOS_PAL?
+			if (pal)
+				scaled_sample_evtime=(MAXHPOS_PAL*313*VBLANK_HZ_PAL*CYCLE_UNIT)/sound_rate;
+			else
+				scaled_sample_evtime=(MAXHPOS_NTSC*MAXVPOS_NTSC*VBLANK_HZ_NTSC*CYCLE_UNIT)/sound_rate + 1;
+			break;
+	}
+
+	schedule_audio();
 }
 
 
@@ -131,6 +146,7 @@ static void *sound_thread(void *unused)
 	int cnt = 0, sem_val = 0;
 	sound_thread_active = 1;
 
+	printf("sound_thread started\n");
 	for (;;)
 	{
 		sem_getvalue(&sound_sem, &sem_val);
@@ -151,19 +167,19 @@ static void *sound_thread(void *unused)
 		cnt++;
 	}
 
+	printf("leaving sound_thread\n");
 	return NULL;
 }
 
 static int gp2x_start_sound(int rate, int bits, int stereo)
 {
-	int frag = 0, bsize, buffers, ret;
-
-	// if no settings change, we don't need to do anything
-	if (rate == s_oldrate && s_oldbits == bits && s_oldstereo == stereo) return 0;
+	int frag = 0, buffers, ret;
+	unsigned int bsize;
 
 	if (!sound_thread_active)
 	{
 		// init sem, start sound thread
+		printf("starting sound thread..\n");
 		pthread_t thr;
 		ret = sem_init(&sound_sem, 0, 0);
 		if (ret != 0) printf("sem_init() failed: %i, errno=%i\n", ret, errno);
@@ -175,13 +191,16 @@ static int gp2x_start_sound(int rate, int bits, int stereo)
 	//if (sounddev > 0) close(sounddev);
 	if (sounddev <= 0)
 	{
-		sounddev = open("/dev/dsp", O_WRONLY|O_ASYNC);
+		sounddev = open("/dev/dsp", O_WRONLY);
 		if (sounddev == -1)
 		{
 			printf("open(\"/dev/dsp\") failed with %i\n", errno);
 			return -1;
 		}
 	}
+
+	// if no settings change, we don't need to do anything
+	if (rate == s_oldrate && s_oldbits == bits && s_oldstereo == stereo) return 0;
 
 	ioctl(sounddev, SNDCTL_DSP_SPEED,  &rate);
 	ioctl(sounddev, SNDCTL_DSP_SETFMT, &bits);
@@ -202,16 +221,18 @@ static int gp2x_start_sound(int rate, int bits, int stereo)
 }
 
 
-static void gp2x_sound_write(void *buff, int len)
+// this is meant to be called only once on exit
+void gp2x_stop_sound(void)
 {
-	write(sounddev, buff, len);
-}
-
-
-static void gp2x_stop_sound(void)
-{
-	sound_thread_exit = 1;
-	sem_post(&sound_sem);
+	if (sound_thread_exit)
+		printf("don't call gp2x_stop_sound more than once!\n");
+	if (sound_thread_active)
+	{
+		printf("stopping sound thread..\n");
+		sound_thread_exit = 1;
+		sem_post(&sound_sem);
+		usleep(100*1000);
+	}
 
 	if (sounddev > 0)
 		close(sounddev);
@@ -227,7 +248,6 @@ void finish_sound_buffer (void)
 	dbg("sound.c : finish_sound_buffer");
 #endif
 
-	//gp2x_sound_write(sndbuffer, SNDBUFFER_LEN);
 	//printf("finish %i\n", wrcnt);
 #if 0
 	write(sounddev, sndbuffer[0], SNDBUFFER_LEN);
@@ -251,7 +271,7 @@ int setup_sound (void)
     dbg("sound.c : setup_sound");
 #endif
 
-    if (gp2x_start_sound(sound_rate, AUDIO_S16, 0) != 0)
+    if (gp2x_start_sound(sound_rate, 16, 0) != 0)
 	    return 0;
 
 #ifdef DEBUG_SOUND
@@ -266,7 +286,7 @@ static int open_sound (void)
     dbg("sound.c : open_sound");
 #endif
 
-    if (gp2x_start_sound(sound_rate, AUDIO_S16, 0) != 0)
+    if (gp2x_start_sound(sound_rate, 16, 0) != 0)
 	    return 0;
 
     sound_default_evtime();
@@ -289,7 +309,9 @@ void close_sound (void)
     if (!have_sound)
 	return;
 
-    gp2x_stop_sound();
+    // testing shows that reopenning sound device is not a good idea on gp2x (causes random sound driver crashes)
+    // we will close it on real exit instead
+    //gp2x_stop_sound();
     have_sound = 0;
 
 #ifdef DEBUG_SOUND
