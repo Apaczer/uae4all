@@ -111,6 +111,7 @@ int m68k_reset(void)
 }
 
 
+#if 0 // inlined
 int m68k_emulate(int cycles)
 {
 	cycles -= 1;
@@ -143,11 +144,13 @@ int m68k_emulate(int cycles)
 
 	return 0;
 }
+#endif
 
 
 /* helper funcs */
 
 // must call this whenever M68KCONTEXT.interrupts[0] gets changed
+#if 0 // inlined
 void m68k_irq_update(int end_timeslice)
 {
 	int level, ints = M68KCONTEXT.interrupts[0];
@@ -163,6 +166,7 @@ void m68k_irq_update(int end_timeslice)
 		m68k_context.cycles = 24 - 1;
 	}
 }
+#endif
 
 
 static unsigned int check_pc(unsigned int pc)

@@ -63,7 +63,7 @@ MORE_CFLAGS+= -DUSE_ZFILE
 MORE_CFLAGS+= -DFAME_INTERRUPTS_PATCH
 #MORE_CFLAGS+= -DFAME_INTERRUPTS_SECURE_PATCH
 
-# Turrican3 becomes unstable if this is not enabled
+# Some games (like Turrican2,3) becomes unstable if this is not enabled
 MORE_CFLAGS+= -DSAFE_MEMORY_ACCESS
 
 #MORE_CFLAGS+= -DUAE_MEMORY_ACCESS

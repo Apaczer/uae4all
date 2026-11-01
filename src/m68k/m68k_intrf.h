@@ -95,9 +95,10 @@ void m68k_release_timeslice(void);
 int  m68k_raise_irq(int level, int vector);
 int  m68k_lower_irq(int level);
 int  m68k_reset(void);
-int  m68k_emulate(int cycles);
+//int  m68k_emulate(int cycles);
+//void m68k_irq_update(int end_timeslice);
 #define M68K_AUTOVECTORED_IRQ 0 // not going to use vector number
-void m68k_irq_update(int end_timeslice);
+
 
 typedef struct
 {
@@ -107,6 +108,27 @@ typedef struct
 } M68KCONTEXT_t;
 
 extern M68KCONTEXT_t M68KCONTEXT;
+
+#define m68k_emulate(cycles) \
+{ \
+	m68k_context.cycles = (cycles) - 1;  \
+	CycloneRun(&m68k_context); \
+	M68KCONTEXT.cycles_counter += (cycles) - 1 - m68k_context.cycles; \
+}
+
+#define m68k_irq_update(end_timeslice) \
+{ \
+	int level, ints = M68KCONTEXT.interrupts[0]; \
+	for (level = 7; level && !(ints & (1 << level)); level--); \
+	m68k_context.irq = level; \
+\
+	if ((end_timeslice) && m68k_context.cycles >= 0 && !(m68k_context.state_flags & 1)) \
+	{ \
+		M68KCONTEXT.cycles_counter += 24 - 1 - m68k_context.cycles; \
+		m68k_context.cycles = 24 - 1; \
+	} \
+}
+
 
 #define IO_CYCLE        m68k_context.cycles
 
