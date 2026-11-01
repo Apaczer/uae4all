@@ -16,7 +16,7 @@
 // #define STOP_WHEN_COPPER
 #define STOP_WHEN_NASTY
 // #define CUSTOM_PREFETCHS
-
+typedef int sprbuf_res_t, cclockres_t, hwres_t,	bplres_t;
 
 #include "sysconfig.h"
 #include "sysdeps.h"
@@ -399,6 +399,166 @@ void notice_new_xcolors (void)
 	docols(color_tables[1]+i);
     }
 }
+
+//////////////////////////////////////////////////////
+static void do_playfield_collisions (void)
+{
+   int bplres = GET_RES (bplcon0);
+    hwres_t ddf_left = thisline_decision.plfleft * 2 << bplres;
+    hwres_t hw_diwlast = coord_window_to_diw_x (thisline_decision.diwlastword);
+    hwres_t hw_diwfirst = coord_window_to_diw_x (thisline_decision.diwfirstword);
+    int i, collided, minpos, maxpos;
+    int planes = 6;
+
+    if (clxcon_bpl_enable == 0) {
+	clxdat |= 1;
+	return;
+    }
+    if (clxdat & 1)
+	{
+	return;
+	}
+    collided = 0;
+    minpos = thisline_decision.plfleft * 2;
+    if (minpos < hw_diwfirst)
+	minpos = hw_diwfirst;
+    maxpos = thisline_decision.plfright * 2;
+    if (maxpos > hw_diwlast)
+	maxpos = hw_diwlast;
+    for (i = minpos; i < maxpos && !collided; i+= 32) {
+	int offs = ((i << bplres) - ddf_left) >> 3;
+	int j;
+	uae_u32 total = 0xffffffff;
+	for (j = 0; j < planes; j++) {
+	    int ena = (clxcon_bpl_enable >> j) & 1;
+	    int match = (clxcon_bpl_match >> j) & 1;
+	    uae_u32 t = 0xffffffff;
+	    if (ena) {
+		if (j < thisline_decision.nr_planes) {
+		    t = *(uae_u32 *)(line_data[next_lineno] + offs + 2 * j * MAX_WORDS_PER_LINE);
+		    t ^= (match & 1) - 1;
+		} else {
+		    t = (match & 1) - 1;
+		}
+	    }
+	    total &= t;
+	}
+	if (total) {
+	    collided = 1;
+#if 0
+	    {
+		int k;
+		for (k = 0; k < 1; k++) {
+		    uae_u32 *ldata = (uae_u32 *)(line_data[next_lineno] + offs + 2 * k * MAX_WORDS_PER_LINE);
+		    *ldata ^= 0x5555555555;
+		}
+	    }
+#endif
+
+	}
+    }
+    if (collided)
+	clxdat |= 1;	
+}
+
+static void do_sprite_collisions (void)
+{
+	
+    int nr_sprites = curr_drawinfo[next_lineno].nr_sprites;
+    int first = curr_drawinfo[next_lineno].first_sprite_entry;
+    int i;
+    unsigned int collision_mask = clxmask[clxcon >> 12];
+    int bplres = GET_RES (bplcon0);
+    hwres_t ddf_left = thisline_decision.plfleft * 2 << bplres;
+    hwres_t hw_diwlast = coord_window_to_diw_x (thisline_decision.diwlastword);
+    hwres_t hw_diwfirst = coord_window_to_diw_x (thisline_decision.diwfirstword);
+
+    if (clxcon_bpl_enable == 0) {
+	clxdat |= 0x1FE;
+	return;
+    }
+
+    for (i = 0; i < nr_sprites; i++) {
+	struct sprite_entry *e = curr_sprite_entries + first + i;
+	sprbuf_res_t j;
+	sprbuf_res_t minpos = e->pos;
+	sprbuf_res_t maxpos = e->max;
+	hwres_t minp1 = minpos >> sprite_buffer_res;
+	hwres_t maxp1 = maxpos >> sprite_buffer_res;
+
+	if (maxp1 > hw_diwlast)
+	    maxpos = hw_diwlast << sprite_buffer_res;
+	if (maxp1 > thisline_decision.plfright * 2)
+	    maxpos = thisline_decision.plfright * 2 << sprite_buffer_res;
+	if (minp1 < hw_diwfirst)
+	    minpos = hw_diwfirst << sprite_buffer_res;
+	if (minp1 < thisline_decision.plfleft * 2)
+	    minpos = thisline_decision.plfleft * 2 << sprite_buffer_res;
+
+	for (j = minpos; j < maxpos; j++) {
+	    int sprpix = spixels[e->first_pixel + j - e->pos] & collision_mask;
+	    int k, offs, match = 1;
+
+	    if (sprpix == 0)
+		continue;
+
+	    offs = ((j << bplres) >> sprite_buffer_res) - ddf_left;
+	    sprpix = sprite_ab_merge[sprpix & 255] | (sprite_ab_merge[sprpix >> 8] << 2);
+	    sprpix <<= 1;
+
+	    /* Loop over number of playfields.  */
+	    for (k = 1; k >= 0; k--) {
+		unsigned int l;
+		unsigned int planes = 6;
+		if (bplcon0 & 0x400)
+		    match = 1;
+		for (l = k; match && l < planes; l += 2) {
+		    unsigned int t = 0;
+		    if (l < thisline_decision.nr_planes) {
+			uae_u32 *ldata = (uae_u32 *)(line_data[next_lineno] + 2 * l * MAX_WORDS_PER_LINE);
+			uae_u32 word = ldata[offs >> 5];
+			t = (word >> (31 - (offs & 31))) & 1;
+#if 0 /* debug: draw collision mask */
+			if (1) {
+			    int m;
+			    for (m = 0; m < 5; m++) {
+				ldata = (uae_u32 *)(line_data[next_lineno] + 2 * m * MAX_WORDS_PER_LINE);
+				ldata[(offs >> 5) + 1] |= 15 << (31 - (offs & 31));
+			    }
+			}
+#endif
+		    }
+		    if (clxcon_bpl_enable & (1 << l)) {
+			if (t != ((clxcon_bpl_match >> l) & 1))
+			    match = 0;
+		    }
+		}
+		if (match) {
+#if 0 /* debug: mark lines where collisions are detected */
+		    if (0) {
+			int l;
+			for (l = 0; l < 5; l++) {
+			    uae_u32 *ldata = (uae_u32 *)(line_data[next_lineno] + 2 * l * MAX_WORDS_PER_LINE);
+			    ldata[(offs >> 5) + 1] |= 15 << (31 - (offs & 31));
+			}
+		    }
+#endif
+		    clxdat |= sprpix << (k * 4);
+		}
+	    }
+	}
+    }
+#if 0
+  {
+	static int olx;
+	if (clxdat != olx)
+	    printf ("%d: %04.4X\n", vpos, clxdat);
+	olx = clxdat;
+    }
+#endif
+
+}
+
 
 static _INLINE_ void do_sprites (int currhp);
 
@@ -3313,7 +3473,12 @@ static void hsync_handler (void)
     sync_copper_with_cpu (maxhpos, 0, 0x8A);
 
     finish_decisions ();
- 
+ if (thisline_decision.plfleft != -1) {
+//	if (currprefs.collision_level > 1)
+	    do_sprite_collisions ();
+//	if (currprefs.collision_level > 2)
+	    do_playfield_collisions ();
+   }
     hsync_record_line_state (next_lineno, thisline_changed);
 
     eventtab[ev_hsync].evtime += get_cycles () - eventtab[ev_hsync].oldcycles;

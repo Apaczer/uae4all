@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
-
+#include<SDL.h>
 #include "menu.h"
 
 #include <sys/stat.h>
@@ -21,6 +21,7 @@ char *text_str_clock_separator="----------------------------------";
 char *text_str_clock_title=    "            Overclocking           -";
 int menuClockRate = -1;
 extern int gp2xClockSpeed;
+extern SDL_Joystick *uae4all_joy0;
 
 
 static void draw_overclockMenu(int c)
@@ -34,9 +35,9 @@ static void draw_overclockMenu(int c)
 	r.x=80-64; r.y=0; r.w=110+64+64; r.h=240;
 
 	text_draw_background();
-	text_draw_window(80-64,12,160+64+64,220,text_str_clock_title);
+	text_draw_window(2,3,40,25,text_str_clock_title);
 
-	menuLine = 2;
+	menuLine = 3;
 	write_text(3, menuLine, "GP2X clock speed");
 	menuLine+=2;
 	write_text(3, menuLine, text_str_clock_separator);
@@ -95,8 +96,21 @@ static void draw_overclockMenu(int c)
 
 static int key_overclockMenu(int *c)
 {
+	
+	static int delay=0;
 	int end=0;
 	int left=0, right=0, up=0, down=0, hit0=0, hit1=0;
+	delay++;
+	if (delay<10) return end;
+	delay=0;
+	SDL_Joystick *joy = uae4all_joy0 ;
+	SDL_JoystickUpdate ();
+	if (SDL_JoystickGetButton(joy, GP2X_BUTTON_UP)) up=1;
+	else if (SDL_JoystickGetButton(joy, GP2X_BUTTON_DOWN)) down=1;
+	else if (SDL_JoystickGetButton(joy, GP2X_BUTTON_B)) hit0=1;
+	else if (SDL_JoystickGetButton(joy, GP2X_BUTTON_START)) hit1=1;
+	else if (SDL_JoystickGetButton(joy, GP2X_BUTTON_X)) hit1=1;
+/*
 	SDL_Event event;
 
 	while (SDL_PollEvent(&event) > 0)
@@ -111,8 +125,10 @@ static int key_overclockMenu(int *c)
                  case GP2X_BUTTON_DOWN: down=1; break;
                  case GP2X_BUTTON_B: hit0=1; break;
 				 case GP2X_BUTTON_START: hit1=1; break;
+				 case GP2X_BUTTON_X: hit1=1; break;
              }
         }
+*/
 
 		if (hit0)
 		{
@@ -195,7 +211,7 @@ static int key_overclockMenu(int *c)
 				menuClockRate = -1;
 			}
 		}
-	}
+	//}
 
 	return end;
 }

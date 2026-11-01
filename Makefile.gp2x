@@ -1,8 +1,8 @@
-#CROSS  = arm-linux-
+#CROSS  = C:/devkitGP2X/bin/arm-linux-
 #SDL_BASE = C:/devkitGP2X/bin/arm-linux-
 CROSS  = /opt/open2x/gcc-4.1.1-glibc-2.3.6/bin/arm-open2x-linux-
 SDL_BASE = /opt/open2x/gcc-4.1.1-glibc-2.3.6/bin/
-MORE_CFLAGS += -I/opt/open2x/gcc-4.1.1-glibc-2.3.6/include/
+MORE_CFLAGS += -I/opt/open2x/gcc-4.1.1-glibc-2.3.6/include/ 
 
 NAME   = uae4all.gpe
 O      = o
@@ -24,13 +24,15 @@ endif
 
 DEFAULT_CFLAGS = `$(SDL_BASE)sdl-config --cflags`
 #LDFLAGS        = `$(SDL_BASE)sdl-config --libs` -lSDL_mixer -lsmpeg -lstdc++ -lSDL -lmikmod -lm -lz -static
-LDFLAGS        = `$(SDL_BASE)sdl-config --libs` -lSDL -lz -static
+#LDFLAGS        =  `$(SDL_BASE)sdl-config --libs` -lm -lSDL_gfx  -static -lSDL -ljpeg -lpng12 -lz -lSDL_mixer -lmikmod -lvorbisidec -lmad -lSDL \
+-lpthread -lgcc -lc -ldl -msoftfloat -lm 
+#`$(SDL_BASE)sdl-config --libs` -lSDL -lz -static -lSDL_gfx 
+LDFLAGS = -L/opt/open2x/gcc-4.1.1-glibc-2.3.6/lib -Wl,-rpath,/opt/open2x/gcc-4.1.1-glibc-2.3.6/lib   -lSDL  -lpthread  -lz -static -lSDL_image -lpng12 
 
-
-MORE_CFLAGS += -DGP2X
+MORE_CFLAGS += -DGP2X 
 #-Wall -fprofile-use
-
-MORE_CFLAGS += -Isrc -Isrc/gp2x -Isrc/menu -Isrc/include -Isrc/gp2x/menu -Isrc/vkbd -fomit-frame-pointer -Wno-unused -Wno-format -DUSE_SDL -DGCCCONSTFUNC="__attribute__((const))" -DUSE_UNDERSCORE -fno-exceptions -DUNALIGNED_PROFITABLE -DOPTIMIZED_FLAGS -DSHM_SUPPORT_LINKS=0 -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
+# -lSDL_mixer -lSDL_image 
+MORE_CFLAGS +=   -I"/opt/open2x/gcc-4.1.1-glibc-2.3.6/include/c++/3.4.6"  -I"/opt/open2x/gcc-4.1.1-glibc-2.3.6/include"   -I"/opt/open2x/gcc-4.1.1-glibc-2.3.6/include/SDL" -Isrc -Isrc/gp2x -Isrc/menu -Isrc/include -Isrc/gp2x/menu -Isrc/vkbd -fomit-frame-pointer -Wno-unused -Wno-format -DUSE_SDL -DGCCCONSTFUNC="__attribute__((const))" -DUSE_UNDERSCORE -fno-exceptions -DUNALIGNED_PROFITABLE -DOPTIMIZED_FLAGS -DSHM_SUPPORT_LINKS=0 -DOS_WITHOUT_MEMORY_MANAGEMENT -DVKBD_ALWAYS
 #-DMENU_MUSIC
 
 MORE_CFLAGS += -DROM_PATH_PREFIX=\"./\" -DDATA_PREFIX=\"./data/\" -DSAVE_PREFIX=\"./saves/\"
@@ -63,7 +65,7 @@ MORE_CFLAGS+= -DUSE_ZFILE
 MORE_CFLAGS+= -DFAME_INTERRUPTS_PATCH
 #MORE_CFLAGS+= -DFAME_INTERRUPTS_SECURE_PATCH
 
-# Some games (like Turrican2,3) becomes unstable if this is not enabled
+# Turrican3 becomes unstable if this is not enabled
 MORE_CFLAGS+= -DSAFE_MEMORY_ACCESS
 
 #MORE_CFLAGS+= -DUAE_MEMORY_ACCESS
@@ -131,6 +133,8 @@ OBJS =	\
 	src/gp2x/menu/menu_load.o \
 	src/gp2x/menu/menu_main.o \
 	src/gp2x/menu/menu_overclock.o \
+	src/gp2x/menu/menu_misc.o \
+	src/gp2x/menu/asmutils.o\
 	src/gp2x/cpuspeed/cpu_speed.o
 
 
@@ -175,7 +179,7 @@ endif
 CPPFLAGS  = $(CFLAGS)
 
 $(PROG): $(OBJS)
-	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LDFLAGS)
+	$(CXX) $(CFLAGS) -o $(PROG) $(OBJS) $(LDFLAGS)
 ifndef DEBUG
 	$(STRIP) $(PROG)
 endif

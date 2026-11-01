@@ -63,8 +63,8 @@ static int fps_counter = 0, fps_counter_changed = 0;
 
 #define GFXVIDINFO_PIXBYTES 2
 #define GFXVIDINFO_WIDTH 320
-#define GFXVIDINFO_HEIGHT 240
-#define MAXBLOCKLINES 240
+//#define GFXVIDINFO_HEIGHT 256
+#define MAXBLOCKLINES 256
 #define VISIBLE_LEFT_BORDER 72
 #define VISIBLE_RIGHT_BORDER 392
 #define LINETOSCR_X_ADJUST_BYTES 144
@@ -85,6 +85,16 @@ static int interlace_seen = 0;
 extern int drawfinished;
 
 extern int mainMenu_showStatus;
+
+extern int mainMenu_drives;
+
+extern char *statusmessages[];
+extern int enableHWscaling;
+extern int GFXVIDINFO_HEIGHT;
+
+extern int showmsg;
+static int delay=0;
+  
 
 /* Lookup tables for dual playfields.  The dblpf_*1 versions are for the case
    that playfield 1 has the priority, dbplpf_*2 are used if playfield 2 has
@@ -432,10 +442,10 @@ static line_draw_func *pfield_do_linetoscr=(line_draw_func *)pfiled_do_linetoscr
 static void pfield_do_fill_line(int start, int stop)
 {
     register uae_u16 *b = &(((uae_u16 *)xlinebuffer)[start]);
-    register xcolnr col = colors_for_drawing.acolors[0];
+	register xcolnr col = colors_for_drawing.acolors[0];
     register int i;
     register int max=(stop-start);
-    for (i = 0; i < max; i++,b++)
+    for (i = 0; i < max; i++,b++,start ++)
 	*b = col;
 }
 
@@ -557,6 +567,70 @@ static __inline__ void fill_line (void)
     }
 */
 }
+
+/* H-A-M-
+static unsigned int ham_lastcolor;
+
+static int ham_decode_pixel;
+
+ Decode HAM in the invisible portion of the display (left of VISIBLE_LEFT_BORDER),
+   but don't draw anything in.  This is done to prepare HAM_LASTCOLOR for later,
+   when decode_ham runs.  
+static void init_ham_decoding (void)
+{
+    int unpainted_amiga = res_shift_from_window (unpainted);
+    ham_decode_pixel = src_pixel;
+    ham_lastcolor = color_reg_get (&colors_for_drawing, 0);
+
+    if (! bplham || (bplplanecnt != 6 && ((currprefs.chipset_mask & CSMASK_AGA) == 0 || bplplanecnt != 8))) {
+		if (unpainted_amiga > 0) {
+			int pv = pixdata.apixels[ham_decode_pixel + unpainted_amiga - 1];
+			ham_lastcolor = colors_for_drawing.color_regs_ecs[pv];
+		}
+    } else {
+	if (bplplanecnt == 6) { /* OCS/ECS mode HAM6 
+	    while (unpainted_amiga-- > 0) {
+		int pv = pixdata.apixels[ham_decode_pixel++];
+		switch (pv & 0x30) {
+		case 0x00: ham_lastcolor = colors_for_drawing.color_regs_ecs[pv]; break;
+		case 0x10: ham_lastcolor &= 0xFF0; ham_lastcolor |= (pv & 0xF); break;
+		case 0x20: ham_lastcolor &= 0x0FF; ham_lastcolor |= (pv & 0xF) << 8; break;
+		case 0x30: ham_lastcolor &= 0xF0F; ham_lastcolor |= (pv & 0xF) << 4; break;
+		}
+	    }
+	}
+    }
+}
+
+static void decode_ham (int pix, int stoppos)
+{
+    int todraw_amiga = res_shift_from_window (stoppos - pix);
+
+    if (! bplham || (bplplanecnt != 6 && ((currprefs.chipset_mask & CSMASK_AGA) == 0 || bplplanecnt != 8))) {
+	while (todraw_amiga-- > 0) {
+	    int pv = pixdata.apixels[ham_decode_pixel];
+		ham_lastcolor = colors_for_drawing.color_regs_ecs[pv];
+
+	    ham_linebuf[ham_decode_pixel++] = ham_lastcolor;
+	}
+    } else {
+	if (bplplanecnt == 6) { /* OCS/ECS mode HAM6 
+	    while (todraw_amiga-- > 0) {
+		int pv = pixdata.apixels[ham_decode_pixel];
+		switch (pv & 0x30) {
+		case 0x00: ham_lastcolor = colors_for_drawing.color_regs_ecs[pv]; break;
+		case 0x10: ham_lastcolor &= 0xFF0; ham_lastcolor |= (pv & 0xF); break;
+		case 0x20: ham_lastcolor &= 0x0FF; ham_lastcolor |= (pv & 0xF) << 8; break;
+		case 0x30: ham_lastcolor &= 0xF0F; ham_lastcolor |= (pv & 0xF) << 4; break;
+		}
+		ham_linebuf[ham_decode_pixel++] = ham_lastcolor;
+	    }
+	}
+    }
+}
+
+*/
+
 
 static __inline__ void gen_pfield_tables (void)
 {
@@ -1212,6 +1286,7 @@ static __inline__ void pfield_doline_1 (uae_u32 *_GCCRES_ pixels, int wordcount,
 
 static _INLINE_ void pfield_doline (int lineno)
 {
+	return;
     uae4all_prof_start(11);
     int wordcount = dp_for_drawing->plflinelen;
     uae_u32 *data = pixdata.apixels_l + MAX_PIXELS_PER_LINE/4;
@@ -1728,7 +1803,7 @@ static _INLINE_ void do_flush_line (int lineno)
 	}
 	last_block_line = lineno;
 	if (last_block_line - first_block_line >= MAXBLOCKLINES) {
-	    flush_block (first_block_line, last_block_line);
+		flush_block (first_block_line, last_block_line);
 	    first_block_line = last_block_line = -2;
 	}
 }
@@ -1740,8 +1815,11 @@ static _INLINE_ void do_flush_line (int lineno)
 static __inline__ void do_flush_screen (int start, int stop)
 {
 
-    if (first_block_line != -2) 
+
+	if (first_block_line != -2) {
+		//printf("Flush line from %d to %d",start,stop);
 	flush_block (first_block_line, last_block_line);
+	}
     
 #ifndef DREAMCAST
     unlockscr ();
@@ -1834,18 +1912,18 @@ static __inline__ void pfield_expand_dp_bplcon (void)
 
 static __inline__ void pfield_draw_line (int lineno, int gfx_ypos, int follow_ypos)
 {
-    int border = 0;
+   int border = 0;
 
-    dp_for_drawing = line_decisions + lineno;
-    dip_for_drawing = curr_drawinfo + lineno;
-    if (dp_for_drawing->plfleft == -1)
-	    border = 1;
+   dp_for_drawing = line_decisions + lineno;
+   dip_for_drawing = curr_drawinfo + lineno;
+   if (dp_for_drawing->plfleft == -1)
+    border = 1;
 
-    linestate[lineno] = LINE_DONE;
-    xlinebuffer = row_map[gfx_ypos];
-    xlinebuffer -= LINETOSCR_X_ADJUST_BYTES;
+   linestate[lineno] = LINE_DONE;
+   xlinebuffer = row_map[gfx_ypos];
+   xlinebuffer -= LINETOSCR_X_ADJUST_BYTES;
     
-    if (!border) {
+   if (!border) {
 	pfield_expand_dp_bplcon ();
 
 	pfield_init_linetoscr ();
@@ -1939,8 +2017,23 @@ static char *numbers = { /* ugly */
 "------ ------ ------ ------ ------ ------ ------ ------ ------ ------ "
 };
 
+static char *letters = { /* ugly */
+"------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ "
+"-xxxxx -xxxxx -xxxxx -xxxx- -xxxxx -xxxxx -xxxxx -x---x --xx-- -----x -x--x- -x---- -x---x -x---x --xxx- -xxxx- -xxxx- -xxxx- -xxxxx -xxxxx -x---x -x---x -x---x -x---x -x---x -xxxxx "
+"-x---x -x---x -x---- -x---x -x---- -x---- -x---- -x---x --xx-- -----x -x-x-- -x---- -xxxxx -xx--x -x---x -x---x -x---- -x---x -x---- ---x-- -x---x -x---x --x-x- --x-x- -x---x ----x- "
+"-xxxxx -xxxxx -x---- -x---x -xxxxx -xxxx- -xxxxx -xxxxx --xx-- -----x -xx--- -x---- -x---x -x-x-x -x---x -xxxx- -x---- -xxxx- -xxxxx ---x-- -x---x -x---x ---x-- ---x-- -x-x-x ---x-- "
+"-x---x -x---x -x---- -x---x -x---- -x---- -x---x -x---x --xx-- -x---x -x-x-- -x---- -x---x -x--xx -x---x -x---- -x---- -x-x-- -----x ---x-- -x---x -xx-xx --x-x- ---x-- -xx-xx --x--- "
+"-x---x -xxxxx -xxxxx -xxxx- -xxxxx -x---- -xxxxx -x---x --xx-- -xxxxx -x--x- -xxxx- -x---x -x---x --xxx- -x---- -xxxx- -x--xx -xxxxx ---x-- --xxx- ---x-- -x---x ---x-- -x---x -xxxxx "
+"------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ "
+};
+
 static int back_drive_track0=-1,back_drive_motor0=-1;
 static int back_drive_track1=-1,back_drive_motor1=-1;
+
+static int back_drive_track2=-1,back_drive_motor2=-1;
+static int back_drive_track3=-1,back_drive_motor3=-1;
+
+
 static int back_powerled=-1;
 
 static __inline__ void putpixel (int x, xcolnr c8)
@@ -1955,15 +2048,29 @@ static _INLINE_ void write_tdnumber (int x, int y, int num)
     uae_u8 *numptr;
     
     numptr = (uae_u8 *)(numbers + num * TD_NUM_WIDTH + 10 * TD_NUM_WIDTH * y);
-    for (j = 0; j < TD_NUM_WIDTH; j++) {
+
+	for (j = 0; j < TD_NUM_WIDTH; j++) {
+		putpixel (x + j, *numptr == 'x' ? xcolors[0xfff] : xcolors[0x000]);
+	numptr++;
+    }
+}
+static _INLINE_ void write_tdletter (int x, int y, char ch)
+{
+    int j;
+    uae_u8 *numptr;
+	
+    numptr = (uae_u8 *)(letters + (ch-65) * TD_NUM_WIDTH + 26 * TD_NUM_WIDTH * y);
+  
+	for (j = 0; j < TD_NUM_WIDTH; j++) {
 	putpixel (x + j, *numptr == 'x' ? xcolors[0xfff] : xcolors[0x000]);
 	numptr++;
     }
+
 }
 
 static _INLINE_ void draw_status_line (int line)
 {
-    int x, y, i, j, led, on;
+	int x, y, i, j, led, on;
     int on_rgb, off_rgb, c;
     uae_u8 *buf;
     
@@ -1975,11 +2082,11 @@ static _INLINE_ void draw_status_line (int line)
     y = line - (GFXVIDINFO_HEIGHT - TD_TOTAL_HEIGHT);
     xlinebuffer = row_map[line];
 
-    uae4all_memclr(xlinebuffer, GFXVIDINFO_WIDTH * GFXVIDINFO_PIXBYTES);
+   uae4all_memclr(xlinebuffer, GFXVIDINFO_WIDTH * GFXVIDINFO_PIXBYTES);
 
-    x+=100 - (TD_WIDTH*(NUM_DRIVES-1));
+    x+=100 - (TD_WIDTH*(mainMenu_drives-1));
 
-    for (led = 0; led < (NUM_DRIVES+1); led++) {
+    for (led = 0; led < (mainMenu_drives+1); led++) {
 	int track;
 	if (led > 0) {
 	    track = gui_data.drive_track[led-1];
@@ -2008,11 +2115,34 @@ static _INLINE_ void draw_status_line (int line)
     }
 
         x = GFXVIDINFO_WIDTH - TD_PADX - 5*TD_WIDTH;
-        x+=100 - (TD_WIDTH*(NUM_DRIVES-1));
+        x+=100 - (TD_WIDTH*(mainMenu_drives-1));
 	if (y >= TD_PADY && y - TD_PADY < TD_NUM_HEIGHT) {
 	    int offs = (TD_WIDTH - 2 * TD_NUM_WIDTH) / 2;
 	    write_tdnumber (x + offs, y - TD_PADY, fps_counter / 10);
 	    write_tdnumber (x + offs + TD_NUM_WIDTH, y - TD_PADY, fps_counter % 10);
+	}
+	if (showmsg)
+	{
+		if (delay<100)
+		{
+			x=0;
+			char *string=statusmessages[showmsg-1];
+			y = line - (GFXVIDINFO_HEIGHT - TD_TOTAL_HEIGHT);
+			if (y >= TD_PADY && y - TD_PADY < TD_NUM_HEIGHT) 
+			{
+				while(*string!='\0') 
+				{
+					if (*string!=' ')write_tdletter(x,y - TD_PADY,*string);
+					string++;
+					x += 8;
+				}
+			}
+		}
+		else
+		{
+			delay=0;
+			showmsg=0;
+		}
 	}
 }
 
@@ -2022,12 +2152,12 @@ void check_all_prefs(void)
 	check_prefs_changed_audio ();
 	check_prefs_changed_custom ();
 	check_prefs_changed_cpu ();
-	if (check_prefs_changed_gfx ()) {
+	//if (check_prefs_changed_gfx ()) {
 	    init_row_map ();
 	    init_aspect_maps ();
 	    notice_screen_contents_lost ();
 	    notice_new_xcolors ();
-	}
+	//}
 }
 
 static void fps_counter_upd(void)
@@ -2052,7 +2182,7 @@ static void fps_counter_upd(void)
 
 static _INLINE_ void finish_drawing_frame (void)
 {
-    int i;
+	int i;
 
     if (mainMenu_showStatus)
         fps_counter_upd();
@@ -2090,30 +2220,37 @@ static _INLINE_ void finish_drawing_frame (void)
     if (   (frame_redraw_necessary) || fps_counter_changed
 	|| (back_drive_track0!=gui_data.drive_track[0])
 	|| (back_drive_motor0!=gui_data.drive_motor[0])
-#if NUM_DRIVES > 1
 	|| (back_drive_track1!=gui_data.drive_track[1])
 	|| (back_drive_motor1!=gui_data.drive_motor[1])
-#endif
+	|| (back_drive_track2!=gui_data.drive_track[2])
+	|| (back_drive_motor2!=gui_data.drive_motor[2])
+	|| (back_drive_track3!=gui_data.drive_track[3])
+	|| (back_drive_motor3!=gui_data.drive_motor[3])
 	|| (back_powerled!=gui_data.powerled)	)
     {
 	back_drive_track0=gui_data.drive_track[0];
 	back_drive_motor0=gui_data.drive_motor[0];
-#if NUM_DRIVES > 1
 	back_drive_track1=gui_data.drive_track[1];
 	back_drive_motor1=gui_data.drive_motor[1];
-#endif
+	back_drive_track2=gui_data.drive_track[2];
+	back_drive_motor2=gui_data.drive_motor[2];
+	back_drive_track3=gui_data.drive_track[3];
+	back_drive_motor3=gui_data.drive_motor[3];
 	back_powerled=gui_data.powerled;
  	for (i = 0; i < TD_TOTAL_HEIGHT; i++) {
-		int line = GFXVIDINFO_HEIGHT - TD_TOTAL_HEIGHT + i;
+		int line = GFXVIDINFO_HEIGHT - TD_TOTAL_HEIGHT + i; 
+	//	if (!enableHWscaling) line-=16;
 		draw_status_line (line);
 		do_flush_line (line);
     	}
     }
+	
 #if defined (GP2X) || defined (PSP) || defined (GIZMONDO)
 	}
 #endif
     drawfinished=1;
     do_flush_screen (first_drawn_line, last_drawn_line);
+	if (showmsg) delay++;
 }
 
 
@@ -2183,9 +2320,9 @@ void reset_drawing (void)
 
     init_aspect_maps ();
 
-    if (line_drawn == 0)
+   /* if (line_drawn == 0)
 	line_drawn = (char *)xmalloc (GFXVIDINFO_HEIGHT);
-
+*/
     init_row_map();
 
     last_redraw_point = 0;
@@ -2200,7 +2337,6 @@ void drawing_init ()
 {
     native2amiga_line_map = 0;
     amiga2aspect_line_map = 0;
-    line_drawn = 0;
-
+    //line_drawn = 0;
     gen_pfield_tables();
 }

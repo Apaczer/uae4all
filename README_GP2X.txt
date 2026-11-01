@@ -1,4 +1,4 @@
-uae4allgp2x0.7.2
+uae4allgp2x0.7.3 Beta
 ----------------
 
 This is an Amiga emulator for the GP2X.  It runs quite a lot of games at a reasonable speed with sound.
@@ -25,6 +25,8 @@ The mmu hack included in this release is thanks to Squidge.
 The cpuspeed.o included in this release is thanks to Hermes/PS2Reality, Vimacs and god_at_hell.
 
 There is use of ryleh's minlib too, and of course Paeryn's HW SDL libs.
+
+There is use of Picodrive and GP2X-CAP32 code. 
 
 
 Installation
@@ -56,13 +58,17 @@ Since 0.7.1 these command line options are accepted:
 -systemclock {0,2,4}     System clock. 0 means 100%, 2 means 83%, 4 means 75%.
 -syncthreshold {0,1,2,3} Sync threshold. 0,1,2,3 is for 100% 75% 50% and 25%.
 -frameskip <x>           Sets frameskip. -1 means auto, >=0 is the frameskip number.
--skipintro {1,0}         If not 0, don't show uae4all intro on startup.
+-skipintro {1,0}         Don't show uae4all intro on startup.
 -ntsc {1,0}              0 means PAL mode, not 0 NTSC.
 -kick <name>             Filename of kickstart ROM image to use.
+-joyconf {0,1,2}	 Sets the joy controls mode: 0 means standard controls, 1 jump=X button1=B, 2 jump=B, button1=X
+-autofire {0,1}		 0 disables autofire, nonzero enables.
+-drive {1,2,3,4}	 Means the number of Amiga drives to be emulated;
 -df0 <name>              Filename of disk image to insert to first drive on startup.
-                         Also skips the menu and boots the disk.
+	                 Also skips the menu and boots the disk.
 -df1 <name>              Filename of disk image to insert to second drive on startup.
-
+-df2 <name>              Filename of disk image to insert to thirth drive on startup.
+-df3 <name>              Filename of disk image to insert to fourth drive on startup.
 
 Release history
 ---------------
@@ -170,13 +176,8 @@ Release history
                                 Project-X work.
                                 GnoStiC submitted a few more optimizations.
 
-20070803 - version 0.7.2        (notaz's release)
-                                Implemented address error emulation in Cyclone (for Shadow of the beast).
-                                Added code to prevent out-of-bounds chipmem access (Turrican 3).
-                                Updated to newer open2x SDL version. Removed some stupid debug code.
-                                Some more (failed?) attempts to optimize blitter code.
-                                Crashing games should no longer bring the emulator down with them.
-
+2007??? - versione 0.8.b	(noldor's release)
+				
 The rest
 --------
 
@@ -184,9 +185,9 @@ The code I ported it from (a Dreamcast port) is available here:
 
 http://chui.dcemu.co.uk/uae4all.html
 
-0.7.2 source is available here:
+0.7.1 source is available here:
 
-http://notaz.gp2x.de/releases/uae4all_gp2x_0.7.2.tar.bz2
+http://notaz.gp2x.de/releases/uae4all_gp2x_0.7.1.tar.bz2
 
 Email: criticalhippo@gmail.com
 

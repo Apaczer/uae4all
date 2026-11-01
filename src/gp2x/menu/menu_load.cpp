@@ -4,9 +4,16 @@
 
 #include "menu.h"
 
+
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+
+
 #include <sys/stat.h>
 #include <unistd.h>
 #include<dirent.h>
+
 
 #include "sysconfig.h"
 #include "sysdeps.h"
@@ -15,412 +22,273 @@
 #include "sound.h"
 
 #include "gp2x.h"
+#include "gp2xutil.h"
+#include "asmutils.h"
+#include <limits.h>
+#include <SDL.h>
+
 
 #define MAX_FILELEN 29
+extern void spend_cycles(int);
+char romFileName[PATH_MAX];
 
-typedef struct{
-	char d_name[MAX_FILELEN+2];
-	char d_type;
-}fichero;
+
 
 #ifdef DREAMCAST
 #define chdir(A) fs_chdir(A)
 #endif
-
-extern char uae4all_image_file[];
+extern unsigned short *gp2x_memregs;
+extern char uae4all_image_file0[];
+extern char uae4all_image_file1[];
 extern char uae4all_image_file2[];
+extern char uae4all_image_file3[];
+extern char currentDir[300];
 
-char *text_str_load_separator="----------------------------------";
+char *text_str_load_separator="----------------------------------------";
 char *text_str_load_dir="#DIR#";
 char *text_str_load_title="            Filemanager            -";
-fichero *text_dir_files=NULL;
 int text_dir_num_files=0, text_dir_num_files_index=0;
-
+//extern char launchDir[300];
 char *text_load=NULL;
 
-#define MAX_FILES_PER_DIR 1024
-#define SHOW_MAX_FILES 15
+#define SHOW_MAX_FILES 13
 
-#ifdef DREAMCAST
-#define chdir(A) fs_chdir(A)
-static char actual_dir[128];
-#endif
 
 extern int run_menuFileinfo(char* fileName);
-
 static int min_in_dir=0, max_in_dir=SHOW_MAX_FILES;
 
-static int compare_names(fichero *a, fichero *b)
+extern int nr_drives;
+static int scandir_cmp(const void *p1, const void *p2)
 {
-	return strcmp(a->d_name,b->d_name);
+
+	struct dirent **d1 = (struct dirent **)p1, **d2 = (struct dirent **)p2;
+	if ((*d1)->d_type == (*d2)->d_type) return alphasort(d1, d2);
+	if ((*d1)->d_type == DT_DIR) return -1; // put before
+	if ((*d2)->d_type == DT_DIR) return  1;
+	return alphasort(d1, d2);
 }
 
-static void copyCompleteName(char *dest, int n)
+static char *filter_exts[] = {
+	".adf", ".gz",".rom",".adf.gz"
+};
+
+static int scandir_filter(const struct dirent *ent)
 {
-	char *src=text_dir_files[n].d_name;
-	if (strlen(src)<MAX_FILELEN)
-		strcpy(dest,src);
-	else
+	const char *p;
+	int i;
+	return 1;
+
+	if (ent == NULL || ent->d_name == NULL) return 0;
+	if (strlen(ent->d_name) < 5) return 1;
+
+	p = ent->d_name + strlen(ent->d_name) - 4;
+
+	for (i = 0; i < sizeof(filter_exts)/sizeof(filter_exts[0]); i++)
 	{
-#ifdef DREAMCAST
-		DIR *d=opendir(actual_dir);
-#else
-		DIR *d=opendir(".");
-#endif
-		if (d)
-		{
-			int i,indice=0,buscado=src[MAX_FILELEN+1];
-			for(i=0;i<MAX_FILES_PER_DIR;i++)
-			{
-				struct dirent *actual=readdir(d);
-				if (actual==NULL)
-				{
-					dest[0]=0;
-					break;
-				}
-				if (!strncmp(src,actual->d_name,MAX_FILELEN))
-				{
-					if (indice==buscado)
-					{
-						strcpy(dest,actual->d_name);
-						break;
-					}
-					indice++;
-				}
-			}
-			closedir(d);
-		}
-		else
-			dest[0]=0;
+		if (strcmp(p, filter_exts[i]) == 0) return 0;
 	}
 
+	return 1;
 }
 
-static int checkFiles(void)
-{
-	char *buf=(char *)calloc(1,2046);
-	int i,max=text_dir_num_files;
-	int ret=(text_dir_num_files<1);
-	if (max>16)
-		max=16;
-	for(i=0;(i<max)&&(!ret);i++)
-	{
-		copyCompleteName(buf,i);
-		if (!buf[0])
-			ret=1;
-		else
-		if (!text_dir_files[i].d_type)
-		{
-			FILE *f=fopen(buf,"rb");
-			if (!f)
-				ret=1;
-			else
-				fclose(f);
-		}
-		else
-		if (strcmp(buf,".."))
-		{
-			DIR *d=opendir(buf);
-			if (!d)
-				ret=1;
-			else
-				closedir(d);
-		}
-	}
-	free(buf);
-	return ret;
-}
 
-static int getFiles(char *dir)
+
+
+
+
+
+
+static void draw_dirlist(char *curdir, struct dirent **namelist, int n, int sel)
 {
 	int i,j;
-	DIR *d;
-	text_dir_num_files_index=0;
-	text_dir_num_files=0;
-	min_in_dir=0;
-	max_in_dir=SHOW_MAX_FILES;
-
-	if (text_dir_files!=NULL)
-		free(text_dir_files);
-
-	text_draw_window(96,64,140,32,"-------");
-	write_text(14,9,"Please wait");
-	text_flip();
-
-	text_dir_files=(fichero *)calloc(sizeof(fichero),MAX_FILES_PER_DIR);
-#ifdef DREAMCAST
-        if (!strcmp(dir,".."))
-        {
-                int ind;
-                for(ind=strlen(actual_dir)-1;ind>0;ind--)
-                        if (actual_dir[ind]=='/')
-                        {
-                                actual_dir[ind]=0;
-                                break;
-                        }
-                d=opendir(actual_dir);
-        }
-        else
-#endif
-	d=opendir(dir);
-	if (d==NULL)
-		return -1;
-	for(i=0;i<MAX_FILES_PER_DIR;i++)
-	{
-		struct dirent *actual=readdir(d);
-		if (actual==NULL)
-			break;
-		if ((!strcmp(actual->d_name,"."))||(!strcmp(actual->d_name,"kick.rom"))||
-		    (!strcmp(actual->d_name,"ip.bin"))||(!strcmp(actual->d_name,"1st_read.bin")))
-		{
-			i--;
-			continue;
-		}
-		memset(text_dir_files[i].d_name,0, MAX_FILELEN+1);
-		strncpy(text_dir_files[i].d_name,actual->d_name,MAX_FILELEN);
-		if (strlen(text_dir_files[i].d_name)==MAX_FILELEN)
-		{
-			int jjg,indice=0;
-			for(jjg=0;jjg<i;jjg++)
-				if (!(strcmp(text_dir_files[i].d_name,text_dir_files[jjg].d_name)))
-						indice++;
-			text_dir_files[jjg].d_name[MAX_FILELEN+1]=indice;
-		}
-#ifndef DREAMCAST
-		{
-			struct stat sstat;
-			char *tmp=(char *)calloc(1,256);
-			strcpy(tmp,dir);
-			strcat(tmp,"/");
-			strcat(tmp,text_dir_files[i].d_name);
-			if (!stat(tmp, &sstat))
-		        	if (S_ISDIR(sstat.st_mode))
-					text_dir_files[i].d_type=4;
-			free(tmp);
-		}
-#else
-		text_dir_files[i].d_type=actual->d_type & 4;
-#endif
-	}
-	closedir(d);
-	text_dir_num_files=i;
-
-#ifndef DREAMCAST
-        chdir(dir);
-#else
-        if (strcmp(dir,MENU_DIR_DEFAULT))
-        {
-                if (strcmp(dir,".."))
-                {
-                        strcat(actual_dir,"/");
-                        strcat(actual_dir,dir);
-                }
-        }
-        chdir(actual_dir);
-        if (strcmp(actual_dir,MENU_DIR_DEFAULT))
-        {
-		strcpy(text_dir_files[i].d_name,"..");
-                text_dir_files[i].d_type=4;
-                if (text_dir_num_files>0)
-                {
-                        char *pptmp=(char *)calloc(1,256);
-                        int tmptype=text_dir_files[0].d_type;
-                        strcpy(pptmp,text_dir_files[0].d_name);
-                        text_dir_files[0].d_type=text_dir_files[text_dir_num_files].d_type;
-                        text_dir_files[text_dir_num_files].d_type=tmptype;
-                        strcpy(text_dir_files[0].d_name,text_dir_files[text_dir_num_files].d_name);
-                        strcpy(text_dir_files[text_dir_num_files].d_name,pptmp);
-                        free(pptmp);
-                }
-                text_dir_num_files++;
-	}
-#endif
-
-	for(i=0;i<text_dir_num_files;i++)
-	{
-		if (text_dir_files[i].d_type==0)
-			for(j=i;j<text_dir_num_files;j++)
-				if (text_dir_files[j].d_type==4)
-				{
-					char *ctmp=(char *)calloc(1,256);
-					strcpy(ctmp,text_dir_files[j].d_name);
-					strcpy(text_dir_files[j].d_name,text_dir_files[i].d_name);
-					strcpy(text_dir_files[i].d_name,ctmp);
-					text_dir_files[i].d_type=4;
-					text_dir_files[j].d_type=0;
-					free(ctmp);
-					break;
-				}
-	}
-	for(i=0;i<text_dir_num_files;i++)
-		// xxx if (text_dir_files[i].d_type==0)
-		{
-			qsort((void *)&text_dir_files[i],text_dir_num_files-i,sizeof(fichero),(int (*)(const void*, const void*))compare_names);
-			break;
-		}
-	return 0;
-}
-
-static void draw_loadMenu(int c)
-{
-	int i,j;
+	n--;
 	static int b=0;
 	int bb=(b%6)/3;
 	SDL_Rect r;
 	extern SDL_Surface *text_screen;
-	r.x=80-64; r.y=0; r.w=110+64+64; r.h=240;
-
+	r.x=80-64; r.y=0; r.w=150-24+64+64; r.h=240;
 	text_draw_background();
-	text_draw_window(80-64,12,160+64+64,220,text_str_load_title);
-
-	if (text_dir_num_files_index<min_in_dir)
+	text_draw_window(2,2,41,25,text_str_load_title);
+	
+	if (sel<min_in_dir)
 	{
-		min_in_dir=text_dir_num_files_index;
-		max_in_dir=text_dir_num_files_index+SHOW_MAX_FILES;
+		min_in_dir=sel;
+		max_in_dir=sel+SHOW_MAX_FILES;
 	}
 	else
-		if (text_dir_num_files_index>=max_in_dir)
+		if (sel>=max_in_dir)
 		{
-			max_in_dir=text_dir_num_files_index+1;
+			max_in_dir=sel+1;
 			min_in_dir=max_in_dir-SHOW_MAX_FILES;
 		}
-	if (max_in_dir>text_dir_num_files)
-		max_in_dir=text_dir_num_files-min_in_dir;
+	if (max_in_dir>n)
+		max_in_dir=n-min_in_dir;
 
-
-	for (i=min_in_dir,j=1;i<max_in_dir;i++,j+=2)
+	for (i=min_in_dir,j=3;i<max_in_dir;i++,j+=2)
 	{
+		
 		write_text(3,j,text_str_load_separator);
-
 		SDL_SetClipRect(text_screen,&r);
-
-		if ((text_dir_num_files_index==i)&&(bb))
-			write_text_inv(4,j+1,(char *)&text_dir_files[i].d_name);
+		
+	if ((sel+1==i+1)&&(bb))
+			write_text_inv(4,j+1,namelist[i+1]->d_name);
 		else
-			write_text(4,j+1,(char *)&text_dir_files[i].d_name);
+			write_text(4,j+1,namelist[i+1]->d_name);
+
 
 		SDL_SetClipRect(text_screen,NULL);
 
-		if (text_dir_files[i].d_type==4)
-			write_text(32,j+1,text_str_load_dir);
+		if (namelist[i+1]->d_type==DT_DIR)
+			write_text(38,j+1,text_str_load_dir);
 	}
 	write_text(3,j,text_str_load_separator);
+
 	text_flip();
+
 	b++;
 }
 
-static int key_loadMenu(int *c)
+
+static int menuLoadLoop(char *curr_path)
 {
-	int end=0;
-	int left=0, right=0, up=0, down=0, hit0=0, hit1=0, hit2=0, hit3=0;
-	SDL_Event event;
+	char *ret = NULL, *fname = NULL;
+	struct dirent **namelist;
+	DIR *dir;
+	int n, sel = 0;
+	unsigned long inp = 0;
 
-	while (SDL_PollEvent(&event) > 0)
+
+	min_in_dir=0;
+	max_in_dir=SHOW_MAX_FILES;
+
+	// is this a dir or a full path?
+
+	if ((dir = opendir(curr_path))) closedir(dir);
+	else 
 	{
-		if (event.type == SDL_QUIT)
-			end=-1;
-		else if (event.type == SDL_JOYBUTTONDOWN)
-		{
-             switch (event.jbutton.button)
-             {
-                 case GP2X_BUTTON_R: right=1; break;
-                 case GP2X_BUTTON_L: left=1; break;
-                 case GP2X_BUTTON_UP: up=1; break;
-                 case GP2X_BUTTON_DOWN: down=1; break;
-                 case GP2X_BUTTON_B: hit0=1; break;
-				 case GP2X_BUTTON_Y: hit2=1; break;
-                 case GP2X_BUTTON_START: hit1=1; break;
-				 case GP2X_BUTTON_SELECT: hit3=1; break;
-             }
-        }
-		else
-		if (event.type == SDL_KEYDOWN)
-		{
-			uae4all_play_click();
-			switch(event.key.keysym.sym)
-			{
-				case SDLK_RIGHT: right=1; break;
-				case SDLK_LEFT: left=1; break;
-				case SDLK_UP: up=1; break;
-				case SDLK_DOWN: down=1; break;
-				case SDLK_RETURN:
-				case SDLK_LCTRL: hit0=1; break;
-				case SDLK_LALT: hit1=1; break;
-				case SDLK_TAB:
-						if (text_dir_num_files)
-							text_dir_num_files_index=text_dir_num_files-1;
-						break;
-				case SDLK_BACKSPACE:
-						text_dir_num_files_index=0;
-						break;
+		char *p;
+		for (p = curr_path + strlen(curr_path) - 1; p > curr_path && *p != '/'; p--);
+		*p = 0;
+		fname = p+1;
+	}
 
-			}
-        }
-		if (hit0||hit2)
-		{
-			if ((text_dir_files[text_dir_num_files_index].d_type==4)||(!strcmp((char *)&text_dir_files[text_dir_num_files_index].d_name,"."))||(!strcmp((char *)&text_dir_files[text_dir_num_files_index].d_name,"..")))
-			{
-				char *tmp=(char *)calloc(1,512);
-				strcpy(tmp,text_dir_files[text_dir_num_files_index].d_name);
-				if (hit0)
-					hit0 = 0;
+	
+	n = scandir(curr_path, &namelist, scandir_filter, scandir_cmp);
 
-				if (hit2)
-					hit2 = 0;
-				
-				if (getFiles(tmp))
-				{
-					end=-1;
-				}
-				free(tmp);
-			}
-			else
+
+	if (n < 0) 
+	{
+		// try root
+		n = scandir("/", &namelist, scandir_filter, scandir_cmp);
+		if (n < 0) 
+		{
+			// oops, we failed
+			printf("dir: "); printf(curr_path); printf("\n");
+			perror("scandir");
+			return 0;
+		}
+	}
+	if (n<10) usleep(70*1024);
+	else usleep(40*1024);
+	// try to find sel
+	if (fname != NULL) 
+	{
+		//SDL_GP2X_VSync();
+		int i;
+		for (i = 1; i < n; i++) 
+		{
+			if (strcmp(namelist[i]->d_name, fname) == 0) 
 			{
-				if (hit0)
-				{
-					copyCompleteName(uae4all_image_file,text_dir_num_files_index);
-				}
-				else
-				{
-					copyCompleteName(uae4all_image_file2,text_dir_num_files_index);
-				}
-				end=1;
+				sel = i - 1;
+				break;
 			}
-		}
-		else if (hit2)
-		{
-		}
-		else if (hit3)
-		{
-			// show file info
-			char *tmp=(char *)calloc(1,512);
-			copyCompleteName(tmp, text_dir_num_files_index);
-			run_menuFileinfo(tmp);
-			free(tmp);
-		}
-		else if (hit1)
-			end=-1;
-		else if ((up)&&(text_dir_num_files_index>0))
-			text_dir_num_files_index--;
-		else if ((down)&&(text_dir_num_files_index+1!=text_dir_num_files))
-			text_dir_num_files_index++;
-		else if (left)
-		{
-			text_dir_num_files_index-=SHOW_MAX_FILES;
-			if (text_dir_num_files_index<0)
-				text_dir_num_files_index=0;
-		}
-		else if (right)
-		{
-			text_dir_num_files_index+=SHOW_MAX_FILES;
-			if (text_dir_num_files_index+1>=text_dir_num_files)
-				text_dir_num_files_index=text_dir_num_files-1;
 		}
 	}
 
-	return end;
+	int loaded=0;
+	int delay=0;
+	for (;;)
+	{
+		unsigned long keys;
+		draw_dirlist(curr_path, namelist, n, sel);
+		delay ++;
+		if (delay>3)
+		{
+			delay=0;
+			keys = gp2x_joystick_read(0);
+		}
+		else keys=0;
+		if(keys&GP2X_UP)  { sel--;   if (sel < 0)   sel = n-2; /*usleep(10*1024);*/ }
+		if(keys&GP2X_DOWN)  { sel++;   if (sel > n-2) sel = 0;/*usleep(10*1024);*/}
+		if(keys&GP2X_LEFT)  { sel-=10; if (sel < 0)   sel = 0;/*usleep(10*1024);*/}
+		if(keys&GP2X_L)     { sel-=24; if (sel < 0)   sel = 0;/*usleep(10*1024);*/}
+		if(keys&GP2X_RIGHT) { sel+=10; if (sel > n-2) sel = n-2;/*usleep(10*1024);*/}
+		if(keys&GP2X_R)     { sel+=24; if (sel > n-2) sel = n-2;/*usleep(10*1024);*/}
+		if(keys&GP2X_SELECT)     { run_menuFileinfo(namelist[sel+1]->d_name);}
+		if(keys&GP2X_B || ((keys&GP2X_Y) && nr_drives>1) || ((keys&GP2X_A) && nr_drives>2) || ((keys&GP2X_X && nr_drives==4)))
+		{
+			if (namelist[sel+1]->d_type == DT_REG) 
+			{
+				int df;
+				int newlen = strlen(curr_path) + strlen(namelist[sel+1]->d_name) + 2;
+				char *p; 
+				char *filename;
+				filename=(char*)malloc(newlen);
+				strcpy(filename, curr_path);
+				p = filename + strlen(filename) - 1;
+				while (*p == '/' && p >= filename) *p-- = 0;
+				strcat(filename, "/");
+				strcat(filename, namelist[sel+1]->d_name);
+				printf("Selecting file %s\n",filename);
+				if (keys&GP2X_B){strcpy(uae4all_image_file0,filename);df=0;}
+				else if(keys&GP2X_Y) {strcpy(uae4all_image_file1,filename);df=1;}
+				else if(keys&GP2X_A) {strcpy(uae4all_image_file2,filename);df=2;}
+				else if(keys&GP2X_X) {strcpy(uae4all_image_file3,filename);df=3;}
+				printf("DF0 %s\n",uae4all_image_file0);
+				loaded=1;
+				strcpy(currentDir,filename);
+				free(filename);
+				break;	
+			} 
+			else if (namelist[sel+1]->d_type == DT_DIR) 
+			{
+				int newlen = strlen(curr_path) + strlen(namelist[sel+1]->d_name) + 2;
+				char *p;
+				char *newdir;
+				newdir=(char*)malloc(newlen);
+				if (strcmp(namelist[sel+1]->d_name, "..") == 0) 
+				{
+					char *start = curr_path;
+					p = start + strlen(start) - 1;
+					while (*p == '/' && p > start) p--;
+					while (*p != '/' && p > start) p--;
+					if (p <= start) strcpy(newdir, "/");
+					else { strncpy(newdir, start, p-start); newdir[p-start] = 0; }
+				} 
+				else 
+				{
+					strcpy(newdir, curr_path);
+					p = newdir + strlen(newdir) - 1;
+					while (*p == '/' && p >= newdir) *p-- = 0;
+					strcat(newdir, "/");
+					strcat(newdir, namelist[sel+1]->d_name);
+				}
+				strcpy(currentDir,newdir);
+				loaded = menuLoadLoop(newdir);
+				free(newdir);
+				break;
+			} 
+		}
+	if(keys&GP2X_START) break;
+	}
+	if (n > 0) 
+	{
+		while(n--) free(namelist[n]);
+		free(namelist);
+	}
+	
+	return loaded;
 }
-
 static void raise_loadMenu()
 {
 	int i;
@@ -448,35 +316,10 @@ static void unraise_loadMenu()
 	text_draw_background();
 	text_flip();
 }
-
-
-int getDefaultFiles(void)
+int run_menuLoad(char *curr_path)
 {
-#ifdef DREAMCAST
-	strcpy(actual_dir,MENU_DIR_DEFAULT);
-#endif
-	return(getFiles(MENU_DIR_DEFAULT));
-}
-
-int run_menuLoad()
-{
-	int end=0,c=0;
-
-	if (text_dir_files==NULL)
-		end=getDefaultFiles();
-	else
-		if (checkFiles())
-			end=getDefaultFiles();
-
-//	text_dir_num_files_index=0;
-
 	raise_loadMenu();
-	while(!end)
-	{
-		draw_loadMenu(c);
-		end=key_loadMenu(&c);
-	}
+	int ret=menuLoadLoop(curr_path);
 	unraise_loadMenu();
-
-	return end;
+	return ret;
 }

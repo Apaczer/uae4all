@@ -14,6 +14,8 @@
 #include "options.h"
 #include "sound.h"
 
+#include <SDL_gp2x.h>
+
 #define MAX_FILELEN 29
 
 typedef struct{

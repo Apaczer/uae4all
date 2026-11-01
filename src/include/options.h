@@ -18,16 +18,22 @@ extern long int version;
 
 extern int produce_sound;
 extern int changed_produce_sound;
-extern char prefs_df[NUM_DRIVES][128];
-extern char changed_df[NUM_DRIVES][128];
-extern int real_changed_df[NUM_DRIVES];
+extern char prefs_df[4][128];
+extern char changed_df[4][128];
+extern int real_changed_df[4];
+extern char romfile[64];
 extern char romfile[64];
 extern unsigned prefs_chipmem_size;
 extern int prefs_gfx_framerate, changed_gfx_framerate;
 extern int m68k_speed;
+extern char *kickstarts_rom_names[3];
+
 
 #define PREFS_GFX_WIDTH 320
 #define PREFS_GFX_HEIGHT 240
+
+#define PREFS_GFX_SCALED_WIDTH 328
+#define PREFS_GFX_SCALED_HEIGHT 256
 
 extern void check_prefs_changed_custom (void);
 extern void check_prefs_changed_cpu (void);

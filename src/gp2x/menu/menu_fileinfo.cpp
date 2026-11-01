@@ -3,7 +3,7 @@
 #include<string.h>
 
 #include "menu.h"
-
+#include<SDL.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include<dirent.h>
@@ -28,7 +28,7 @@ static void draw_fileinfoMenu(int c)
 	r.x=80-64; r.y=60; r.w=110+64+64; r.h=120;
 
 	text_draw_background();
-	text_draw_window(80-64,12,160+64+64,220,text_str_fileinfo_title);
+	text_draw_window(2,2,40,40,text_str_fileinfo_title);
 
 	menuLine = 4;
 	write_text(3, menuLine, "File info:");
@@ -105,13 +105,13 @@ int run_menuFileinfo(char* fileName)
 
 	fileInfo_fileName = fileName;
 
-	raise_fileinfoMenu();
+//	raise_fileinfoMenu();
 	while(!end)
 	{
 		draw_fileinfoMenu(c);
 		end=key_fileinfoMenu(&c);
 	}
-	unraise_fileinfoMenu();
+//	unraise_fileinfoMenu();
 
 	return end;
 }

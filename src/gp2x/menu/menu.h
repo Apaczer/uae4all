@@ -22,20 +22,57 @@ void write_centered_text(int y, char * str);
 void write_num(int x, int y, int v);
 void write_num_inv(int x, int y, int v);
 void text_draw_window(int x, int y, int w, int h, char *title);
+//void menuin_Effect();
+//void menuout_Effect();
+int save_thumb(int code,char *path);
+int save_png(SDL_Surface* surface,char *path);
+
+int createScript(int bIcon=0);
+
+//int save_png(SDL_Surface* surface);
+//void setupDrives(int num);
+//void clearScreen();
+//void fixDisplay();
+
 // void text_draw_menu_msg();
 void text_flip(void);
-
+void set_joyConf(void);
 void parse_cmdline(int argc, char **argv);
+void loadconfig(int general=0);
+int saveconfig(int general=0);
 
 void drawPleaseWait(void);
 void menu_raise(void);
 void menu_unraise(void);
 
 int run_mainMenu();
-int run_menuLoad();
+int run_menuLoad(char *);
 int run_menuGame();
 int run_menuOverclock();
-int run_menuControl();
+int run_menuMisc();
 
-enum { MAIN_MENU_CASE_REBOOT, MAIN_MENU_CASE_LOAD, MAIN_MENU_CASE_RUN, MAIN_MENU_CASE_RESET, MAIN_MENU_CASE_CANCEL, MAIN_MENU_CASE_OVERCLOCK, MAIN_MENU_CASE_EJECT };
+int run_menuControl();
+enum { SCREENSHOT, ICON };
+
+enum { MAIN_MENU_CASE_REBOOT, MAIN_MENU_CASE_LOAD, MAIN_MENU_CASE_RUN, MAIN_MENU_CASE_RESET, MAIN_MENU_CASE_CANCEL, MAIN_MENU_CASE_OVERCLOCK, MAIN_MENU_CASE_EJECT ,MAIN_MENU_CASE_MISC, MAIN_MENU_CASE_SAVE};
+
+
+
+#define DEFAULT_STATUSLN 0
+#define DEFAULT_MOUSEMULTIPLIER 1
+#define DEFAULT_SOUND 1
+#define DEFAULT_AUTOSAVE 1
+#define DEFAULT_SYSTEMCLOCK 0
+#define DEFAULT_SYNCTHRESHOLD 2
+#define DEFAULT_SKIPINTRO 0
+#define DEFAULT_NTSC 0
+#define DEFAULT_JOYCONF 0
+#define DEFAULT_USE1MBCHIP 1
+#define DEFAULT_AUTOFIRE 0
+#define DEFAULT_DRIVES 4
+#define DEFAULT_ENABLESCRIPTS 0
+#define DEFAULT_ENABLESCREENSHOTS 0
+#define DEFAULT_SCALING 0
+#define DEFAULT_KICKSTART 1
+
 

@@ -32,6 +32,6 @@ void volumecontrol_redraw(void)
 
 	// draw the blocks now
 	SDL_FillRect(prSDLScreen, &r, green);
-	SDL_Delay(100);
+	//SDL_Delay(100);
 }
 

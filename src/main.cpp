@@ -5,6 +5,11 @@ KOS_INIT_FLAGS(INIT_DEFAULT);
 KOS_INIT_ROMDISK(romdisk);
 #endif
 
+int kickstart=1;
+int oldkickstart=1;
+
+extern char launchDir[300];
+
 extern "C" int main( int argc, char *argv[] );
 
 /*
@@ -28,6 +33,7 @@ extern "C" int main( int argc, char *argv[] );
 #include "events.h"
 #include "memory.h"
 #include "audio.h"
+#include "memory.h"
 #include "sound.h"
 #include "custom.h"
 #include "m68k/m68k_intrf.h"
@@ -44,6 +50,7 @@ extern "C" int main( int argc, char *argv[] );
 #include "compiler.h"
 #include "bsdsocket.h"
 #include "drawing.h"
+#include "menu.h" 
 
 #ifdef USE_SDL
 #include "SDL.h"
@@ -107,7 +114,15 @@ void default_prefs ()
     strcpy (romfile, ROM_PATH_PREFIX "kick.rom");
 #else
 //    strcpy (romfile, "/cdrom/kick.rom");
-    strcpy (romfile, "kick.rom");
+	
+	sprintf(romfile,"%s/kickstarts/%s",launchDir,kickstarts_rom_names[kickstart-1]);
+	FILE *f=fopen (romfile, "r" );
+	if(!f){
+		strcpy (romfile, "kick.rom");
+	}
+	else fclose(f);
+
+    //strcpy (romfile, "kick.rom");
 #endif
 
     prefs_chipmem_size=0x00100000;
@@ -222,7 +237,8 @@ void real_main (int argc, char **argv)
 #endif
 	);
 #endif
-
+	getcwd(launchDir,250);
+loadconfig(1);
     default_prefs ();
 #ifdef GP2X
     gp2x_init(argc, argv);
@@ -234,7 +250,7 @@ void real_main (int argc, char **argv)
 
     rtarea_init ();
 
-    machdep_init ();
+   // machdep_init ();
 
     if (! setup_sound ()) {
 	write_log ("Sound driver unavailable: Sound output disabled\n");

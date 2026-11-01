@@ -18,6 +18,7 @@
 #include "custom.h"
 #include "joystick.h"
 #include "SDL.h"
+#include "menu.h"
 
 #include "vkbd.h"
 
@@ -26,6 +27,18 @@
 #include "xwin.h"
 extern int gp2xMouseEmuOn;
 extern int mainMenu_mouseMultiplier;
+extern int mainMenu_joyConf;
+extern int mainMenu_button1;
+extern int mainMenu_button2;
+extern int mainMenu_jump;
+extern int mainMenu_autofire;
+extern int mainMenu_enableScreenshots;
+extern int mainMenu_enableScripts;
+extern char launchDir[300];
+extern int showmsg;
+bool switch_autofire=false;
+int delay=0;
+int delay1=0;
 #endif
 
 
@@ -48,7 +61,7 @@ extern int mainMenu_mouseMultiplier;
 int nr_joysticks;
 
 SDL_Joystick *uae4all_joy0, *uae4all_joy1;
-
+extern SDL_Surface *prSDLScreen;
 
 #if !defined (DREAMCAST) && !defined (GP2X) && !defined (GIZMONDO)
 struct joy_range
@@ -61,7 +74,7 @@ void read_joystick(int nr, unsigned int *dir, int *button)
 {
 #ifndef MAX_AUTOEVENTS
     int x_axis, y_axis;
-    int left = 0, right = 0, top = 0, bot = 0;
+    int left = 0, right = 0, top = 0, bot = 0, upRight=0, downRight=0, upLeft=0, downLeft=0, x=0, y=0, a=0, b=0;
     int len, i, num;
     SDL_Joystick *joy = nr == 0 ? uae4all_joy0 : uae4all_joy1;
 
@@ -153,115 +166,145 @@ void read_joystick(int nr, unsigned int *dir, int *button)
 #endif
 #ifdef GP2X
 	int mouseScale = mainMenu_mouseMultiplier;
-
-	if (SDL_JoystickGetButton(joy, GP2X_BUTTON_Y) && gp2xMouseEmuOn)
+	
+    if (gp2xMouseEmuOn)
 	{
-		mouseScale = mainMenu_mouseMultiplier * 2;
+		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_Y))
+			mouseScale = mainMenu_mouseMultiplier * 3;
+		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_LEFT))
+		{
+		   lastmx -= mouseScale;
+			newmousecounters=1;
+		}
+		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_UPLEFT))
+		{
+			lastmx -= mouseScale;
+			lastmy -= mouseScale;
+			newmousecounters=1;
+		}
+		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_DOWNLEFT))
+		{
+			lastmx -= mouseScale;
+			lastmy += mouseScale;
+			newmousecounters=1;
+		}
+		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_RIGHT))
+		{
+		    lastmx += mouseScale;
+			 newmousecounters=1;
+		}
+      	if (SDL_JoystickGetButton(joy, GP2X_BUTTON_UPRIGHT))
+		{
+			lastmx += mouseScale;
+			lastmy -= mouseScale;
+			newmousecounters=1;
+		}
+		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_DOWNRIGHT))
+		{
+			lastmx += mouseScale;
+			lastmy += mouseScale;
+			newmousecounters=1;
+		}
+        if (SDL_JoystickGetButton(joy, GP2X_BUTTON_UP))
+		{    
+			lastmy -= mouseScale;
+			newmousecounters=1;
+		}
+        if (SDL_JoystickGetButton(joy, GP2X_BUTTON_DOWN))
+		{
+          lastmy += mouseScale;
+          newmousecounters=1;
+		}
+    }
+
+	else
+	{
+	
+		if ((SDL_JoystickGetButton(joy, GP2X_BUTTON_Y)| SDL_JoystickGetButton(joy, GP2X_BUTTON_CLICK))& !delay1 & mainMenu_autofire) 
+		{
+			switch_autofire = !switch_autofire;
+			delay1++;
+			switch_autofire?showmsg=1:showmsg=2;
+		} 
+		if ((SDL_JoystickGetButton(joy, GP2X_BUTTON_Y))) 
+		{	
+			int script,screenshot=0;
+			if (mainMenu_enableScreenshots) {
+				char path[512];
+				int count=0;
+				FILE *f;
+				while(1)
+				{
+					sprintf(path, "%s/screenshots/shot%d.png", launchDir,count);
+					f=fopen ( path, "r" );
+					if (!f) break;
+					else
+					{
+						fclose(f);
+						count++;
+					}
+				}
+				save_thumb(SCREENSHOT,path);
+				screenshot=1;
+			}
+			if (mainMenu_enableScripts)
+			{
+				createScript(1);
+				script=1;
+			}
+			else script=0;	
+			if (screenshot & script) showmsg=5;
+			else if(screenshot) showmsg=3;
+			else if(script) showmsg=4;
+		}
+		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_LEFT))left = 1;
+			
+		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_RIGHT)) right = 1;
+		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_UP))top = 1;
+		
+		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_DOWN))bot = 1;
+		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_DOWNLEFT))
+		{
+			bot = 1;
+			left = 1;
+		}
+		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_DOWNRIGHT))
+		{
+			bot = 1;
+			right = 1;
+		}
+		
+		if (!mainMenu_joyConf)
+		{
+			if (SDL_JoystickGetButton(joy, GP2X_BUTTON_UPLEFT))
+			{
+				top = 1;
+				left = 1;
+			}
+    		if (SDL_JoystickGetButton(joy, GP2X_BUTTON_UPRIGHT))
+			{
+				top = 1;
+				right = 1;
+			}
+		}
+		else
+		{	
+			if (SDL_JoystickGetButton(joy, mainMenu_jump) && !vkbd_mode)top = 1;
+			
+		}
+	}   
+	if (mainMenu_autofire & switch_autofire & delay>10){
+		*button=1;
+		delay=0;
 	}
-    
-
-    if (SDL_JoystickGetButton(joy, GP2X_BUTTON_LEFT))
-    {
-      if (gp2xMouseEmuOn)
-      {
-         lastmx -= mouseScale;
-         newmousecounters=1;
-      }
-      else
-         left = 1;
-    }
-	if (SDL_JoystickGetButton(joy, GP2X_BUTTON_UPLEFT))
-    {
-      if (gp2xMouseEmuOn)
-      {
-         lastmx -= mouseScale;
-         lastmy -= mouseScale;
-         newmousecounters=1;
-      }
-      else
-	  {
-         top = 1;
-         left = 1;
-      }
-    }
-	if (SDL_JoystickGetButton(joy, GP2X_BUTTON_DOWNLEFT))
-    {
-      if (gp2xMouseEmuOn)
-      {
-          lastmx -= mouseScale;
-          lastmy += mouseScale;
-          newmousecounters=1;
-      }
-      else
-	  {   
-          bot = 1;
-          left = 1;
-      }
-    }
-    if (SDL_JoystickGetButton(joy, GP2X_BUTTON_RIGHT))
-    {
-      if (gp2xMouseEmuOn)
-      {
-         lastmx += mouseScale;
-         newmousecounters=1;
-      }
-      else
-          right = 1;
-    }
-	if (SDL_JoystickGetButton(joy, GP2X_BUTTON_UPRIGHT))
-    {
-      if (gp2xMouseEmuOn)
-      {
-          lastmx += mouseScale;
-          lastmy -= mouseScale;
-          newmousecounters=1;
-      }
-      else
-      {
-	      top = 1;
-          right = 1;
-      }
-    }
-	if (SDL_JoystickGetButton(joy, GP2X_BUTTON_DOWNRIGHT))
-    {
-      if (gp2xMouseEmuOn)
-      {
-          lastmx += mouseScale;
-          lastmy += mouseScale;
-          newmousecounters=1;
-      }
-      else
-	  {
-          bot = 1;
-          right = 1;
-      }
-    }
-
-    if (SDL_JoystickGetButton(joy, GP2X_BUTTON_UP))
-    {
-      if (gp2xMouseEmuOn)
-      {
-          lastmy -= mouseScale;
-          newmousecounters=1;
-      }
-      else
-          top = 1;
-    }
-    if (SDL_JoystickGetButton(joy, GP2X_BUTTON_DOWN))
-    {
-      if (gp2xMouseEmuOn)
-      {
-          lastmy += mouseScale;
-          newmousecounters=1;
-      }
-      else
-          bot = 1;
-    }
-    
-    *button = SDL_JoystickGetButton(joy, GP2X_BUTTON_B) & 1;
-    
+	else{ 
+		*button = SDL_JoystickGetButton(joy,  mainMenu_button1) & 1;
+		delay++;
+		*button |= (SDL_JoystickGetButton (joy, mainMenu_button2) & 1) << 1;
+	}
+	if (delay1) {delay1++;if (delay1>100) delay1=0;}
     // support second joystick button
-    *button |= (SDL_JoystickGetButton (joy, GP2X_BUTTON_X) & 1) << 1;
+    
 #else
 #ifdef PSP
     struct joy_range *r = nr == 0 ? &range0 : &range1;

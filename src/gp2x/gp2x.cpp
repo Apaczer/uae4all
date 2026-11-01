@@ -14,11 +14,11 @@
 #include "SDL.h"
 #include "gp2x.h"
 #include "gp2xutil.h"
+
 #include "menu/menu.h"
 
 extern int uae4all_keystate[256];
 extern void record_key(int);
-
 
 int vol = 100;
 unsigned long memDev;
@@ -29,10 +29,13 @@ static int mixerdev;
 int soundVolume = 50;
 int flashLED;
 
-int gp2xMouseEmuOn;
-int gp2xButtonRemappingOn;
-int hasGp2xButtonRemapping;
+int gp2xMouseEmuOn=1;
+int gp2xButtonRemappingOn=0;
+int hasGp2xButtonRemapping=1;
+int enableHWscaling=DEFAULT_SCALING;
+int GFXVIDINFO_HEIGHT=240;
 char launchDir[300];
+char currentDir[300];
 
 extern int graphics_init (void);
 
@@ -65,12 +68,23 @@ static int mmuhack(int first_time)
 	return 0;
 }
 
+unsigned long gp2x_joystick_read(int allow_usb_joy)
+{
+	int i;
+	unsigned long value=(MEM_REG[0x1198>>1] & 0x00FF);
+	if(value==0xFD) value=0xFA;
+	if(value==0xF7) value=0xEB;
+  	if(value==0xDF) value=0xAF;
+  	if(value==0x7F) value=0xBE;
+	value = ~((MEM_REG[0x1184>>1] & 0xFF00) | value | (MEM_REG[0x1186>>1] << 16));
+	return value;
+}
+
 
 void gp2x_init(int argc, char **argv)
 {
 	parse_cmdline(argc, argv);
-
-	//getcwd(launchDir, 256);
+	unsigned long memdev = open("/dev/mem", O_RDWR);
 	gp2xClockSpeed = -1;
 
 	memDev = open("/dev/mem", O_RDWR);
@@ -84,6 +98,8 @@ void gp2x_init(int argc, char **argv)
 
 	SDL_ShowCursor(SDL_DISABLE);
 	getcwd(launchDir, 250);
+	getcwd(currentDir, 250);
+	strcat(currentDir,"/roms/");
 }
 
 int is_overridden_button(int button)
@@ -178,7 +194,15 @@ void switch_to_hw_sdl(int first_time)
 	munmap((void *)MEM_REG, 0x10000);
 
 	printf("switching to SDL_HWSURFACE... "); fflush(stdout);
-	prSDLScreen = SDL_SetVideoMode(320,240,16,SDL_HWSURFACE|SDL_FULLSCREEN);
+	// 328, 256;
+	if (enableHWscaling){
+		prSDLScreen = SDL_SetVideoMode(328,256,16,SDL_HWSURFACE|SDL_FULLSCREEN);
+		GFXVIDINFO_HEIGHT=256;
+	}
+	else {
+		prSDLScreen = SDL_SetVideoMode(320,240,16,SDL_HWSURFACE|SDL_FULLSCREEN);
+		GFXVIDINFO_HEIGHT=240;
+	}
 	SDL_ShowCursor(SDL_DISABLE);
 	printf(prSDLScreen ? "done\n" : "failed\n");
 	usleep(100*1000);
@@ -186,7 +210,6 @@ void switch_to_hw_sdl(int first_time)
 
 	// map again
 	MEM_REG=(unsigned short *)mmap(0, 0x10000, PROT_READ|PROT_WRITE, MAP_SHARED,memDev, 0xc0000000);
-
 	// reinit video
 	graphics_init();
 }

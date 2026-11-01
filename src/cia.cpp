@@ -450,7 +450,6 @@ static void WriteCIAA (uae_u16 addr,uae_u8 val)
 	gui_ledstate |= ((~ciaapra & 2) >> 1);
 	gui_data.powerled = ((~ciaapra & 2) >> 1);
 
-
 	if ((ciaapra & 1) != oldovl) {
 	    int i = (allocated_chipmem>>16) > 32 ? allocated_chipmem >> 16 : 32;
 	    
@@ -864,4 +863,3 @@ void REGPARAM2 clock_bput (uaecptr addr, uae_u32 value)
     case 0x3f: clock_control_f = value; break;
     }
 }
-

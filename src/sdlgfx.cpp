@@ -71,6 +71,8 @@ extern int __sdl_dc_emulate_mouse;
 extern int gp2xMouseEmuOn;
 extern int gp2xButtonRemappingOn;
 extern int hasGp2xButtonRemapping;
+extern int enableHWscaling;
+
 int show_inputmode = 0;
 int show_volumecontrol;
 extern int soundVolume;
@@ -81,7 +83,6 @@ extern int soundVolume;
 #include "vkbd.h"
 
 extern int drawfinished;
-
 int prefs_gfx_framerate, changed_gfx_framerate;
 
 uae_u16 *prSDLScreenPixels;
@@ -177,10 +178,11 @@ void flush_block (int ystart, int ystop)
 	if (vkbd_mode)
 	{
 		vkbd_key=vkbd_process();
+		
 	}
 	if (show_inputmode)
 	{
-		inputmode_redraw();
+		inputmode_redraw();	
 	}
 #ifdef GP2X
 	else if (show_volumecontrol)
@@ -190,10 +192,11 @@ void flush_block (int ystart, int ystop)
 #endif
 #endif
 #if !defined (DOUBLEBUFFER)
-    SDL_UpdateRect(prSDLScreen, 0, ystart, current_width, ystop-ystart+1);
+	SDL_UpdateRect(prSDLScreen, 0, ystart, current_width, ystop-ystart+1);
 #endif
     if (drawfinished)
     {
+
 	drawfinished=0;
 #if !defined (GP2X) && !defined (PSP) && !defined (GIZMONDO)
 	if (vkbd_mode)
@@ -215,7 +218,7 @@ void black_screen_now(void)
 #ifdef DOUBLEBUFFER
 	SDL_Flip(prSDLScreen);
 #else
-	SDL_UpdateRect(prSDLScreen, 0, 0, 320, 240);
+	SDL_UpdateRect(prSDLScreen, 0, 0, current_width, current_height);
 #endif
 
 }
@@ -316,7 +319,7 @@ static void graphics_subinit (void)
 #ifdef DREAMCAST
 		prSDLScreen = SDL_SetVideoMode(current_width, current_height, 16, uiSDLVidModFlags|VIDEO_FLAGS);
 #else
-		prSDLScreen = SDL_SetVideoMode(current_width, current_height, 16, uiSDLVidModFlags|VIDEO_FLAGS);
+	{prSDLScreen = SDL_SetVideoMode(current_width, current_height, 16, uiSDLVidModFlags|VIDEO_FLAGS);printf("prSDLScreen is null, creating new screen\n");}
 #endif
 	if (prSDLScreen == NULL)
 	{
@@ -352,6 +355,7 @@ static void graphics_subinit (void)
 #endif
 		/* Initialize structure for Amiga video modes */
 		gfx_mem = (char *)prSDLScreen->pixels;
+		if (enableHWscaling)gfx_mem+=8;
 		gfx_rowbytes = prSDLScreen->pitch;
 	}
 #ifdef DEBUG_GFX
@@ -371,8 +375,8 @@ int graphics_init (void)
 // this will hold the state of the mouse emulation toggle.  The start button
 // will enable mouse emulation, which will allow the joystick to move the 
 // mouse point (probably badly, but there you go).
-gp2xMouseEmuOn=0;
-hasGp2xButtonRemapping = 1;
+//gp2xMouseEmuOn=0;
+//hasGp2xButtonRemapping = 1;
 gp2xButtonRemappingOn = 0;
 show_volumecontrol = 0;
 #endif 
@@ -381,11 +385,20 @@ show_volumecontrol = 0;
 	dbg("Function: graphics_init");
 #endif
 
-	current_width = PREFS_GFX_WIDTH;
-	current_height = PREFS_GFX_HEIGHT;
-
+	if(enableHWscaling)
+	{
+		current_width = PREFS_GFX_SCALED_WIDTH;//PREFS_GFX_WIDTH;
+		current_height = PREFS_GFX_SCALED_HEIGHT;//PREFS_GFX_HEIGHT;
+	}
+	else
+	{
+		current_width = PREFS_GFX_WIDTH;//PREFS_GFX_WIDTH;
+		current_height = PREFS_GFX_HEIGHT;//PREFS_GFX_HEIGHT;
+	}
+//	PREFS_GFX_SCALED_WIDTH,PREFS_GFX_SCALED_HEIGHT
 	graphics_subinit ();
 
+check_all_prefs();	
 
     if (!init_colors ())
 		return 0;
@@ -877,12 +890,14 @@ printf("%i\n",cuenta); fflush(stdout);
 			else if (gp2xMouseEmuOn)
 			{
 #ifdef GP2X
-				if (rEvent.jbutton.button==GP2X_BUTTON_L)
+				if (rEvent.jbutton.button==GP2X_BUTTON_L || rEvent.jbutton.button==GP2X_BUTTON_B)
 				{
+					printf("Pressed Left Mouse");
 					buttonstate[0] = 0;
 				}
-				else if (rEvent.jbutton.button==GP2X_BUTTON_R)
+				else if (rEvent.jbutton.button==GP2X_BUTTON_R || rEvent.jbutton.button==GP2X_BUTTON_X)
 				{
+					printf("Pressed Right Mouse");
 					buttonstate[2] = 0;
 				}
 #else

@@ -19,10 +19,14 @@
 #include "events.h"
 #include "m68k/m68k_intrf.h"
 #include "autoconf.h"
-
+extern int bReloadKickstart;
 #include "zfile.h"
 
+extern int mainMenu_useOneMegaChip;
+
 unsigned prefs_chipmem_size;
+
+char *kickstarts_rom_names[] = { "kick13.rom\0", "kick20.rom\0","kick31.rom\0"};
 
 #ifdef USE_MAPPED_MEMORY
 #include <sys/mman.h>
@@ -808,7 +812,7 @@ static int kickstart_checksum (uae_u8 *mem, int size)
 	    cksum++;
 	prevck = cksum;
     }
-    if (cksum != 0xFFFFFFFFul) {
+	if (cksum != 0xFFFFFFFFul) {
 	write_log ("Kickstart checksum incorrect. You probably have a corrupted ROM image.\n");
     }
     return 0;
@@ -1082,21 +1086,22 @@ static void init_mem_banks (void)
 
 static void allocate_memory (void)
 {
-    if (allocated_chipmem != prefs_chipmem_size) {
-	if (chipmemory)
-	    mapped_free (chipmemory);
-	chipmemory = 0;
+	if (allocated_chipmem != prefs_chipmem_size) 
+	{
+		if (chipmemory)
+			mapped_free (chipmemory);
+		chipmemory = 0;
 
-	allocated_chipmem = prefs_chipmem_size;
-	chipmem_mask = allocated_chipmem - 1;
+		allocated_chipmem = prefs_chipmem_size;
+		chipmem_mask = allocated_chipmem - 1;
 
-	chipmemory = mapped_malloc (allocated_chipmem, "chip");
+		chipmemory = mapped_malloc (allocated_chipmem, "chip");
 
-	if (chipmemory == 0) {
-	    write_log ("Fatal error: out of memory for chipmem.\n");
-	    allocated_chipmem = 0;
-	} else
-	    do_put_mem_long ((uae_u32 *)(chipmemory + 4), swab_l(0));
+		if (chipmemory == 0) {
+		 write_log ("Fatal error: out of memory for chipmem.\n");
+			allocated_chipmem = 0;
+		}	 
+		else do_put_mem_long ((uae_u32 *)(chipmemory + 4), swab_l(0));
     }
 
     chipmem_bank.baseaddr = chipmemory;
@@ -1118,7 +1123,8 @@ static void reload_kickstart(void)
 void memory_reset (void)
 {
     int i, custom_start;
-
+	if (mainMenu_useOneMegaChip) prefs_chipmem_size=0x00100000;
+	else prefs_chipmem_size=0x00100000>>1;	
 #ifdef DEBUG_MEMORY
     dbg("memory_reset!");
 #endif
@@ -1219,8 +1225,9 @@ void memory_reset (void)
 	    map_banks (&kickmem_bank, 0xE0, 8, 0);
 	}
     }
-    if (kickmem_checksum!=get_kickmem_checksum())
+    if (kickmem_checksum!=get_kickmem_checksum() | bReloadKickstart)
     {
+		bReloadKickstart=0;
 	unsigned chksum=kickmem_checksum;
 	reload_kickstart();
 	if (chksum!=kickmem_checksum)

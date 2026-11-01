@@ -343,6 +343,8 @@ void m68k_go (int may_quit)
 	    check_prefs_changed_cpu ();
 	    sound_default_evtime ();
             /* We may have been restoring state, but we're done now.  */
+
+
             handle_active_events ();
             if (mispcflags)
                 do_specialties (0);

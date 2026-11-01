@@ -2,6 +2,7 @@
 #define _GP2X_UTIL_H
 
 void gp2x_init(int argc, char **argv);
+unsigned long gp2x_joystick_read(int allow_usb_joy);
 void gp2x_set_volume(int);
 void inputmode_init();
 void volumecontrol_init();

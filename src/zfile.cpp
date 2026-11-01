@@ -22,7 +22,7 @@
 #define MAX_COMP_SIZE (1024*128)
 
 extern int mainMenu_autosave;
-
+extern int mainMenu_drives;
 #ifdef GP2X
 extern char launchDir[300];
 #endif
@@ -152,7 +152,7 @@ static unsigned uae4all_disk_actual_crc[4]={ 0, 0, 0, 0};
 void zfile_exit (void)
 {
 	int i;
-	for(i=0;i<NUM_DRIVES;i++)
+	for(i=0;i<mainMenu_drives;i++)
 		if (uae4all_disk_memory[i])
 		{
 #ifndef DREAMCAST
@@ -166,7 +166,7 @@ void zfile_exit (void)
 int zfile_close (FILE *f)
 {
 	int i;
-	for(i=0;i<NUM_DRIVES;i++)
+	for(i=0;i<mainMenu_drives;i++)
 		if (f==uae4all_disk_memory[i])
 		{
 			uae4all_disk_used[i]=0;
@@ -253,6 +253,7 @@ static void uae4all_disk_real_write(int num)
 			char *namefile=get_namefile(num);
 			void *bc=calloc(1,MAX_COMP_SIZE);
 			unsigned long sizecompressed=MAX_COMP_SIZE;
+			//int compress2(Bytef * dest, uLongf * destLen, const Bytef * source, uLong sourceLen, int level);
 			int retc=compress2((Bytef *)bc,&sizecompressed,(const Bytef *)uae4all_extra_buffer,changed,Z_BEST_COMPRESSION);
 			if (retc>=0)
 			{
@@ -337,7 +338,7 @@ static void uae4all_initsave(unsigned num)
 FILE *zfile_open (const char *name, const char *mode)
 {
     int i;
-    for(i=0;i<NUM_DRIVES;i++)
+    for(i=0;i<mainMenu_drives;i++)
     	if (uae4all_disk_memory[i]==NULL)
     	{
 #ifndef DREAMCAST
@@ -352,12 +353,12 @@ FILE *zfile_open (const char *name, const char *mode)
 #ifndef DREAMCAST
 		uae4all_extra_buffer=malloc(MAX_DISK_LEN);
 #else
-		uae4all_extra_buffer=(void *)(DC_VRAM+(MAX_DISK_LEN*(NUM_DRIVES+1)));
+		uae4all_extra_buffer=(void *)(DC_VRAM+(MAX_DISK_LEN*(4+1)));
 #endif
-    for(i=0;i<NUM_DRIVES;i++)
+    for(i=0;i<mainMenu_drives;i++)
 	if (!uae4all_disk_used[i])
 		break;
-    if (i>=NUM_DRIVES)
+    if (i>=4)
 	return NULL;
 
     if (try_to_read_disk(i,name))
@@ -376,10 +377,10 @@ FILE *zfile_open (const char *name, const char *mode)
 size_t uae4all_fread( void *ptr, size_t tam, size_t nmiemb, FILE *flujo)
 {
 	int i;
-	for(i=0;i<NUM_DRIVES;i++)
+	for(i=0;i<mainMenu_drives;i++)
 		if (flujo==uae4all_disk_memory[i])
 			break;
-	if (i>=NUM_DRIVES)
+	if (i>=mainMenu_drives)
 		return 0;
 	if (uae4all_disk_pos[i]>=uae4all_disk_len[i])
 		return 0;
@@ -391,10 +392,10 @@ size_t uae4all_fread( void *ptr, size_t tam, size_t nmiemb, FILE *flujo)
 size_t uae4all_fwrite( void *ptr, size_t tam, size_t nmiemb, FILE *flujo)
 {
 	int i;
-	for(i=0;i<NUM_DRIVES;i++)
+	for(i=0;i<mainMenu_drives;i++)
 		if (flujo==uae4all_disk_memory[i])
 			break;
-	if (i>=NUM_DRIVES)
+	if (i>=mainMenu_drives)
 		return 0;
 	if (uae4all_disk_pos[i]>=uae4all_disk_len[i])
 		return 0;
@@ -407,10 +408,10 @@ size_t uae4all_fwrite( void *ptr, size_t tam, size_t nmiemb, FILE *flujo)
 int uae4all_fseek( FILE *flujo, long desplto, int origen)
 {
 	int i;
-	for(i=0;i<NUM_DRIVES;i++)
+	for(i=0;i<mainMenu_drives;i++)
 		if (flujo==uae4all_disk_memory[i])
 			break;
-	if (i>=NUM_DRIVES)
+	if (i>=mainMenu_drives)
 		return -1;
 	switch(origen)
 	{
@@ -432,10 +433,10 @@ int uae4all_fseek( FILE *flujo, long desplto, int origen)
 long uae4all_ftell( FILE *flujo)
 {
 	int i;
-	for(i=0;i<NUM_DRIVES;i++)
+	for(i=0;i<mainMenu_drives;i++)
 		if (flujo==uae4all_disk_memory[i])
 			break;
-	if (i>=NUM_DRIVES)
+	if (i>=mainMenu_drives)
 		return 0;
 	return uae4all_disk_pos[i];
 }
@@ -446,9 +447,11 @@ int uae4all_init_rom(const char *name)
 	FILE *f=fopen(name,"rb");
 	if (f)
 	{
+		printf("Open kick %s\n",name);
 #ifndef DREAMCAST
 		uae4all_rom_memory=calloc(1,MAX_ROM_LEN);
 #else
+		if (uae4all_rom_memory) free(uae4all_rom_memory);
 		uae4all_rom_memory=(void *)(DC_VRAM+VRAM_MAX_LEN);
 		bzero(uae4all_rom_memory,MAX_ROM_LEN);
 #endif
@@ -462,6 +465,7 @@ int uae4all_init_rom(const char *name)
 		fclose(f);
 		return 0;
 	}
+	printf("Kick %s not open\n",name);
 	return -1;
 }
 

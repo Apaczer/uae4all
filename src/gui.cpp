@@ -85,12 +85,14 @@ extern int keycode2amiga(SDL_keysym *prKeySym);
 extern int uae4all_keystate[];
 
 int emulating=0;
-char uae4all_image_file[128]  = { 0, };
-char uae4all_image_file2[128] = { 0, };
+char uae4all_image_file0[128]  = { 0, };
+char uae4all_image_file1[128] = { 0, };
+char uae4all_image_file2[128]  = { 0, };
+char uae4all_image_file3[128] = { 0, };
 
 int drawfinished=0;
 
-extern int mainMenu_throttle, mainMenu_frameskip, mainMenu_sound, mainMenu_case, mainMenu_autosave, mainMenu_ntsc;
+extern int mainMenu_throttle, mainMenu_frameskip, mainMenu_sound, mainMenu_case, mainMenu_autosave, mainMenu_ntsc, mainMenu_drives;
 
 static void getChanges(void)
 {
@@ -122,6 +124,7 @@ static void getChanges(void)
 
 int gui_init (void)
 {
+	
 //Se ejecuta justo despues del MAIN
 
     if (prSDLScreen==NULL)
@@ -136,6 +139,7 @@ int gui_init (void)
     if (prSDLScreen!=NULL)
     {
 	emulating=0;
+	
 #if !defined(DEBUG_UAE4ALL) && !defined(PROFILER_UAE4ALL) && !defined(AUTO_RUN) && !defined(AUTO_FRAMERATE)
 	//uae4all_image_file[0]=0;
 	//uae4all_image_file2[0]=0;
@@ -144,7 +148,7 @@ int gui_init (void)
 	//strcpy(uae4all_image_file2,"prueba2.adz");
 #endif
 	init_text(1);
-	if (!uae4all_image_file[0])
+	if (!uae4all_image_file0[0])
 		run_mainMenu();
 	quit_text();
 	vkbd_init();
@@ -205,16 +209,21 @@ int gui_init (void)
 int gui_update (void)
 {
 // SE EJECUTA DESPUES DE INICIAR EL CORE 68k
-    strcpy(changed_df[0],uae4all_image_file);
-    strcpy(changed_df[1],uae4all_image_file2);
+    strcpy(changed_df[0],uae4all_image_file0);
+    strcpy(changed_df[1],uae4all_image_file1);
+	strcpy(changed_df[2],uae4all_image_file2);
+    strcpy(changed_df[3],uae4all_image_file3);
     real_changed_df[0]=1;
     real_changed_df[1]=1;
+	real_changed_df[2]=1;
+    real_changed_df[3]=1;
     return 0;
 }
 
 
 static void goMenu(void)
 {
+	
    int exitmode=0;
    int autosave=mainMenu_autosave;
    if (quit_program != 0)
@@ -234,7 +243,7 @@ static void goMenu(void)
    exitmode=run_mainMenu();
    notice_screen_contents_lost();
    resume_sound();
-   if ((!(strcmp(prefs_df[0],uae4all_image_file))) || ((!(strcmp(prefs_df[1],uae4all_image_file2)))))
+   if ((!(strcmp(prefs_df[0],uae4all_image_file0))) || ((!(strcmp(prefs_df[1],uae4all_image_file1)))))
 	   menu_unraise();
    quit_text();
    vkbd_init();
@@ -242,29 +251,46 @@ static void goMenu(void)
    SDL_DC_EmulateKeyboard(SDL_FALSE);
 #endif
     getChanges();
-    vkbd_init_button2();
+	vkbd_init_button2();
     if (exitmode==1 || exitmode==2)
     {
-            strcpy(changed_df[0],uae4all_image_file);
-            strcpy(changed_df[1],uae4all_image_file2);
-	    real_changed_df[0]=1;
-	    real_changed_df[1]=1;
+		for(int i=0;i<mainMenu_drives;i++)
+		{
+			real_changed_df[i]=1;
+			if (i==0) strcpy(changed_df[0],uae4all_image_file0);
+			else if (i==1)  strcpy(changed_df[1],uae4all_image_file1);
+			else if (i==2) strcpy(changed_df[2],uae4all_image_file2);
+			else if (i==3)  strcpy(changed_df[3],uae4all_image_file3);
+			 real_changed_df[i]=1;
+		}
     }
     if (exitmode==3)
     {
-	    changed_df[1][0]=0;
-	    real_changed_df[0]=1;
-	    uae4all_image_file2[0]=0;
-	    disk_eject(1);
+		for(int i=0;i<mainMenu_drives;i++)
+		{
+			changed_df[i][0]=0;
+			real_changed_df[i]=1;
+			if (i==0) uae4all_image_file1[0]=0;
+			else if (i==1) uae4all_image_file1[0]=0;
+			else if (i==2) uae4all_image_file2[0]=0;
+			else if (i==3) uae4all_image_file3[0]=0;
+			disk_eject(i);
+		}
+
     }
     if (exitmode==2)
     {
 	    if (autosave!=mainMenu_autosave)
 	    {
 	    	prefs_df[0][0]=0;
-	   	prefs_df[1][0]=0;
+	   		prefs_df[1][0]=0;
+			prefs_df[2][0]=0;
+	   		prefs_df[3][0]=0;
 	    }
+		int gp2xMouseEmuOn=1;
+		int gp2xButtonRemappingOn=0;
 	    uae_reset ();
+
     }
     check_all_prefs();
     gui_purge_events();
@@ -275,6 +301,7 @@ static void goMenu(void)
 #ifdef PROFILER_UAE4ALL
     uae4all_prof_init();
 #endif
+
 }
 
 int nowSuperThrottle=0, goingSuperThrottle=0, goingVkbd=0;
