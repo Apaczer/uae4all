@@ -234,8 +234,8 @@ static __inline__ void CHIPMEM_WPUT(unsigned addr,unsigned data)
 #define CHIPMEM_WGET(PT) (*((unsigned short *)&chipmemory[(unsigned)PT]))
 #define CHIPMEM_WPUT(PT,DA) ((*((unsigned short *)&chipmemory[(unsigned)PT]))=DA)
 #else
-#define CHIPMEM_WGET(PT) (*((unsigned short *)&chipmemory[((unsigned)PT)&0x000FFFFF]))
-#define CHIPMEM_WPUT(PT,DA) ((*((unsigned short *)&chipmemory[((unsigned)PT)&0x000FFFFF]))=DA)
+#define CHIPMEM_WGET(PT) (*((unsigned short *)&chipmemory[((unsigned)PT)&~0x0ff00000]))
+#define CHIPMEM_WPUT(PT,DA) ((*((unsigned short *)&chipmemory[((unsigned)PT)&~0x0ff00000]))=DA)
 #endif
 #endif
 #endif

@@ -57,7 +57,7 @@ struct bltinfo blt_info;
 
 static uae_u8 blit_filltable[256][4][2];
 uae_u32 blit_masktable[BLITTER_MAX_WORDS];
-static uae_u16 blit_trashtable[BLITTER_MAX_WORDS];
+//static uae_u16 blit_trashtable[BLITTER_MAX_WORDS];
 enum blitter_states bltstate;
 
 void build_blitfilltable(void)
@@ -128,8 +128,8 @@ static _INLINE_ void blitter_dofast(void)
     uaecptr bltadatptr = 0, bltbdatptr = 0, bltcdatptr = 0, bltddatptr = 0;
     uae_u8 mt = bltcon0 & 0xFF;
 
-    blit_masktable[0] = blt_info.bltafwm;
-    blit_masktable[blt_info.hblitsize - 1] &= blt_info.bltalwm;
+    blit_masktable[BLITTER_MAX_WORDS - 1] = blt_info.bltafwm;
+    blit_masktable[BLITTER_MAX_WORDS - blt_info.hblitsize] &= blt_info.bltalwm;
 
 #ifdef DEBUG_BLITTER
     dbgf("blitter_dofast bltafwm=0x%X, bltcon0=0x%X\n",blt_info.bltafwm,bltcon0);
@@ -166,21 +166,22 @@ static _INLINE_ void blitter_dofast(void)
 	uae_u32 blitbhold = blt_info.bltbhold;
 	uae_u32 preva = 0, prevb = 0;
 	uaecptr dstp = 0;
+	uae_u32 *blit_masktable_p = blit_masktable + BLITTER_MAX_WORDS - blt_info.hblitsize;
 
 #ifdef DEBUG_BLITTER
 	dbgf("bltbhold=0x%X, vblitsize=0x%X, bltcon1=0x%X\n",blt_info.bltbhold,blt_info.vblitsize,bltcon1);
 #endif
 	/*if (!blitfill) write_log ("minterm %x not present\n",mt); */
-	for (j = 0; j < blt_info.vblitsize; j++) {
+	for (j = blt_info.vblitsize; j--;) {
 	    blitfc = !!(bltcon1 & 0x4);
-	    for (i = 0; i < blt_info.hblitsize; i++) {
+	    for (i = blt_info.hblitsize; i--;) {
 		uae_u32 bltadat, blitahold;
 		if (bltadatptr) {
 		    bltadat = CHIPMEM_WGET (bltadatptr);
 		    bltadatptr += 2;
 		} else
 		    bltadat = blt_info.bltadat;
-		bltadat &= blit_masktable[i];
+		bltadat &= blit_masktable_p[i];
 		blitahold = (((uae_u32)preva << 16) | bltadat) >> blt_info.blitashift;
 		preva = bltadat;
 
@@ -219,8 +220,8 @@ static _INLINE_ void blitter_dofast(void)
 	if (dstp) CHIPMEM_WPUT (dstp, blt_info.bltddat);
 	blt_info.bltbhold = blitbhold;
     }
-    blit_masktable[0] = 0xFFFF;
-    blit_masktable[blt_info.hblitsize - 1] = 0xFFFF;
+    blit_masktable[BLITTER_MAX_WORDS - 1] = 0xFFFF;
+    blit_masktable[BLITTER_MAX_WORDS - blt_info.hblitsize] = 0xFFFF;
 
     bltstate = BLT_done;
 }
@@ -231,8 +232,8 @@ static _INLINE_ void blitter_dofast_desc(void)
     uaecptr bltadatptr = 0, bltbdatptr = 0, bltcdatptr = 0, bltddatptr = 0;
     uae_u8 mt = bltcon0 & 0xFF;
 
-    blit_masktable[0] = blt_info.bltafwm;
-    blit_masktable[blt_info.hblitsize - 1] &= blt_info.bltalwm;
+    blit_masktable[BLITTER_MAX_WORDS - 1] = blt_info.bltafwm;
+    blit_masktable[BLITTER_MAX_WORDS - blt_info.hblitsize] &= blt_info.bltalwm;
 
 #ifdef DEBUG_BLITTER
     dbgf("blitter_dofast_desc bltafwm=0x%X, bltcon0=0x%X\n",blt_info.bltafwm,bltcon0);
@@ -269,21 +270,22 @@ static _INLINE_ void blitter_dofast_desc(void)
 	uae_u32 blitbhold = blt_info.bltbhold;
 	uae_u32 preva = 0, prevb = 0;
 	uaecptr dstp = 0;
+	uae_u32 *blit_masktable_p = blit_masktable + BLITTER_MAX_WORDS - blt_info.hblitsize;
 
 #ifdef DEBUG_BLITTER
 	dbgf("bltbhold=0x%X, vblitsize=0x%X, bltcon1=0x%X\n",blt_info.bltbhold,blt_info.vblitsize,bltcon1);
 #endif
 /*	if (!blitfill) write_log ("minterm %x not present\n",mt);*/
-	for (j = 0; j < blt_info.vblitsize; j++) {
+	for (j = blt_info.vblitsize; j--;) {
 	    blitfc = !!(bltcon1 & 0x4);
-	    for (i = 0; i < blt_info.hblitsize; i++) {
+	    for (i = blt_info.hblitsize; i--;) {
 		uae_u32 bltadat, blitahold;
 		if (bltadatptr) {
 		    bltadat = CHIPMEM_WGET (bltadatptr);
 		    bltadatptr -= 2;
 		} else
 		    bltadat = blt_info.bltadat;
-		bltadat &= blit_masktable[i];
+		bltadat &= blit_masktable_p[i];
 		blitahold = (((uae_u32)bltadat << 16) | preva) >> blt_info.blitdownashift;
 		preva = bltadat;
 		if (bltbdatptr) {
@@ -321,8 +323,8 @@ static _INLINE_ void blitter_dofast_desc(void)
 	if (dstp) CHIPMEM_WPUT (dstp, blt_info.bltddat);
 	blt_info.bltbhold = blitbhold;
     }
-    blit_masktable[0] = 0xFFFF;
-    blit_masktable[blt_info.hblitsize - 1] = 0xFFFF;
+    blit_masktable[BLITTER_MAX_WORDS - 1] = 0xFFFF;
+    blit_masktable[BLITTER_MAX_WORDS - blt_info.hblitsize] = 0xFFFF;
 
     bltstate = BLT_done;
 }

@@ -9,6 +9,9 @@
 
 #include <stdio.h>
 
+// note: Shadow of the beast intentionally causes address errors
+// Project-X uses trace mode.
+
 #define dprintf_al(f,...) printf("%05i|%03i: %s: " f "\n",M68KCONTEXT.cycles_counter,m68k_context.cycles,__FUNCTION__,##__VA_ARGS__)
 #define dprintf(...)
 //#define dprintf(f,...) \
@@ -30,16 +33,22 @@ printf("%05i|%03i: %06x: %s: " f "\n",M68KCONTEXT.cycles_counter,m68k_context.cy
 struct Cyclone m68k_context;
 M68KCONTEXT_t M68KCONTEXT;
 
-static unsigned char  read8 (unsigned int a);
-static unsigned short read16(unsigned int a);
-static unsigned int   read32(unsigned int a);
-static void write8 (unsigned int a,unsigned char  d);
-static void write16(unsigned int a,unsigned short d);
-static void write32(unsigned int a,unsigned int   d);
+#ifdef USE_CYCLONE_MEMHANDLERS
+#define MH_STATIC extern "C"
+#else
+#define MH_STATIC static
+#endif
+
+MH_STATIC unsigned int cyclone_read8 (unsigned int a);
+MH_STATIC unsigned int cyclone_read16(unsigned int a);
+MH_STATIC unsigned int cyclone_read32(unsigned int a);
+MH_STATIC void cyclone_write8 (unsigned int a,unsigned char  d);
+MH_STATIC void cyclone_write16(unsigned int a,unsigned short d);
+MH_STATIC void cyclone_write32(unsigned int a,unsigned int   d);
 
 static unsigned int check_pc(unsigned int pc);
-static void irq_ack(int level);
-static int  unrecognized_callback(void);
+static int irq_ack(int level);
+static int unrecognized_callback(void);
 
 
 void init_m68k(void)
@@ -47,12 +56,12 @@ void init_m68k(void)
 	CycloneInit();
 	memset(&m68k_context, 0, sizeof(m68k_context));
 	m68k_context.checkpc = check_pc;
-	m68k_context.read8   = m68k_context.fetch8  = read8;
-	m68k_context.read16  = m68k_context.fetch16 = read16;
-	m68k_context.read32  = m68k_context.fetch32 = read32;
-	m68k_context.write8  = write8;
-	m68k_context.write16 = write16;
-	m68k_context.write32 = write32;
+	m68k_context.read8   = m68k_context.fetch8  = cyclone_read8;
+	m68k_context.read16  = m68k_context.fetch16 = cyclone_read16;
+	m68k_context.read32  = m68k_context.fetch32 = cyclone_read32;
+	m68k_context.write8  = cyclone_write8;
+	m68k_context.write16 = cyclone_write16;
+	m68k_context.write32 = cyclone_write32;
 	m68k_context.IrqCallback = irq_ack;
 	m68k_context.UnrecognizedCallback = unrecognized_callback;
 }
@@ -158,11 +167,12 @@ void m68k_irq_update(int end_timeslice)
 
 static unsigned int check_pc(unsigned int pc)
 {
+	static int loopcode = 0x60fe60fe;
 	pc -= m68k_context.membase;
-	pc &= ~1;
+	// pc &= ~1; // leave it for address error emulation
 
 	// do we really need to do this? I've seen some cores never clearing the upper bits
-	// and pushing them, etc. But in that case kickstart hangs because cmp @ fc090e fails.
+	// and pushing them, etc. But in that case kickstart 1.3 hangs because cmp @ fc090e fails.
 	pc &= ~0xff000000;
 
 	uae_u8 *p = baseaddr[pc >> 16];
@@ -170,7 +180,7 @@ static unsigned int check_pc(unsigned int pc)
 	if ((int)p & 1)
 	{
 		printf("Cyclone problem: branched to unknown memory location: %06x\n", pc);
-		p = baseaddr[0xf8];
+		p = (uae_u8 *)&loopcode - pc;
 	}
 
 	//dprintf("newpc=%06x, base=%p, result=%08x, oldpc=%06x", pc, p, (unsigned)p + pc, m68k_context.pc - m68k_context.membase);
@@ -179,12 +189,13 @@ static unsigned int check_pc(unsigned int pc)
 }
 
 
-static void irq_ack(int level)
+static int irq_ack(int level)
 {
 	M68KCONTEXT.interrupts[0] &= ~(1 << level);
 	m68k_irq_update(0);
 
 	dprintf("level: %i, irqs: %02x", level, M68KCONTEXT.interrupts[0]);
+	return CYCLONE_INT_ACK_AUTOVECTOR;
 }
 
 
@@ -240,7 +251,6 @@ static int unrecognized_callback(void)
 	}
 	if ((opcode & 0xF000) == 0xA000) {
 		dprintfu("  expA");
-		exit(1); // rm
 		return 0;
 	}
 	dprintfu("  real illegal");
@@ -267,7 +277,8 @@ static int unrecognized_callback(void)
 
 
 /* memory handlers */
-static unsigned char read8(unsigned int a)
+#ifndef USE_CYCLONE_MEMHANDLERS
+static unsigned char cyclone_read8(unsigned int a)
 {
 	a &= ~0xff000000;
 	uae_u8 *p = baseaddr[a>>16];
@@ -285,7 +296,7 @@ static unsigned char read8(unsigned int a)
 	}
 }
 
-static unsigned short read16(unsigned int a)
+static unsigned short cyclone_read16(unsigned int a)
 {
 	a &= ~0xff000000;
 	uae_u16 *p = (uae_u16 *) baseaddr[a>>16];
@@ -303,7 +314,7 @@ static unsigned short read16(unsigned int a)
 	}
 }
 
-static unsigned int read32(unsigned int a)
+static unsigned int cyclone_read32(unsigned int a)
 {
 #ifdef SPLIT_32_2_16
 	return (read16(a)<<16) | read16(a+2);
@@ -326,7 +337,7 @@ static unsigned int read32(unsigned int a)
 #endif
 }
 
-static void write8(unsigned int a, unsigned char d)
+static void cyclone_write8(unsigned int a, unsigned char d)
 {
 	a &= ~0xff000000;
 	uae_u8 *p = baseaddr[a>>16];
@@ -343,7 +354,7 @@ static void write8(unsigned int a, unsigned char d)
 	}
 }
 
-static void write16(unsigned int a,unsigned short d)
+static void cyclone_write16(unsigned int a,unsigned short d)
 {
 	a &= ~0xff000000;
 	uae_u16 *p = (uae_u16 *) baseaddr[a>>16];
@@ -360,7 +371,7 @@ static void write16(unsigned int a,unsigned short d)
 	}
 }
 
-static void write32(unsigned int a,unsigned int d)
+static void cyclone_write32(unsigned int a,unsigned int d)
 {
 #ifdef SPLIT_32_2_16
 	write16(a, d>>16);
@@ -383,6 +394,7 @@ static void write32(unsigned int a,unsigned int d)
 	}
 #endif
 }
+#endif
 
 
 /* nothing to do? */

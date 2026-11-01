@@ -63,8 +63,10 @@ MORE_CFLAGS+= -DUSE_ZFILE
 MORE_CFLAGS+= -DFAME_INTERRUPTS_PATCH
 #MORE_CFLAGS+= -DFAME_INTERRUPTS_SECURE_PATCH
 
+# Turrican3 becomes unstable if this is not enabled
+MORE_CFLAGS+= -DSAFE_MEMORY_ACCESS
+
 #MORE_CFLAGS+= -DUAE_MEMORY_ACCESS
-#MORE_CFLAGS+= -DSAFE_MEMORY_ACCESS
 #MORE_CFLAGS+= -DERROR_WHEN_MEMORY_OVERRUN
 
 #MORE_CFLAGS+= -DDEBUG_UAE4ALL
@@ -154,6 +156,9 @@ CFLAGS+=-DUSE_CYCLONE_CORE
 OBJS += src/m68k/cyclone/cyclone.o
 OBJS += src/m68k/m68k_cmn_intrf.o
 OBJS += src/m68k/cyclone/m68k_intrf.o
+# asm memhandlers
+CFLAGS+=-DUSE_CYCLONE_MEMHANDLERS
+OBJS += src/m68k/cyclone/memhandlers.o
 else
 OBJS += \
 	src/m68k/uae/newcpu.o \

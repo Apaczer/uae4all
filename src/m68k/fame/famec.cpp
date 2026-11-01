@@ -24,6 +24,9 @@
 #define FAMEC_ADR_BITS  24
 #define FAMEC_FETCHBITS 8
 #define FAMEC_DATABITS  8
+
+// #define USE_CYCLONE_TIMING
+// #define USE_CYCLONE_TIMING_DIV
 // Options //
 
 
@@ -1739,13 +1742,18 @@ u32 m68k_emulate(s32 cycles)
 	/* Comprobar si la CPU esta detenida debido a un doble error de bus */
 	if (m68kcontext.execinfo & M68K_FAULTED) return (u32)-1;
 	
-	/* Comprobar si la CPU esta parada */
-	if (m68kcontext.execinfo & M68K_HALTED) {
-		/* La CPU esta detenida mediante la instruccion STOP */
-		/* Agregar ciclos de reloj requeridos */
-		m68kcontext.cycles_counter += cycles;
-		return 0;
+	if (m68kcontext.execinfo & M68K_HALTED)
+	{
+		if (interrupt_chk__() <= 0)
+		{
+			/* La CPU esta detenida mediante la instruccion STOP */
+			/* Agregar ciclos de reloj requeridos */
+			m68kcontext.cycles_counter += cycles;
+			return 0;
+		}
+		m68kcontext.execinfo &= ~M68K_HALTED;
 	} 
+
 
 #ifdef FAMEC_DEBUG
 	printf("Ciclos a ejecutar: %d\n",cycles);

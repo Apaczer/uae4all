@@ -1,4 +1,4 @@
-uae4allgp2x0.7.0
+uae4allgp2x0.7.2
 ----------------
 
 This is an Amiga emulator for the GP2X.  It runs quite a lot of games at a reasonable speed with sound.
@@ -56,7 +56,7 @@ Since 0.7.1 these command line options are accepted:
 -systemclock {0,2,4}     System clock. 0 means 100%, 2 means 83%, 4 means 75%.
 -syncthreshold {0,1,2,3} Sync threshold. 0,1,2,3 is for 100% 75% 50% and 25%.
 -frameskip <x>           Sets frameskip. -1 means auto, >=0 is the frameskip number.
--skipintro {1,0}         Don't show uae4all intro on startup.
+-skipintro {1,0}         If not 0, don't show uae4all intro on startup.
 -ntsc {1,0}              0 means PAL mode, not 0 NTSC.
 -kick <name>             Filename of kickstart ROM image to use.
 -df0 <name>              Filename of disk image to insert to first drive on startup.
@@ -157,7 +157,7 @@ Release history
 20070729 - version 0.7.1        (notaz's release)
                                 "Emu Bias" option has been split into two separate options:
                                   "System clock", which allows you to underclock the whole system to
-                                    improve performance, but breaks sound pitch.
+                                    improve emulation performance, but breaks sound pitch.
                                   "Sync threshold", which allows to reduce amount of synchronization
                                     between 68k and other chips to also improve performance.
                                 Set both to 100 for best compatibility.
@@ -170,6 +170,12 @@ Release history
                                 Project-X work.
                                 GnoStiC submitted a few more optimizations.
 
+20070803 - version 0.7.2        (notaz's release)
+                                Implemented address error emulation in Cyclone (for Shadow of the beast).
+                                Added code to prevent out-of-bounds chipmem access (Turrican 3).
+                                Updated to newer open2x SDL version. Removed some stupid debug code.
+                                Some more (failed?) attempts to optimize blitter code.
+                                Crashing games should no longer bring the emulator down with them.
 
 The rest
 --------
@@ -178,9 +184,9 @@ The code I ported it from (a Dreamcast port) is available here:
 
 http://chui.dcemu.co.uk/uae4all.html
 
-0.7.1 source is available here:
+0.7.2 source is available here:
 
-http://notaz.gp2x.de/releases/uae4all_gp2x_0.7.1.tar.bz2
+http://notaz.gp2x.de/releases/uae4all_gp2x_0.7.2.tar.bz2
 
 Email: criticalhippo@gmail.com
 
