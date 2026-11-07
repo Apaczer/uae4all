@@ -347,8 +347,15 @@ void parse_cmdline(int argc, char **argv)
 			printf("  -kick             Path to kickstart ROM file\n");
 			printf("  -df0              Path to disk 0\n");
 			printf("  -df1              Path to disk 1\n");
+			printf("  -config           Path to config file \n");
 			printf("e.g. $: %s -sound 1 -sytemclock 2 -df0 Game(Disk 1 of 2).adf -df1 Game(Disk 2 of 2).adf \n", argv[0]);
 			exit (0);
+		}
+		//-config should be already handled before loadConfig() skip it here
+		if (strcmp(argv[arg], "-config") == 0) {
+			arg++;
+			found = 1;
+			continue;
 		}
 		for (i = 0; i < sizeof(cmdl_opts) / sizeof(cmdl_opts[0]); i++)
 		{
@@ -389,6 +396,22 @@ void real_main (int argc, char **argv)
 #endif
 
     default_prefs ();
+
+	//Pre-scan argv for -config before loadConfig()
+	for (int i = 1; i < argc - 1; i++)
+	{
+		if (strcmp(argv[i], "-config") == 0)
+		{
+			if(realpath(argv[i + 1], custom_config) == NULL)
+			{
+				// realpath failed (file may not exist yet), fall back to raw path
+				strncpy(custom_config, argv[i + 1], PATH_MAX - 1);
+				custom_config[PATH_MAX - 1] = '\0';
+			}
+			printf("Custom config path: \"%s\"\n", custom_config);
+			break;
+		}
+	}
 
 	loadConfig();
 

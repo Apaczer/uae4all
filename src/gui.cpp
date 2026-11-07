@@ -31,6 +31,8 @@
 #include "homedir.h"
 #endif
 
+char custom_config[PATH_MAX] = "";
+
 #include <SDL.h>
 
 #ifdef PROFILER_UAE4ALL
@@ -110,8 +112,20 @@ void loadConfig()
 {
 #if defined(HOME_DIR)
 	FILE *f;
-	char *config = (char *)malloc(strlen(config_dir) + strlen("/uae4all.cfg") + 1);
+	char *config = NULL;
 	extern char last_directory[PATH_MAX];
+
+	if(custom_config[0] != '\0')
+	{
+		config = strdup(custom_config);
+		printf("Using custom config file: \"%s\"\n", config);
+	}
+	else
+	{
+		config = (char *)malloc(strlen(config_dir) + strlen("/uae4all.cfg") + 1);
+		if(config != NULL)
+			sprintf(config, "%s/uae4all.cfg", config_dir);
+	}
 
 	FILE *k;
 	char *kickrom = (char *)malloc(strlen(config_dir) + strlen("/kick.rom") + 1);
@@ -132,7 +146,7 @@ void loadConfig()
 	if(config == NULL)
 		return;
 
-	sprintf(config, "%s/uae4all.cfg", config_dir);
+	// sprintf(config, "%s/uae4all.cfg", config_dir);
 
 	f = fopen(config, "r");
 
@@ -203,8 +217,19 @@ void storeConfig()
 {
 #if defined(HOME_DIR)
 	FILE *f;
-	char *config = (char *)malloc(strlen(config_dir) + strlen("/uae4all.cfg") + 1);
+	char *config = NULL;
 	extern char last_directory[PATH_MAX];
+
+	if(custom_config[0] != '\0')
+	{
+		config = strdup(custom_config);
+	}
+	else
+	{
+		config = (char *)malloc(strlen(config_dir) + strlen("/uae4all.cfg") + 1);
+		if(config != NULL)
+			sprintf(config, "%s/uae4all.cfg", config_dir);
+	}
 
 	FILE *k;
 	char *kickrom = (char *)malloc(strlen(config_dir) + strlen("/kick.rom") + 1);
@@ -225,7 +250,7 @@ void storeConfig()
 	if(config == NULL)
 		return;
 
-	sprintf(config, "%s/uae4all.cfg", config_dir);
+	// sprintf(config, "%s/uae4all.cfg", config_dir);
 
 	f = fopen(config, "w");
 

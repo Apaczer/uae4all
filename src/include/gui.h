@@ -26,6 +26,7 @@ extern unsigned int gui_ledstate;
 extern int show_message;
 extern int no_gui;
 extern char *show_message_str;
+extern char custom_config[];
 
 struct gui_info
 {
