@@ -1,7 +1,8 @@
 #include "debug_uae4all.h"
 #include "m68k/m68k_intrf.h"
 
-#ifdef DEBUG_M68K
+/* make_a_sr() is needed by both DEBUG_M68K and DEBUG_UAE4ALL code */
+#if defined(DEBUG_M68K) || defined(DEBUG_UAE4ALL)
 
 #ifdef USE_FAME_CORE
 #define make_a_sr() _68k_sreg
@@ -23,6 +24,9 @@ static __inline__ unsigned short make_a_sr(void)
 }
 #endif
 
+#endif /* DEBUG_M68K || DEBUG_UAE4ALL */
+
+#ifdef DEBUG_M68K
 
 static __inline__ void dbg_cycle(unsigned opcode)
 {

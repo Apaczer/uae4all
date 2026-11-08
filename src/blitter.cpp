@@ -245,7 +245,11 @@ static void blitter_dofast(void)
     {
 #endif
 #ifdef DEBUG_BLITTER
+#ifdef USE_LARGE_BLITFUNC
 	dbgf("blitfunc_dofast[%i](0x%X,0x%X,0x%X,0x%X)\n",mt,bltadatptr, bltbdatptr, bltcdatptr, bltddatptr);
+#else
+	dbgf("blitfunc_dofast[%i](pta=0x%X,ptb=0x%X,ptc=0x%X,ptd=0x%X)\n",mt,blt_info.pta, blt_info.ptb, blt_info.ptc, blt_info.ptd);
+#endif
 #endif
 #ifndef USE_LARGE_BLITFUNC
 	(*blitfunc_dofast[mt])(&blt_info);
@@ -350,7 +354,11 @@ static void blitter_dofast_desc(void)
     {
 #endif
 #ifdef DEBUG_BLITTER
+#ifdef USE_LARGE_BLITFUNC
 	dbgf("blitfunc_dofast_desc[%i](0x%X,0x%X,0x%X,0x%X)\n",mt,bltadatptr, bltbdatptr, bltcdatptr, bltddatptr);
+#else
+	dbgf("blitfunc_dofast_desc[%i](pta=0x%X,ptb=0x%X,ptc=0x%X,ptd=0x%X)\n",mt,blt_info.pta, blt_info.ptb, blt_info.ptc, blt_info.ptd);
+#endif
 #endif
 #ifndef USE_LARGE_BLITFUNC
 	(*blitfunc_dofast_desc[mt])(&blt_info);
@@ -586,7 +594,7 @@ static _INLINE_ void blit_init(void)
 	}
 #endif
 #ifdef DEBUG_BLITTER
-	dbgf("blit_init blitfc=0x%X, blitife=0x%X, blitfill=0x%X, blitdesc=0x%X\n",blt_info.blitfc,blt_info.blitife,blt_info.blitfill,blitdesc);
+	dbgf("blit_init blitfc=0x%X, blitife=0x%X, blitfill=0x%X, blitdesc=0x%X\n",blt_info.blitfc,blt_info.blitife,blt_info.blitfill,(bltcon1 & 0x2));
 #endif
     }
 }
@@ -681,7 +689,7 @@ void do_blitter(void)
 #endif
 
 #ifdef DEBUG_BLITTER
-    dbgf("DO_BLITTER blitline=0x%X, blit_cycles=0x%X, blit_firstline_cycles=0x%X\n",blitline,blit_cycles,blit_firstline_cycles);
+    dbgf("DO_BLITTER blitline=0x%X, blit_cycles=0x%X, blit_firstline_cycles=0x%X\n",(bltcon1 & 1),blit_cycles,blit_firstline_cycles);
 #endif
 
     blit_init();

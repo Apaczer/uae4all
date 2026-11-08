@@ -146,7 +146,11 @@ void flush_screen (void)
 {
     uae4all_prof_start(13);
 #ifdef DEBUG_GFX
+#ifdef USE_RASTER_DRAW
     dbgf("Function: flush_block %d %d\n", ystart, ystop);
+#else
+    dbgf("Function: flush_screen\n");
+#endif
 #endif
 #if !defined(DREAMCAST) && !defined(DINGOO)
     if (SDL_MUSTLOCK(prSDLScreen))

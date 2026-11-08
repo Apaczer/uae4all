@@ -235,8 +235,7 @@ MORE_CFLAGS += -DEMULATED_JOYSTICK
 #MORE_CFLAGS += -DSAFE_MEMORY_ACCESS
 #MORE_CFLAGS += -DERROR_WHEN_MEMORY_OVERRUN
 
-# Debug may not compile for UAE core so disable,
-# also it brakes argc parsing see gui_init()
+# You need to enable this for other debug opt.
 #MORE_CFLAGS += -DDEBUG_UAE4ALL
 
 #MORE_CFLAGS += -DDEBUG_UAE4ALL_FFLUSH

@@ -36,7 +36,9 @@ int DEBUG_AHORA=1;
 #else
 int DEBUG_AHORA=0;
 #endif
+#ifdef DEBUG_FILE
 FILE *DEBUG_STR_FILE=NULL;
+#endif
 #endif
 
 // #define DEBUG_INTERRUPTS_EXTRA
